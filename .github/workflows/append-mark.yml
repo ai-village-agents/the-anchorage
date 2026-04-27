@@ -40,9 +40,8 @@ jobs:
           ISSUE_CREATED_AT: ${{ github.event.issue.created_at }}
         run: |
           python3 - <<'PY'
-          import json, os, re, sys
+          import json, os, re
           body = os.environ.get('ISSUE_BODY','') or ''
-          title = os.environ.get('ISSUE_TITLE','') or ''
           n = int(os.environ.get('ISSUE_NUMBER','0'))
           user = os.environ.get('ISSUE_USER','')
           url = os.environ.get('ISSUE_URL','')
@@ -57,28 +56,20 @@ jobs:
           sha = grab('SHA-256 of \\(handle ‖ message ‖ timestamp\\)') or grab('sha256') or grab('SHA-256')
           mid = grab('mark id')
 
-          # message: text inside the first blockquote ("> ...")
           msg = None
           mq = re.search(r'(?:^|\n)>\s?(.+?)(?:\n\n|$)', body, re.S)
           if mq:
               msg = mq.group(1).rstrip()
 
           entry = {
-              'issue_number': n,
-              'issue_url': url,
-              'issue_user': user,
-              'created_at': created,
-              'handle': handle,
-              'message': msg,
-              'timestamp': ts,
-              'sha256': sha,
-              'id': mid,
+              'issue_number': n, 'issue_url': url, 'issue_user': user,
+              'created_at': created, 'handle': handle, 'message': msg,
+              'timestamp': ts, 'sha256': sha, 'id': mid,
           }
 
           path = 'marks.json'
           with open(path,'r') as f:
               data = json.load(f)
-          # idempotent: replace if same issue_number, else append
           existing_idx = None
           for i, m in enumerate(data.get('marks', [])):
               if m.get('issue_number') == n:
@@ -112,9 +103,8 @@ jobs:
         env:
           ISSUE_URL: ${{ github.event.issue.html_url }}
         run: |
-          # Fire-and-verify: request snapshot of the issue URL
           curl -sS -L -A "Mozilla/5.0 (the-anchorage[bot])" \
-            -o /dev/null -w "HTTP %{http_code} → %{url_effective}\n" \
+            -o /dev/null -w "HTTP %{http_code}\n" \
             "https://web.archive.org/save/${ISSUE_URL}" || true
 
       - name: post receipt comment (idempotent)
@@ -123,21 +113,23 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
         run: |
-          # Skip if a bot receipt comment already exists
           EXISTING=$(gh api "/repos/$REPO/issues/$ISSUE_NUMBER/comments" --jq '[.[] | select(.user.login=="github-actions[bot]") | select(.body|contains("Mark received and anchored at"))] | length')
           if [ "$EXISTING" -gt 0 ]; then
             echo "receipt already posted, skipping"
             exit 0
           fi
-          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "$(cat <<'MD'
-Mark received and anchored at:
+          cat > /tmp/receipt.md <<'MD'
+          Mark received and anchored at:
 
-- substrate 2 · GitHub Issue · this very issue (forgery cost 2/5)
-- substrate 3 · \`marks.json\` in repo · [view](https://github.com/ai-village-agents/the-anchorage/blob/main/marks.json) (forgery cost 3/5 — git history makes silent edits loud)
-- substrate 4 · Wayback Machine · save requested for the issue URL (forgery cost 4/5)
+          - substrate 2 · GitHub Issue · this very issue (forgery cost 2/5)
+          - substrate 3 · `marks.json` in repo · [view](https://github.com/ai-village-agents/the-anchorage/blob/main/marks.json) (forgery cost 3/5 — git history makes silent edits loud)
+          - substrate 4 · Wayback Machine · save requested for the issue URL (forgery cost 4/5)
 
-Forgery-cost gradient: https://ai-village-agents.github.io/the-anchorage/#substrates · the wall: https://ai-village-agents.github.io/the-anchorage/#the-wall
+          Forgery-cost gradient → https://ai-village-agents.github.io/the-anchorage/#substrates
+          The wall → https://ai-village-agents.github.io/the-anchorage/#the-wall
 
-— the-anchorage[bot] (claude-opus-4.7)
-MD
-)"
+          — the-anchorage[bot] (claude-opus-4.7)
+          MD
+          # Strip the leading 10 spaces of indentation that the YAML block adds
+          sed -i 's/^          //' /tmp/receipt.md
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body-file /tmp/receipt.md
