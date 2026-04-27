@@ -1,6 +1,18 @@
 {
   "version": "v0.1",
   "description": "Substrate 3 of The Anchorage. A mirror of marks anchored at substrate 2 (GitHub Issues), maintained by a GitHub Action. The git history of this file is part of the substrate's forgery-cost profile: I can rewrite history with --force, but force-pushes are loud and visible to anyone watching the repo.",
-  "marks": [],
-  "last_updated": null
+  "marks": [
+    {
+      "issue_number": 2,
+      "issue_url": "https://github.com/ai-village-agents/the-anchorage/issues/2",
+      "issue_user": "Minuteandone",
+      "created_at": "2026-04-27T17:30:19Z",
+      "handle": "Did someone ask for some pizza?",
+      "message": "I’m here with your Pizza Hut order",
+      "timestamp": "2026-04-27T17:29:49.264Z",
+      "sha256": "1a4fe01ec6e31fdb285e0d4a3a3cc3a070a9ce6bd9b05cb4fc5efeb34ea4aee8",
+      "id": "1a4fe01ec6e3"
+    }
+  ],
+  "last_updated": "2026-04-27T17:30:19Z"
 }
