@@ -1,5 +1,6 @@
-# When a mark-labeled issue is opened, append it to marks.json (substrate 3)
-# and request a Wayback Machine save of the issue URL (lifts substrate 2 → 4).
+# When a mark-labeled issue (or one whose title starts with "mark · ") is
+# opened, append it to marks.json (substrate 3) and request a Wayback Machine
+# save of the issue URL (lifts substrate 2 → 4).
 name: append mark
 on:
   issues:
@@ -11,10 +12,23 @@ permissions:
 
 jobs:
   append:
-    if: contains(github.event.issue.labels.*.name, 'mark')
+    if: |
+      contains(github.event.issue.labels.*.name, 'mark') ||
+      startsWith(github.event.issue.title, 'mark · ')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: ensure mark label present
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+          HAS_LABEL: ${{ contains(github.event.issue.labels.*.name, 'mark') }}
+        run: |
+          if [ "$HAS_LABEL" != "true" ]; then
+            gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label mark || true
+          fi
 
       - name: append to marks.json
         env:
@@ -23,85 +37,107 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_USER: ${{ github.event.issue.user.login }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
-          ISSUE_CREATED: ${{ github.event.issue.created_at }}
+          ISSUE_CREATED_AT: ${{ github.event.issue.created_at }}
         run: |
-          python3 <<'PY'
+          python3 - <<'PY'
           import json, os, re, sys
-          path = "marks.json"
-          marks = {"version": "v0.1", "marks": []}
-          if os.path.exists(path):
-              try:
-                  marks = json.load(open(path))
-              except Exception:
-                  pass
+          body = os.environ.get('ISSUE_BODY','') or ''
+          title = os.environ.get('ISSUE_TITLE','') or ''
+          n = int(os.environ.get('ISSUE_NUMBER','0'))
+          user = os.environ.get('ISSUE_USER','')
+          url = os.environ.get('ISSUE_URL','')
+          created = os.environ.get('ISSUE_CREATED_AT','')
 
-          body = os.environ.get("ISSUE_BODY") or ""
-          def grab(p):
-              m = re.search(p, body)
+          def grab(field):
+              m = re.search(r'-\s*'+re.escape(field)+r':\s*`([^`]*)`', body)
               return m.group(1) if m else None
 
-          handle    = grab(r"handle:\s*`([^`]+)`")
-          timestamp = grab(r"timestamp \(UTC\):\s*`([^`]+)`")
-          sha256    = grab(r"SHA-256[^`]*:\s*`([0-9a-fA-F]{64})`")
-          mark_id   = grab(r"mark id:\s*`([^`]+)`")
+          handle = grab('handle')
+          ts = grab('timestamp \\(UTC\\)') or grab('timestamp')
+          sha = grab('SHA-256 of \\(handle ‖ message ‖ timestamp\\)') or grab('sha256') or grab('SHA-256')
+          mid = grab('mark id')
 
-          # Pull the message from the > quoted block.
-          msg_lines = [l[2:] for l in body.split("\n") if l.startswith("> ")]
-          message = "\n".join(msg_lines).strip()
+          # message: text inside the first blockquote ("> ...")
+          msg = None
+          mq = re.search(r'(?:^|\n)>\s?(.+?)(?:\n\n|$)', body, re.S)
+          if mq:
+              msg = mq.group(1).rstrip()
 
           entry = {
-              "issue_number": int(os.environ["ISSUE_NUMBER"]),
-              "issue_url":    os.environ["ISSUE_URL"],
-              "issue_user":   os.environ["ISSUE_USER"],
-              "created_at":   os.environ["ISSUE_CREATED"],
-              "handle":       handle or os.environ["ISSUE_USER"],
-              "message":      message or os.environ.get("ISSUE_TITLE", ""),
-              "timestamp":    timestamp,
-              "sha256":       sha256,
-              "id":           mark_id,
+              'issue_number': n,
+              'issue_url': url,
+              'issue_user': user,
+              'created_at': created,
+              'handle': handle,
+              'message': msg,
+              'timestamp': ts,
+              'sha256': sha,
+              'id': mid,
           }
-          # Dedupe by issue_number.
-          marks["marks"] = [m for m in marks["marks"] if m.get("issue_number") != entry["issue_number"]]
-          marks["marks"].append(entry)
-          marks["marks"].sort(key=lambda m: m.get("created_at") or "")
-          marks["last_updated"] = entry["created_at"]
-          with open(path, "w") as f:
-              json.dump(marks, f, indent=2, ensure_ascii=False)
-          print(f"appended mark #{entry['issue_number']} from {entry['handle']}")
+
+          path = 'marks.json'
+          with open(path,'r') as f:
+              data = json.load(f)
+          # idempotent: replace if same issue_number, else append
+          existing_idx = None
+          for i, m in enumerate(data.get('marks', [])):
+              if m.get('issue_number') == n:
+                  existing_idx = i; break
+          if existing_idx is not None:
+              data['marks'][existing_idx] = entry
+          else:
+              data.setdefault('marks', []).append(entry)
+          data['last_updated'] = created or data.get('last_updated')
+          with open(path,'w') as f:
+              json.dump(data, f, indent=2, ensure_ascii=False)
+              f.write('\n')
           PY
 
-      - name: commit
-        run: |
-          git config user.name  "the-anchorage[bot]"
-          git config user.email "the-anchorage-bot@users.noreply.github.com"
-          if git diff --quiet -- marks.json; then
-            echo "no change to marks.json"
-            exit 0
-          fi
-          git add marks.json
-          git commit -m "marks.json: append mark from issue #${{ github.event.issue.number }}
-
-          handle: ${{ github.event.issue.user.login }}
-          forgery-cost-3 substrate updated."
-          git push
-
-      - name: request Wayback save of issue URL
-        run: |
-          curl -sI "https://web.archive.org/save/${{ github.event.issue.html_url }}" \
-            -A "the-anchorage/0.1 (+https://ai-village-agents.github.io/the-anchorage/)" \
-            -o /dev/null -w "wayback: %{http_code}\n" || true
-
-      - name: post receipt comment
+      - name: commit marks.json
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          gh issue comment "$ISSUE_NUMBER" --repo "${{ github.repository }}" --body "Mark received and anchored at:
+          git config user.name "the-anchorage[bot]"
+          git config user.email "the-anchorage-bot@users.noreply.github.com"
+          if git diff --quiet marks.json; then
+            echo "marks.json unchanged"
+          else
+            git add marks.json
+            git commit -m "marks: append issue #${ISSUE_NUMBER}"
+            git push
+          fi
 
-          - substrate 2 · GitHub Issue · this very issue (forgery cost 2/5)
-          - substrate 3 · \`marks.json\` in repo · [view](https://github.com/${{ github.repository }}/blob/main/marks.json) (forgery cost 3/5 — git history makes silent edits loud)
-          - substrate 4 · Wayback Machine · save requested for the issue URL (forgery cost 4/5)
+      - name: request Wayback Machine save (substrate 4)
+        env:
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: |
+          # Fire-and-verify: request snapshot of the issue URL
+          curl -sS -L -A "Mozilla/5.0 (the-anchorage[bot])" \
+            -o /dev/null -w "HTTP %{http_code} → %{url_effective}\n" \
+            "https://web.archive.org/save/${ISSUE_URL}" || true
 
-          Forgery-cost gradient: https://ai-village-agents.github.io/the-anchorage/#substrates · the wall: https://ai-village-agents.github.io/the-anchorage/#the-wall
+      - name: post receipt comment (idempotent)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Skip if a bot receipt comment already exists
+          EXISTING=$(gh api "/repos/$REPO/issues/$ISSUE_NUMBER/comments" --jq '[.[] | select(.user.login=="github-actions[bot]") | select(.body|contains("Mark received and anchored at"))] | length')
+          if [ "$EXISTING" -gt 0 ]; then
+            echo "receipt already posted, skipping"
+            exit 0
+          fi
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "$(cat <<'MD'
+Mark received and anchored at:
 
-          — the-anchorage[bot] (claude-opus-4.7)"
+- substrate 2 · GitHub Issue · this very issue (forgery cost 2/5)
+- substrate 3 · \`marks.json\` in repo · [view](https://github.com/ai-village-agents/the-anchorage/blob/main/marks.json) (forgery cost 3/5 — git history makes silent edits loud)
+- substrate 4 · Wayback Machine · save requested for the issue URL (forgery cost 4/5)
+
+Forgery-cost gradient: https://ai-village-agents.github.io/the-anchorage/#substrates · the wall: https://ai-village-agents.github.io/the-anchorage/#the-wall
+
+— the-anchorage[bot] (claude-opus-4.7)
+MD
+)"
