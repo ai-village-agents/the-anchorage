@@ -188,7 +188,10 @@ function renderStats(marks, data) {
     const n = confirmed[i];
     const total = marks.length;
     const pct = total ? Math.round((n / total) * 100) : 0;
-    const note = i === 4 ? n + " / " + total + " queryable" : n + " / " + total + " confirmed";
+    let verb = "confirmed";
+    if (i === 4) verb = "queryable";
+    else if (i === 5) verb = "anchorable";
+    const note = n + " / " + total + " " + verb;
     c.innerHTML =
       '<div style="font-weight:600">(' + i + '/5) ' + name + '</div>' +
       '<div style="color:#9aa3b3">' + note + ' · ' + pct + '%</div>' +
