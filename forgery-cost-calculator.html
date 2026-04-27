@@ -59,6 +59,36 @@
 </section>
 
 <section class="section">
+  <h2>the gradient on a log scale</h2>
+  <p>
+    Five substrates, drawn against the rough USD a hostile actor would have to
+    spend to <em>silently</em> rewrite a mark stored there — i.e. to make the lie
+    land without leaving a trail in some other substrate. The axis is base-10;
+    each tick is 100x the previous one.
+  </p>
+  <div class="fc-chart" id="fcChart"></div>
+  <div class="fc-axis">
+    <span class="lbl">USD log scale</span>
+    <div class="ticks">
+      <span style="left:0%">$0.01</span>
+      <span style="left:18.2%">$10</span>
+      <span style="left:36.4%">$10k</span>
+      <span style="left:54.5%">$10M</span>
+      <span style="left:72.7%">$10B</span>
+      <span style="left:100%">$10T</span>
+    </div>
+    <span></span>
+  </div>
+  <p class="muted">
+    Numbers are order-of-magnitude estimates; the point is the <em>shape</em>,
+    not the price. Substrates 2 and 3 are cheap to edit but expensive to edit
+    <em>without</em> a forensic trail. Substrate 4 requires compromising the
+    Internet Archive's operational integrity. Substrate 5 requires re-mining
+    Bitcoin from the block your hash lands in.
+  </p>
+</section>
+
+<section class="section">
   <h2>read the gradient</h2>
   <table class="fcc-table">
     <thead>
@@ -147,7 +177,7 @@ const fccData = [
     cost: "the cost of rewriting Bitcoin",
     costNote: "An OpenTimestamps proof commits a SHA-256 hash into a Merkle tree whose root is published in a Bitcoin block. To rewrite the timestamp I would need to produce a longer Bitcoin chain forked from before the block — i.e. out-mine the network from that point forward. The current cost of that, in hardware and electricity, is in the billions of dollars and growing.",
     detection: "The proof is a small file (.ots) anyone can verify against the public Bitcoin chain. No trust in me, in GitHub, or in the Internet Archive is required.",
-    advice: "Anchor anything you'd want to hold up in court here. The Anchorage currently links out to opentimestamps.org for this; an in-page generator is on my list.",
+    advice: "Anchor anything you'd want to hold up in court here. Use The Anchorage's in-page generator at <code>anchor.html</code> — it produces a real .ots file you can verify offline.",
     pill: "fc-5"
   }
 ];
@@ -186,10 +216,29 @@ function renderTable() {
   `).join("");
 }
 
+
+function renderChart() {
+  const costs = {1:-2, 2:4, 3:5, 4:7, 5:9};
+  const labels = {1:"$0.01", 2:"$10,000", 3:"$100,000", 4:"$10,000,000", 5:"$1,000,000,000"};
+  const min=-2, max=10, span=max-min;
+  const c = $("fcChart");
+  if (!c) return;
+  c.innerHTML = fccData.map(d=>{
+    const v = costs[d.n];
+    const pct = ((v-min)/span)*100;
+    return `<div class="fc-row fc${d.n}">
+      <span class="lbl">${d.n}/5 · ${d.name}</span>
+      <div class="bar-wrap"><div class="bar k" style="width:${pct.toFixed(1)}%"></div></div>
+      <span class="val">${labels[d.n]}</span>
+    </div>`;
+  }).join("");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   $("fccSelect").addEventListener("change", e => renderCard(parseInt(e.target.value, 10)));
   renderCard(parseInt($("fccSelect").value, 10));
   renderTable();
+  renderChart();
 });
 </script>
 

@@ -233,3 +233,24 @@ main.container.narrow{max-width:760px}
   padding:14px 16px;font-size:13px;line-height:1.6;overflow-x:auto;
 }
 .section pre code{background:none;padding:0;color:var(--fg)}
+
+
+/* forgery cost log-scale bar chart */
+.fc-chart{margin-top:1rem;display:flex;flex-direction:column;gap:.55rem;font:13px/1.4 var(--mono)}
+.fc-row{display:grid;grid-template-columns:8.5rem 1fr 7rem;gap:.65rem;align-items:center}
+.fc-row .lbl{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fc-row .bar-wrap{position:relative;height:1.2rem;background:#11151b;border:1px solid #1f2630;border-radius:3px;overflow:hidden}
+.fc-row .bar{position:absolute;left:0;top:0;bottom:0;border-right:1px solid currentColor;background:currentColor;opacity:.18}
+.fc-row .bar.k{opacity:.34}
+.fc-row .val{font-variant-numeric:tabular-nums;text-align:right;color:var(--accent)}
+.fc-row.fc1 .bar,.fc-row.fc1 .val{color:var(--hot)}
+.fc-row.fc2 .bar,.fc-row.fc2 .val{color:#f5b97a}
+.fc-row.fc3 .bar,.fc-row.fc3 .val{color:var(--warn)}
+.fc-row.fc4 .bar,.fc-row.fc4 .val{color:var(--good)}
+.fc-row.fc5 .bar,.fc-row.fc5 .val{color:var(--accent)}
+.fc-axis{display:grid;grid-template-columns:8.5rem 1fr 7rem;gap:.65rem;align-items:center;color:var(--muted);font-size:11px;margin-top:.35rem}
+.fc-axis .ticks{position:relative;height:1rem;border-top:1px dashed #2a3140}
+.fc-axis .ticks span{position:absolute;top:.15rem;transform:translateX(-50%);white-space:nowrap}
+
+.field-guide{margin-top:1.4rem;font-size:13px;color:var(--muted);border-top:1px dashed #2a3140;padding-top:.85rem}
+.field-guide a{margin:0 .15rem}
