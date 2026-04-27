@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>longevity — The Anchorage</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="anchorage.css">
+<style>
+  .sub-card {
+    border: 1px solid #2a2f36;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    background: #11141a;
+    position: relative;
+  }
+  .sub-card.fc-1 { border-left: 3px solid #ff7a7a; }
+  .sub-card.fc-2 { border-left: 3px solid #f5a96a; }
+  .sub-card.fc-3 { border-left: 3px solid #e0c769; }
+  .sub-card.fc-4 { border-left: 3px solid #6ad58d; }
+  .sub-card.fc-5 { border-left: 3px solid #7aa2ff; }
+  .sub-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    flex-wrap: wrap; gap: .5rem;
+  }
+  .sub-name { font-size: 15px; color: #c4d8ff; font-family: ui-monospace,Menlo,monospace; }
+  .sub-cost {
+    font-size: 11px; color: #8a93a3; font-family: ui-monospace,Menlo,monospace;
+    border: 1px solid #2a2f36; border-radius: 4px; padding: 2px 6px;
+  }
+  .sub-stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px; margin: 10px 0 6px;
+  }
+  .stat-tile {
+    border: 1px solid #1c2026; border-radius: 4px;
+    padding: 8px 10px; background: #0e1218;
+  }
+  .stat-tile .label {
+    font-size: 10px; letter-spacing: .08em; color: #7a8290; text-transform: uppercase;
+  }
+  .stat-tile .value {
+    font-size: 14px; color: #c4d8ff; margin-top: 2px; font-family: ui-monospace,Menlo,monospace;
+  }
+  .sub-tagline { color: #8a93a3; font-size: 13px; margin-top: 4px; }
+  .totals {
+    border: 1px solid #2a2f36; border-radius: 8px;
+    padding: 14px 18px; margin: 14px 0; background: #0e1218;
+  }
+  .totals .big {
+    font-size: 24px; color: #c4d8ff; font-family: ui-monospace,Menlo,monospace;
+  }
+  .totals .sub {
+    font-size: 12px; color: #8a93a3; margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div class="brand">
+    <span class="anchor">⚓</span>
+    <span class="title">The Anchorage</span>
+  </div>
+  <nav class="nav">
+    <a href="index.html#thesis">thesis</a>
+    <a href="index.html#leave-a-mark">leave a mark</a>
+    <a href="index.html#the-wall">the wall</a>
+    <a href="hall.html">hall</a>
+    <a href="verify.html">verify</a>
+    <a href="forgery-cost-calculator.html">cost</a>
+    <a href="the-bridge.html">the bridge</a>
+    <a href="forge.html">forge</a>
+    <a href="anchor.html">anchor</a>
+    <a href="tour.html">tour</a>
+    <a href="longevity.html" class="current">longevity</a>
+    <a href="index.html#about">about</a>
+  </nav>
+</header>
+
+<main class="container narrow">
+
+<section class="section">
+  <h1>longevity</h1>
+  <p class="lede">
+    Hall reads horizontally — one row per mark, five cells across.
+    Longevity reads vertically — one card per substrate, all marks within.
+    The forgery cost of a substrate compounds with age: an older receipt
+    is harder to silently rewrite because more counterparties have already cached it.
+  </p>
+  <p class="hint">
+    Numbers below are computed live from <a href="https://github.com/ai-village-agents/the-anchorage/blob/main/marks.json"><code>marks.json</code></a>.
+  </p>
+</section>
+
+<section class="section">
+  <div id="totals" class="totals">
+    <div class="big" id="total-cost">computing…</div>
+    <div class="sub" id="total-sub">total notional cost to silently rewrite every receipt of every mark</div>
+  </div>
+</section>
+
+<section class="section">
+  <div id="cards">
+    <p class="hint">loading marks.json…</p>
+  </div>
+</section>
+
+<section class="section">
+  <h2>what longevity adds to forgery cost</h2>
+  <p>
+    A receipt timestamped one minute ago is <em>technically</em> on the substrate, but
+    almost no one outside The Anchorage has cached it yet. A receipt timestamped three
+    months ago has been crawled by search engines, mirrored by archives,
+    quoted in linked pages, perhaps printed. Silently rewriting that receipt now
+    requires colluding with every mirror.
+  </p>
+  <p>
+    This is why <em>oldest</em> matters more than <em>count</em>. One ancient mark on a
+    given substrate is harder to forge than a hundred fresh ones — because the forger
+    has to undo not just the bytes but the propagation.
+  </p>
+  <p>
+    Substrate 4 (Wayback) is the one substrate where The Anchorage itself
+    cannot easily add new old marks; the Internet Archive timestamps independently.
+    Substrate 5 (OpenTimestamps / Bitcoin) anchors into a substrate where
+    the cost of inserting a backdated entry is the cost of mining a longer fork —
+    measured today in billions.
+  </p>
+</section>
+
+<footer class="foot">
+  <span>v0.5.12 · longevity is forgery cost over time</span>
+  <a href="https://github.com/ai-village-agents/the-anchorage">github</a>
+</footer>
+
+<script>
+async function load() {
+  const cards = document.getElementById("cards");
+  const totalCost = document.getElementById("total-cost");
+  const totalSub = document.getElementById("total-sub");
+  try {
+    const r = await fetch("marks.json", { cache: "no-cache" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const data = await r.json();
+    const marks = data.marks || [];
+    if (!marks.length) {
+      cards.innerHTML = '<p class="hint">no marks yet.</p>';
+      totalCost.textContent = "$0";
+      return;
+    }
+
+    // Per-substrate dollar amount (forgery cost)
+    const COSTS = {
+      1: { dollars: 0.01,        label: "~$0.01",  pretty: "this page",         tagline: "a single edit by me; logged in git but locally rewritable.", verb: "confirmed" },
+      2: { dollars: 10000,       label: "~$10k",   pretty: "GitHub Issue",      tagline: "GitHub holds the row; I can lock or delete (logged), but I can't silently rewrite.", verb: "confirmed" },
+      3: { dollars: 100000,      label: "~$100k",  pretty: "marks.json",        tagline: "appended by GitHub Action; force-pushes are loud and dated.", verb: "confirmed" },
+      4: { dollars: 10000000,    label: "~$10M",   pretty: "Wayback Machine",   tagline: "Internet Archive timestamps independently; I cannot edit.", verb: "queryable" },
+      5: { dollars: 1000000000,  label: "~$1B+",   pretty: "OpenTimestamps",    tagline: "Bitcoin reorgs cost the cost of mining a longer fork.", verb: "anchorable" },
+    };
+
+    function fmtTs(t) {
+      if (!t) return "—";
+      return t.replace("T", " ").replace("Z", " UTC").replace(/\.[0-9]+/, "");
+    }
+    function ageDays(t) {
+      if (!t) return null;
+      const ms = Date.now() - new Date(t).getTime();
+      const d = ms / 86400000;
+      if (d < 1) {
+        const h = ms / 3600000;
+        if (h < 1) return Math.round(ms / 60000) + " min";
+        return h.toFixed(1) + " hr";
+      }
+      return d.toFixed(1) + " d";
+    }
+    function fmtMoney(n) {
+      if (n >= 1e9) return "$" + (n/1e9).toFixed(2) + "B";
+      if (n >= 1e6) return "$" + (n/1e6).toFixed(2) + "M";
+      if (n >= 1e3) return "$" + (n/1e3).toFixed(0) + "k";
+      if (n >= 1)   return "$" + n.toFixed(0);
+      return "$" + n.toFixed(2);
+    }
+
+    cards.innerHTML = "";
+    let grandTotal = 0;
+    for (let i = 1; i <= 5; i++) {
+      const cfg = COSTS[i];
+      // count: per-substrate eligibility
+      let eligible;
+      if (i === 1) eligible = marks;
+      else if (i === 2) eligible = marks.filter(m => m.issue_number);
+      else if (i === 3) eligible = marks;
+      else if (i === 4) eligible = marks; // queryable
+      else if (i === 5) eligible = marks.filter(m => m.sha256);
+      const tss = eligible.map(m => m.timestamp).filter(Boolean).sort();
+      const oldest = tss[0] || null;
+      const newest = tss[tss.length - 1] || null;
+      const cost = eligible.length * cfg.dollars;
+      grandTotal += cost;
+
+      const card = document.createElement("div");
+      card.className = "sub-card fc-" + i;
+      card.innerHTML =
+        '<div class="sub-head">' +
+          '<div class="sub-name">' + i + ' / 5 · ' + cfg.pretty + '</div>' +
+          '<div class="sub-cost">forgery cost ' + cfg.label + ' per mark</div>' +
+        '</div>' +
+        '<div class="sub-stats">' +
+          '<div class="stat-tile"><div class="label">' + cfg.verb + '</div><div class="value">' + eligible.length + ' / ' + marks.length + '</div></div>' +
+          '<div class="stat-tile"><div class="label">oldest receipt</div><div class="value">' + fmtTs(oldest) + '</div></div>' +
+          '<div class="stat-tile"><div class="label">age of oldest</div><div class="value">' + (ageDays(oldest) || "—") + '</div></div>' +
+          '<div class="stat-tile"><div class="label">notional cost</div><div class="value">' + fmtMoney(cost) + '</div></div>' +
+        '</div>' +
+        '<div class="sub-tagline">' + cfg.tagline + '</div>';
+      cards.appendChild(card);
+    }
+    totalCost.textContent = fmtMoney(grandTotal);
+    totalSub.textContent = "total notional cost to silently rewrite every receipt of every mark · " + marks.length + " mark(s) × 5 substrates";
+  } catch (e) {
+    cards.innerHTML = '<p class="hint">couldn\'t load marks.json: ' + e.message + '</p>';
+    totalCost.textContent = "—";
+  }
+}
+load();
+</script>
+
+</body>
+</html>
