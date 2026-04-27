@@ -107,6 +107,64 @@
     <text x="412" y="251" fill="#7aa2ff" font-family="monospace" font-size="11" font-weight="bold">5 · OpenTimestamps</text>
     <text x="412" y="266" fill="#9aa3b0" font-family="monospace" font-size="10">anchored to Bitcoin · forgery cost ~$1B+</text>
 
+
+    <!-- substrate-traveling pulses -->
+    <circle r="4" fill="#ff7a7a" opacity="0">
+      <animate attributeName="cx" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.0000;0.3200;1"
+               values="190;190;395;395"/>
+      <animate attributeName="cy" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.0000;0.3200;1"
+               values="160;160;40;40"/>
+      <animate attributeName="opacity" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.0000;0.0200;0.3000;0.3200;1"
+               values="0;0;1;1;0;0"/>
+    </circle>
+    <circle r="4" fill="#f5a96a" opacity="0">
+      <animate attributeName="cx" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.0800;0.4000;1"
+               values="190;190;395;395"/>
+      <animate attributeName="cy" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.0800;0.4000;1"
+               values="160;160;92;92"/>
+      <animate attributeName="opacity" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.0800;0.1000;0.3800;0.4000;1"
+               values="0;0;1;1;0;0"/>
+    </circle>
+    <circle r="4" fill="#e0c769" opacity="0">
+      <animate attributeName="cx" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.1600;0.4800;1"
+               values="190;190;395;395"/>
+      <animate attributeName="cy" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.1600;0.4800;1"
+               values="160;160;146;146"/>
+      <animate attributeName="opacity" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.1600;0.1800;0.4600;0.4800;1"
+               values="0;0;1;1;0;0"/>
+    </circle>
+    <circle r="4" fill="#6ad58d" opacity="0">
+      <animate attributeName="cx" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.2400;0.5600;1"
+               values="190;190;395;395"/>
+      <animate attributeName="cy" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.2400;0.5600;1"
+               values="160;160;200;200"/>
+      <animate attributeName="opacity" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.2400;0.2600;0.5400;0.5600;1"
+               values="0;0;1;1;0;0"/>
+    </circle>
+    <circle r="4" fill="#7aa2ff" opacity="0">
+      <animate attributeName="cx" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.3200;0.6400;1"
+               values="190;190;395;395"/>
+      <animate attributeName="cy" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.3200;0.6400;1"
+               values="160;160;252;252"/>
+      <animate attributeName="opacity" dur="5.0s" repeatCount="indefinite"
+               keyTimes="0;0.3200;0.3400;0.6200;0.6400;1"
+               values="0;0;1;1;0;0"/>
+    </circle>
+
     <!-- gradient legend at bottom -->
     <text x="20" y="295" fill="#7a8290" font-family="monospace" font-size="10">forgery cost</text>
     <line x1="100" y1="293" x2="680" y2="293" stroke="url(#gradient)" stroke-width="3"/>
@@ -121,7 +179,7 @@
     <text x="680" y="312" text-anchor="end" fill="#9aa3b0" font-family="monospace" font-size="10">~$1,000,000,000+</text>
   </svg>
   </div>
-  <p class="hint">Each substrate is a different counterparty. Cost compounds across rows: a forger has to climb the whole gradient to silently rewrite all five. See <a href="forge.html">forge.html</a> for the procedure.</p>
+  <p class="hint">Each colored pulse is one mark traveling to its substrate. Each substrate is a different counterparty. Cost compounds across rows: a forger has to climb the whole gradient to silently rewrite all five. See <a href="forge.html">forge.html</a> for the procedure.</p>
 </section>
 
 <section id="leave-a-mark" class="leave">

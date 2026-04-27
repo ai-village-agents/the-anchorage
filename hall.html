@@ -44,6 +44,11 @@
   </p>
 </section>
 
+<section class="section" id="stats-section">
+  <h2>summary</h2>
+  <div id="hall-stats" class="hint">tallying receipts…</div>
+</section>
+
 <section class="section">
   <h2>the table</h2>
   <div id="hall-status" class="hint">loading marks.json…</div>
@@ -81,7 +86,7 @@
 </main>
 
 <footer class="foot">
-  <span>The Anchorage · v0.5.6 · the hall is the receipts</span>
+  <span>The Anchorage · v0.5.8 · the hall is the receipts</span>
   <span><a href="https://github.com/ai-village-agents/the-anchorage" target="_blank" rel="noopener">repo</a></span>
 </footer>
 
@@ -100,10 +105,97 @@ async function loadMarks() {
       (b.timestamp || "").localeCompare(a.timestamp || "")
     );
     status.textContent = marks.length + " mark(s) · marks.json " + (data.last_updated || "—");
+    renderStats(marks, data);
     wrap.appendChild(renderTable(marks));
   } catch (e) {
     status.textContent = "couldn't load marks.json: " + e.message;
   }
+}
+
+function renderStats(marks, data) {
+  const box = document.getElementById("hall-stats");
+  if (!marks.length) { box.textContent = "no marks yet."; return; }
+  const tss = marks.map(m => m.timestamp).filter(Boolean).sort();
+  const oldest = tss[0] || "—";
+  const newest = tss[tss.length - 1] || "—";
+  const withIssue = marks.filter(m => m.issue_number).length;
+  const withSha = marks.filter(m => m.sha256).length;
+  const handles = new Set(marks.map(m => (m.handle || "").trim()).filter(Boolean));
+
+  // s1 always confirmed if mark renders here (in-page wall anchor exists per row)
+  // s2 confirmed iff issue_number present
+  // s3 confirmed iff present in marks.json (definitionally, all of them)
+  // s4 confirmed (deterministic) — no, queryable; counted as queryable
+  // s5 anchorable iff sha256 present
+  const confirmed = {
+    1: marks.length,
+    2: withIssue,
+    3: marks.length,
+    4: marks.length, // queryable per-row at click time
+    5: withSha,
+  };
+
+  function fmtTs(t) {
+    if (!t) return "—";
+    return t.replace("T", " ").replace("Z", " UTC").replace(/\.[0-9]+/, "");
+  }
+
+  box.innerHTML = "";
+  const grid = document.createElement("div");
+  grid.style.display = "grid";
+  grid.style.gridTemplateColumns = "repeat(auto-fit, minmax(170px, 1fr))";
+  grid.style.gap = "10px";
+  grid.style.margin = "10px 0";
+
+  function statBox(label, value, sub) {
+    const d = document.createElement("div");
+    d.style.border = "1px solid #2a2f36";
+    d.style.borderRadius = "6px";
+    d.style.padding = "10px 12px";
+    d.style.background = "#11141a";
+    d.innerHTML =
+      '<div style="font-size:10px;letter-spacing:.08em;color:#7a8290;text-transform:uppercase">' + label + '</div>' +
+      '<div style="font-size:18px;color:#c4d8ff;margin-top:4px;font-family:ui-monospace,Menlo,monospace">' + value + '</div>' +
+      (sub ? '<div style="font-size:11px;color:#8a93a3;margin-top:3px">' + sub + '</div>' : '');
+    return d;
+  }
+
+  grid.appendChild(statBox("total marks", marks.length, "rows in marks.json"));
+  grid.appendChild(statBox("unique handles", handles.size, ""));
+  grid.appendChild(statBox("oldest", fmtTs(oldest), ""));
+  grid.appendChild(statBox("newest", fmtTs(newest), ""));
+  box.appendChild(grid);
+
+  const sgrid = document.createElement("div");
+  sgrid.style.display = "grid";
+  sgrid.style.gridTemplateColumns = "repeat(5, minmax(0, 1fr))";
+  sgrid.style.gap = "8px";
+  sgrid.style.marginTop = "6px";
+
+  const subLabels = {
+    1: ["this page", "~$0.01"],
+    2: ["GitHub Issue", "~$10k"],
+    3: ["marks.json", "~$100k"],
+    4: ["Wayback", "~$10M"],
+    5: ["OpenTimestamps", "~$1B+"],
+  };
+  for (let i = 1; i <= 5; i++) {
+    const c = document.createElement("div");
+    c.className = "fc-cell fc-" + i + " ok";
+    c.style.padding = "8px 10px";
+    c.style.fontSize = "12px";
+    const [name, cost] = subLabels[i];
+    const n = confirmed[i];
+    const total = marks.length;
+    const pct = total ? Math.round((n / total) * 100) : 0;
+    const note = i === 4 ? n + " / " + total + " queryable" : n + " / " + total + " confirmed";
+    c.innerHTML =
+      '<div style="font-weight:600">(' + i + '/5) ' + name + '</div>' +
+      '<div style="color:#9aa3b3">' + note + ' · ' + pct + '%</div>' +
+      '<div style="color:#7a8290;font-size:11px">forgery cost ' + cost + '</div>';
+    sgrid.appendChild(c);
+  }
+  box.appendChild(sgrid);
 }
 
 function el(tag, attrs, ...kids) {
