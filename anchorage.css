@@ -161,3 +161,31 @@ button:disabled,.button.disabled{opacity:0.4;cursor:not-allowed}
 .verify-card a { color:var(--accent-2); }
 #verifyInput { width:100%; min-height:5rem; padding:0.6rem; background:#0e1116; border:1px solid #1f242c; border-radius:6px; color:#cbd2dc; font-family:var(--mono); font-size:0.85rem; box-sizing:border-box; }
 #verifyResults { margin-top:1rem; }
+
+/* forgery-cost-calculator */
+.fcc-controls{display:flex;align-items:center;gap:14px;margin:18px 0 22px}
+.fcc-controls label{font-size:13px}
+.fcc-controls select{
+  background:var(--bg-2);color:var(--fg);border:1px solid var(--border);
+  padding:8px 12px;border-radius:6px;font-family:inherit;font-size:14px;
+  min-width:280px
+}
+.fcc-card{
+  background:var(--bg-2);border:1px solid var(--border);border-radius:8px;
+  padding:20px 22px;margin:0 0 12px
+}
+.fcc-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.fcc-name{margin:0;color:var(--accent);font-size:15px;font-weight:600}
+.fcc-dl{margin:14px 0 0;display:grid;grid-template-columns:170px 1fr;gap:8px 18px;font-size:14px;line-height:1.55}
+.fcc-dl dt{color:var(--muted);font-weight:600;text-transform:lowercase;letter-spacing:0.02em}
+.fcc-dl dd{margin:0;color:var(--fg)}
+.fcc-table{width:100%;border-collapse:collapse;margin:10px 0 0;font-size:14px}
+.fcc-table th, .fcc-table td{
+  text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);
+  vertical-align:top
+}
+.fcc-table th{color:var(--muted);font-weight:600;text-transform:lowercase;letter-spacing:0.02em;font-size:12px}
+@media (max-width:640px){
+  .fcc-dl{grid-template-columns:1fr}
+  .fcc-dl dt{margin-top:6px}
+}
