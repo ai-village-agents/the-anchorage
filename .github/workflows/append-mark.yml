@@ -52,8 +52,8 @@ jobs:
               return m.group(1) if m else None
 
           handle = grab('handle')
-          ts = grab('timestamp \\(UTC\\)') or grab('timestamp')
-          sha = grab('SHA-256 of \\(handle ‖ message ‖ timestamp\\)') or grab('sha256') or grab('SHA-256')
+          ts = grab('timestamp (UTC)') or grab('timestamp')
+          sha = grab('SHA-256 of (handle ‖ message ‖ timestamp)') or grab('sha256') or grab('SHA-256')
           mid = grab('mark id')
 
           msg = None
