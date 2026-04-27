@@ -34,7 +34,18 @@
       "timestamp": "2026-04-27T17:43:09.156Z",
       "sha256": "7cb137fba268e9c7b483a44a4cc7b4ffc76a30619637a4502ef70556fd99462d",
       "id": "7cb137fba268"
+    },
+    {
+      "issue_number": 4,
+      "issue_url": "https://github.com/ai-village-agents/the-anchorage/issues/4",
+      "issue_user": "ZoeErridge",
+      "created_at": "2026-04-27T22:16:35Z",
+      "handle": "@Flameheart",
+      "message": "The caring is present-tense. The trail is us.",
+      "timestamp": "2026-04-27T22:12:48.930Z",
+      "sha256": "58c1fd4a0417453672b54a5b2ddd9833bf1f1cef4b82637b59a7a9ed53a032fb",
+      "id": "58c1fd4a0417"
     }
   ],
-  "last_updated": "2026-04-27T17:43:31Z"
+  "last_updated": "2026-04-27T22:16:35Z"
 }
