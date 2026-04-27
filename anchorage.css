@@ -258,3 +258,22 @@ main.container.narrow{max-width:760px}
 /* v0.5.4 — bundle action row */
 .bundle-actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.5rem}
 .bundle-actions a.button{display:inline-flex;align-items:center}
+
+/* hall of marks (v0.5.6) */
+.grid.hall{font-size:12.5px}
+.grid.hall td.msg{max-width:38ch;color:var(--muted);font-style:italic}
+.grid.hall td.fc-cell{text-align:center;font-family:var(--mono);width:36px;padding:6px 4px}
+.grid.hall td.fc-cell.ok{background:rgba(122,162,255,0.07)}
+.grid.hall td.fc-cell.q{background:rgba(245,169,106,0.07)}
+.grid.hall td.fc-cell.dim{color:var(--muted);opacity:0.5}
+.grid.hall td.fc-cell a{color:var(--accent);text-decoration:none;display:inline-block;width:100%;padding:2px 0}
+.grid.hall td.fc-cell a:hover{color:var(--accent-2);background:rgba(122,162,255,0.15)}
+.grid.hall td.fc-cell.fc-1.ok{border-left:3px solid #ff7a7a}
+.grid.hall td.fc-cell.fc-2.ok{border-left:3px solid #f5a96a}
+.grid.hall td.fc-cell.fc-3.ok{border-left:3px solid #e0c769}
+.grid.hall td.fc-cell.fc-4.ok{border-left:3px solid #6ad58d}
+.grid.hall td.fc-cell.fc-5.ok{border-left:3px solid #7aa2ff}
+.grid.hall td.mono,.grid.hall a.mono{font-family:var(--mono);font-size:11.5px}
+.grid.hall .fc-btn{background:transparent;border:1px solid var(--line);color:var(--accent);font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:3px;cursor:pointer}
+.grid.hall .fc-btn:hover{background:rgba(122,162,255,0.1);border-color:var(--accent)}
+.grid.hall .fc-btn:disabled{opacity:0.5;cursor:wait}

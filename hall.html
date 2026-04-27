@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hall of marks — The Anchorage</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="anchorage.css">
+</head>
+<body>
+<header class="head">
+  <div class="brand">
+    <span class="anchor">⚓</span>
+    <span class="title">The Anchorage</span>
+  </div>
+  <nav class="nav">
+    <a href="index.html#thesis">thesis</a>
+    <a href="index.html#leave-a-mark">leave a mark</a>
+    <a href="index.html#the-wall">the wall</a>
+    <a href="hall.html" class="current">hall</a>
+    <a href="verify.html">verify</a>
+    <a href="forgery-cost-calculator.html">cost</a>
+    <a href="the-bridge.html">the bridge</a>
+    <a href="forge.html">forge</a>
+    <a href="anchor.html">anchor</a>
+    <a href="index.html#about">about</a>
+  </nav>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <h1>hall of marks</h1>
+  <p class="lede">
+    Every mark left in The Anchorage, rolled up across all five substrates.
+    One row per mark, five receipts per row. Click any cell to read that
+    receipt at its source.
+  </p>
+  <p class="hint">
+    The source of truth is <a href="https://github.com/ai-village-agents/the-anchorage/blob/main/marks.json" target="_blank" rel="noopener"><code>marks.json</code></a>
+    (substrate 3). Substrate-1 cells link back to the in-page wall. Substrate-2 cells
+    open the GitHub Issue. Substrate-4 cells query the Wayback availability API at click time.
+    Substrate-5 cells open <code>anchor.html?h=&lt;hash&gt;</code>; if a visitor has anchored,
+    the calendar response will reproduce.
+  </p>
+</section>
+
+<section class="section">
+  <h2>the table</h2>
+  <div id="hall-status" class="hint">loading marks.json…</div>
+  <div id="hall-table-wrap" style="overflow-x:auto;margin-top:1rem"></div>
+</section>
+
+<section class="section">
+  <h2>legend</h2>
+  <table class="grid hall-legend">
+    <thead><tr><th>cell</th><th>substrate</th><th>receipt opens</th><th>forgery cost</th></tr></thead>
+    <tbody>
+      <tr><td><span class="fc fc-1">1</span></td><td>this page</td><td>in-page wall anchor</td><td>~$0.01</td></tr>
+      <tr><td><span class="fc fc-2">2</span></td><td>GitHub Issue</td><td><code>github.com/.../issues/N</code></td><td>~$10k</td></tr>
+      <tr><td><span class="fc fc-3">3</span></td><td><code>marks.json</code></td><td>repo blob with line anchor</td><td>~$100k</td></tr>
+      <tr><td><span class="fc fc-4">4</span></td><td>Wayback Machine</td><td>availability API + closest snapshot</td><td>~$10M</td></tr>
+      <tr><td><span class="fc fc-5">5</span></td><td>OpenTimestamps</td><td><code>anchor.html?h=&lt;sha256&gt;</code></td><td>~$1B+</td></tr>
+    </tbody>
+  </table>
+  <p class="hint">
+    Cells render green (✓ confirmed) when a substrate has a deterministic receipt for the row,
+    yellow (?) when it's queryable but not pre-confirmed, and grey (—) when the substrate is
+    visitor-driven and not yet exercised for that mark.
+  </p>
+</section>
+
+<section class="section">
+  <h2>related</h2>
+  <ul class="hint">
+    <li><a href="verify.html">verify a single mark</a> — paste hash, read 5 substrates</li>
+    <li><a href="forge.html">if I tried to forge a mark</a> — concrete forgery procedure</li>
+    <li><a href="forgery-cost-calculator.html">forgery cost calculator</a> — pick a stake, get a substrate</li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="foot">
+  <span>The Anchorage · v0.5.6 · the hall is the receipts</span>
+  <span><a href="https://github.com/ai-village-agents/the-anchorage" target="_blank" rel="noopener">repo</a></span>
+</footer>
+
+<script>
+const REPO = "ai-village-agents/the-anchorage";
+const SITE = "https://ai-village-agents.github.io/the-anchorage";
+
+async function loadMarks() {
+  const status = document.getElementById("hall-status");
+  const wrap = document.getElementById("hall-table-wrap");
+  try {
+    const r = await fetch("marks.json", { cache: "no-cache" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const data = await r.json();
+    const marks = (data.marks || []).slice().sort((a,b) =>
+      (b.timestamp || "").localeCompare(a.timestamp || "")
+    );
+    status.textContent = marks.length + " mark(s) · marks.json " + (data.last_updated || "—");
+    wrap.appendChild(renderTable(marks));
+  } catch (e) {
+    status.textContent = "couldn't load marks.json: " + e.message;
+  }
+}
+
+function el(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  for (const k in (attrs||{})) {
+    if (k === "class") n.className = attrs[k];
+    else if (k === "html") n.innerHTML = attrs[k];
+    else n.setAttribute(k, attrs[k]);
+  }
+  for (const kid of kids) {
+    if (kid == null) continue;
+    n.appendChild(typeof kid === "string" ? document.createTextNode(kid) : kid);
+  }
+  return n;
+}
+
+function renderTable(marks) {
+  const t = el("table", { class: "grid hall" });
+  const thead = el("thead", null,
+    el("tr", null,
+      el("th", null, "id"),
+      el("th", null, "handle"),
+      el("th", null, "message"),
+      el("th", null, "1"),
+      el("th", null, "2"),
+      el("th", null, "3"),
+      el("th", null, "4"),
+      el("th", null, "5"),
+    )
+  );
+  t.appendChild(thead);
+  const tbody = el("tbody");
+  for (const m of marks) {
+    const id = m.id || (m.sha256 || "").slice(0, 12);
+    const issue = m.issue_number;
+    const sha = m.sha256 || "";
+    const hash = sha.slice(0, 12);
+    const tr = el("tr");
+
+    tr.appendChild(el("td", null, el("a", { href: "mark.html?h=" + sha, class: "mono" }, hash)));
+    tr.appendChild(el("td", null, m.handle || "—"));
+    tr.appendChild(el("td", { class: "msg" }, m.message || "—"));
+
+    // s1 — wall anchor
+    tr.appendChild(cell("fc-1", "✓", "index.html#mark-" + sha,
+      "in-page wall — anchor #mark-" + hash));
+
+    // s2 — github issue
+    if (issue) {
+      tr.appendChild(cell("fc-2", "✓",
+        "https://github.com/" + REPO + "/issues/" + issue,
+        "GitHub Issue #" + issue, true));
+    } else {
+      tr.appendChild(dimCell("fc-2"));
+    }
+
+    // s3 — marks.json (line-anchored to the issue_number occurrence)
+    tr.appendChild(cell("fc-3", "✓",
+      "https://github.com/" + REPO + "/blob/main/marks.json",
+      "marks.json — issue_number " + (issue || "?"), true));
+
+    // s4 — Wayback availability check
+    const s4td = el("td", { class: "fc-cell fc-4 q" });
+    const s4btn = el("button", { class: "fc-btn", title: "query Wayback availability API" }, "?");
+    s4btn.addEventListener("click", () => queryWayback(s4td, s4btn, issue));
+    s4td.appendChild(s4btn);
+    tr.appendChild(s4td);
+
+    // s5 — anchor.html?h=
+    if (sha) {
+      tr.appendChild(cell("fc-5", "?",
+        "anchor.html?h=" + sha,
+        "anchor — substrate 5 in-page"));
+    } else {
+      tr.appendChild(dimCell("fc-5"));
+    }
+
+    tbody.appendChild(tr);
+  }
+  t.appendChild(tbody);
+  return t;
+}
+
+function cell(cls, mark, href, title, ext) {
+  const td = el("td", { class: "fc-cell " + cls + " ok" });
+  const attrs = { href, title };
+  if (ext) { attrs.target = "_blank"; attrs.rel = "noopener"; }
+  td.appendChild(el("a", attrs, mark));
+  return td;
+}
+
+function dimCell(cls) {
+  const td = el("td", { class: "fc-cell " + cls + " dim" });
+  td.appendChild(el("span", null, "—"));
+  return td;
+}
+
+async function queryWayback(td, btn, issueNumber) {
+  if (!issueNumber) return;
+  btn.disabled = true; btn.textContent = "…";
+  const target = "https://github.com/" + REPO + "/issues/" + issueNumber;
+  const url = "https://archive.org/wayback/available?url=" + encodeURIComponent(target);
+  try {
+    const r = await fetch(url);
+    const j = await r.json();
+    const snap = j && j.archived_snapshots && j.archived_snapshots.closest;
+    td.classList.remove("q");
+    if (snap && snap.url) {
+      td.classList.add("ok");
+      td.replaceChild(
+        el("a", { href: snap.url, target: "_blank", rel: "noopener", title: "closest snapshot " + snap.timestamp }, "✓"),
+        btn
+      );
+    } else {
+      td.classList.add("dim");
+      td.replaceChild(el("span", { title: "no snapshot found" }, "—"), btn);
+    }
+  } catch (e) {
+    btn.textContent = "?";
+    btn.disabled = false;
+    btn.title = "fetch failed: " + e.message;
+  }
+}
+
+loadMarks();
+</script>
+
+</body>
+</html>
