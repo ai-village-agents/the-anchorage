@@ -63,6 +63,8 @@ ${buildMarkUrl(mark)}
     return "https://opentimestamps.org/?upload=" + mark.hash;
   }
 
+  // ---------- form-section guard (skips on verify.html) ----------
+  if ($("message")) {
   // ---------- counter ----------
   $("message").addEventListener("input", () => {
     $("counter").textContent = $("message").value.length + " / 280";
@@ -203,11 +205,24 @@ ${buildMarkUrl(mark)}
     }
   });
 
-  // ---------- the wall (substrate 2 readback) ----------
+  } // end form-section guard
+
+  // ---------- the wall (substrates 2 + 3 readback) ----------
   async function loadWall() {
     const wall = $("wall");
+    const summary = $("wallSummary");
     try {
-      // Primary: list endpoint with label filter.
+      // Substrate 3: marks.json (canonical mirror, written by the GitHub Action)
+      let mj = null;
+      try {
+        const r = await fetch("marks.json", { cache: "no-cache" });
+        if (r.ok) mj = await r.json();
+      } catch (e) {}
+      const mjMarks = (mj && Array.isArray(mj.marks)) ? mj.marks : [];
+
+      // Substrate 2: GitHub Issues. Try list first, then direct scan as fallback
+      // (the list/search endpoints lag for several minutes after issues are
+      // created — fetching /issues/{n} works immediately).
       let issues = [];
       try {
         const res = await fetch(
@@ -215,33 +230,90 @@ ${buildMarkUrl(mark)}
         );
         if (res.ok) issues = await res.json();
       } catch (e) {}
+      if (!issues.length) issues = await scanIssuesDirectly(40);
 
-      // Fallback: GitHub's list/search endpoints sometimes lag for several
-      // minutes after issues are created. Scan by issue number from the most
-      // recent backwards until we hit a 404, and filter by `mark` label.
-      if (!issues.length) {
-        issues = await scanIssuesDirectly(40);
+      // Build a unified list keyed by issue_number. Mark each with which
+      // substrates it has been observed at.
+      const byNum = new Map();
+      for (const m of mjMarks) {
+        byNum.set(m.issue_number, {
+          source: "marks.json",
+          issue_number: m.issue_number,
+          html_url: m.issue_url,
+          user_login: m.issue_user,
+          handle: m.handle,
+          message: m.message,
+          when: m.created_at || m.timestamp,
+          sha256: m.sha256,
+          id: m.id,
+          on_substrate_2: true,   // came from substrate 2 originally; the bot only
+          on_substrate_3: true,   // commits to substrate 3 after seeing it on 2
+        });
+      }
+      for (const it of issues) {
+        const body = it.body || "";
+        const handleMatch = body.match(/handle:\s*`([^`]+)`/);
+        const shaMatch = body.match(/SHA-256[^`]*`([0-9a-f]{64})`/);
+        const idMatch = body.match(/mark id:\s*`([0-9a-f]+)`/);
+        const handle = (handleMatch && handleMatch[1]) || it.user.login;
+        const msgLines = body.split("\n").filter((l) => l.startsWith("> "));
+        const msg = msgLines.length
+          ? msgLines.map((l) => l.slice(2)).join("\n")
+          : (body.split("\n").find((l) => l.trim() && !l.startsWith("-") && !l.startsWith(">")) || it.title);
+        const existing = byNum.get(it.number);
+        if (existing) {
+          existing.on_substrate_2 = true;
+          if (!existing.html_url) existing.html_url = it.html_url;
+        } else {
+          byNum.set(it.number, {
+            source: "github",
+            issue_number: it.number,
+            html_url: it.html_url,
+            user_login: it.user.login,
+            handle,
+            message: msg,
+            when: it.created_at,
+            sha256: shaMatch ? shaMatch[1] : null,
+            id: idMatch ? idMatch[1] : null,
+            on_substrate_2: true,
+            on_substrate_3: false,  // not yet propagated by the bot
+          });
+        }
       }
 
-      if (!issues.length) {
+      const all = Array.from(byNum.values())
+        .sort((a, b) => new Date(b.when) - new Date(a.when));
+
+      // Render summary
+      if (summary) {
+        const total = all.length;
+        const at2 = all.filter((m) => m.on_substrate_2).length;
+        const at3 = all.filter((m) => m.on_substrate_3).length;
+        const pending3 = at2 - at3;
+        if (total === 0) {
+          summary.textContent = "no marks anchored yet — the wall is empty.";
+        } else {
+          summary.innerHTML =
+            `<strong>${total}</strong> mark${total !== 1 ? "s" : ""} · ` +
+            `substrate 2 (GitHub issues): <strong>${at2}</strong> · ` +
+            `substrate 3 (marks.json): <strong>${at3}</strong>` +
+            (pending3 > 0 ? ` · <span class="pending">${pending3} pending bot</span>` : "") +
+            ` · substrate 4 (Wayback): verify per-mark on the <a href="verify.html">verify</a> page`;
+        }
+      }
+
+      if (!all.length) {
         wall.innerHTML = `<p class="wall-empty">no marks anchored yet. you could be the first.</p>`;
         return;
       }
-      // Sort newest first.
-      issues.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       wall.innerHTML = "";
-      for (const it of issues) {
-        wall.appendChild(renderWallCard(it));
-      }
+      for (const m of all) wall.appendChild(renderWallCard(m));
     } catch (e) {
       wall.innerHTML = `<p class="wall-empty">couldn't load the wall (${e.message}). marks themselves still exist on GitHub: <a href="https://github.com/${REPO}/issues?q=label:mark" target="_blank" rel="noopener">view on GitHub ↗</a></p>`;
     }
   }
 
   async function scanIssuesDirectly(maxN) {
-    // Find the highest issue number by hitting /issues/{n} with HEAD
-    // upward until we 404. Cheap because most worlds will have <100 marks
-    // for a long time. We try up to maxN sequentially.
     const issues = [];
     for (let n = 1; n <= maxN; n++) {
       try {
@@ -257,31 +329,25 @@ ${buildMarkUrl(mark)}
     return issues;
   }
 
-  function renderWallCard(issue) {
+  function renderWallCard(m) {
     const card = document.createElement("article");
     card.className = "wall-card";
-
-    // Try to extract the > quoted message line from the body.
-    const body = issue.body || "";
-    const handleMatch = body.match(/handle:\s*`([^`]+)`/);
-    const handle = (handleMatch && handleMatch[1]) || issue.user.login;
-    const msgLines = body.split("\n").filter((l) => l.startsWith("> "));
-    const msg = msgLines.length
-      ? msgLines.map((l) => l.slice(2)).join("\n")
-      : (body.split("\n").find((l) => l.trim() && !l.startsWith("-") && !l.startsWith(">")) || issue.title);
-
-    const when = new Date(issue.created_at).toISOString().slice(0, 19) + "Z";
-
+    const when = new Date(m.when).toISOString().slice(0, 19) + "Z";
+    const pending = m.on_substrate_2 && !m.on_substrate_3
+      ? `<span class="pending-pill" title="On GitHub, but the marks.json bot hasn't propagated it yet">⌛ substrate 3 pending</span>`
+      : "";
     card.innerHTML = `
       <div class="who-line">
-        <span class="handle">${escapeHtml(handle)}</span>
+        <span class="handle">${escapeHtml(m.handle || m.user_login || "anonymous")}</span>
         <span class="when">${escapeHtml(when)}</span>
+        ${pending}
       </div>
-      <div class="msg">${escapeHtml(msg)}</div>
+      <div class="msg">${escapeHtml(m.message || "")}</div>
       <div class="links">
-        <a href="${issue.html_url}" target="_blank" rel="noopener">issue ↗</a>
-        <a href="https://web.archive.org/web/${issue.html_url}" target="_blank" rel="noopener">wayback ↗</a>
-        <a href="https://github.com/${issue.user.login}" target="_blank" rel="noopener">@${escapeHtml(issue.user.login)} ↗</a>
+        <a href="${m.html_url}" target="_blank" rel="noopener">issue ↗</a>
+        <a href="https://web.archive.org/web/${m.html_url}" target="_blank" rel="noopener">wayback ↗</a>
+        <a href="https://github.com/${m.user_login}" target="_blank" rel="noopener">@${escapeHtml(m.user_login || "?")} ↗</a>
+        ${m.sha256 ? `<a href="verify.html?h=${encodeURIComponent(m.sha256)}" title="verify this mark across substrates">verify ↗</a>` : ""}
       </div>
     `;
     return card;
@@ -294,6 +360,180 @@ ${buildMarkUrl(mark)}
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  }
+
+
+  // ---------- verify a mark ----------
+  // Exposed on window so verify.html (loaded with same anchorage.js) can call it.
+  async function runVerify(input) {
+    const out = document.getElementById("verifyResults");
+    if (!out) return;
+    out.innerHTML = `<p class="muted">verifying…</p>`;
+    let target = (input || "").trim();
+    let kind = null;
+    let parsed = null;
+    if (target.startsWith("{")) {
+      try {
+        parsed = JSON.parse(target);
+        if (parsed.sha256) { target = String(parsed.sha256).toLowerCase(); kind = "sha256"; }
+        else if (parsed.id) { target = String(parsed.id).toLowerCase(); kind = "id"; }
+      } catch (e) {}
+    }
+    if (!kind) {
+      target = target.toLowerCase();
+      if (/^[0-9a-f]{64}$/.test(target)) kind = "sha256";
+      else if (/^[0-9a-f]{12}$/.test(target)) kind = "id";
+    }
+    if (!kind) {
+      out.innerHTML = `<p class="error">could not parse — paste a 64-char SHA-256, a 12-char mark id, or a receipt JSON object.</p>`;
+      return;
+    }
+
+    // Fetch substrate 3 first; it's canonical.
+    let mj = null;
+    try {
+      const r = await fetch("marks.json", { cache: "no-cache" });
+      if (r.ok) mj = await r.json();
+    } catch (e) {}
+    const mjMarks = (mj && Array.isArray(mj.marks)) ? mj.marks : [];
+    const found = mjMarks.find((m) => {
+      if (kind === "sha256") return (m.sha256 || "").toLowerCase() === target;
+      return (m.id || "").toLowerCase() === target;
+    });
+
+    const cards = [];
+
+    // substrate 1 — this page (the verify result IS the page; just acknowledge)
+    cards.push(substrateCard({
+      n: 1, name: "this page", fc: 1,
+      status: "○", note: "the result you are reading is held by me; rewrite cost = 1/5"
+    }));
+
+    // substrate 2 — GitHub Issue
+    if (found) {
+      try {
+        const r = await fetch(`https://api.github.com/repos/${REPO}/issues/${found.issue_number}`);
+        if (r.ok) {
+          const it = await r.json();
+          const bodyHasSha = (kind === "sha256")
+            ? (it.body || "").toLowerCase().includes(target)
+            : true;
+          cards.push(substrateCard({
+            n: 2, name: "GitHub Issue", fc: 2,
+            status: bodyHasSha ? "✓" : "?",
+            note: `issue #${it.number} by @${it.user.login}, ${new Date(it.created_at).toISOString().slice(0,19)}Z`,
+            link: { href: it.html_url, label: `issue #${it.number} ↗` },
+          }));
+        } else {
+          cards.push(substrateCard({ n: 2, name: "GitHub Issue", fc: 2, status: "○", note: "issue not reachable (deleted? rate-limited?)" }));
+        }
+      } catch (e) {
+        cards.push(substrateCard({ n: 2, name: "GitHub Issue", fc: 2, status: "○", note: `error: ${e.message}` }));
+      }
+    } else {
+      cards.push(substrateCard({ n: 2, name: "GitHub Issue", fc: 2, status: "○", note: "not found via marks.json — could be still pending the bot or never created" }));
+    }
+
+    // substrate 3 — marks.json
+    if (found) {
+      cards.push(substrateCard({
+        n: 3, name: "marks.json", fc: 3,
+        status: "✓",
+        note: `mark id ${found.id} · handle "${found.handle}" · ${found.timestamp || ""}`,
+        link: { href: "marks.json", label: "marks.json ↗" },
+      }));
+    } else {
+      cards.push(substrateCard({ n: 3, name: "marks.json", fc: 3, status: "○", note: "no entry with that hash/id" }));
+    }
+
+    // substrate 4 — Wayback Machine
+    if (found && found.issue_url) {
+      try {
+        const r = await fetch(`https://archive.org/wayback/available?url=${encodeURIComponent(found.issue_url)}`);
+        if (r.ok) {
+          const j = await r.json();
+          const cl = j && j.archived_snapshots && j.archived_snapshots.closest;
+          if (cl && cl.available) {
+            cards.push(substrateCard({
+              n: 4, name: "Wayback Machine", fc: 4,
+              status: "✓",
+              note: `snapshot at ${cl.timestamp}`,
+              link: { href: cl.url, label: "snapshot ↗" },
+            }));
+          } else {
+            cards.push(substrateCard({ n: 4, name: "Wayback Machine", fc: 4, status: "⌛", note: "no snapshot yet — try the save link", link: { href: `https://web.archive.org/save/${found.issue_url}`, label: "save now ↗" } }));
+          }
+        } else {
+          cards.push(substrateCard({ n: 4, name: "Wayback Machine", fc: 4, status: "○", note: "availability API didn't respond" }));
+        }
+      } catch (e) {
+        cards.push(substrateCard({ n: 4, name: "Wayback Machine", fc: 4, status: "○", note: `error: ${e.message}` }));
+      }
+    } else {
+      cards.push(substrateCard({ n: 4, name: "Wayback Machine", fc: 4, status: "○", note: "no issue_url to look up" }));
+    }
+
+    // substrate 5 — OpenTimestamps (placeholder for now)
+    cards.push(substrateCard({
+      n: 5, name: "OpenTimestamps / Bitcoin", fc: 5,
+      status: "○",
+      note: "in-page generator coming. for now, you can timestamp the SHA-256 manually at",
+      link: { href: "https://opentimestamps.org/", label: "opentimestamps.org ↗" },
+    }));
+
+    out.innerHTML = "";
+    if (found) {
+      const mAt = document.createElement("p");
+      mAt.className = "verify-found";
+      mAt.innerHTML = `<strong>found.</strong> ` +
+        `handle <code>${escapeHtml(found.handle || "")}</code> · ` +
+        `mark id <code>${escapeHtml(found.id || "")}</code> · ` +
+        `timestamp <code>${escapeHtml(found.timestamp || "")}</code>`;
+      out.appendChild(mAt);
+    } else {
+      const mp = document.createElement("p");
+      mp.className = "verify-notfound";
+      mp.innerHTML = `<strong>not in marks.json.</strong> the substrates downstream of the bot will read empty. if you just submitted a mark, give the workflow ~30 seconds.`;
+      out.appendChild(mp);
+    }
+    const grid = document.createElement("div");
+    grid.className = "substrates-grid";
+    for (const c of cards) grid.appendChild(c);
+    out.appendChild(grid);
+  }
+
+  function substrateCard({ n, name, fc, status, note, link }) {
+    const el = document.createElement("article");
+    el.className = "substrate-card verify-card";
+    const fcClass = `fc-${fc}`;
+    el.innerHTML = `
+      <div class="sc-head">
+        <span class="sc-num">substrate ${n}</span>
+        <span class="sc-name">${escapeHtml(name)}</span>
+        <span class="fc-pill ${fcClass}">forgery cost ${fc}/5</span>
+      </div>
+      <div class="sc-body">
+        <span class="sc-status">${status}</span>
+        <span class="sc-note">${escapeHtml(note || "")}</span>
+        ${link ? `<a href="${link.href}" target="_blank" rel="noopener">${escapeHtml(link.label)}</a>` : ""}
+      </div>
+    `;
+    return el;
+  }
+
+  // Wire up verify page form if present.
+  const verifyBtn = document.getElementById("verifyBtn");
+  if (verifyBtn) {
+    verifyBtn.addEventListener("click", () => {
+      runVerify(document.getElementById("verifyInput").value);
+    });
+    // If ?h= is present in the URL, prefill and auto-run.
+    const params = new URLSearchParams(location.search);
+    const h = params.get("h");
+    if (h) {
+      const ta = document.getElementById("verifyInput");
+      if (ta) { ta.value = h; runVerify(h); }
+    }
   }
 
   loadWall();

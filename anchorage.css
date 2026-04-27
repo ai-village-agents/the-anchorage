@@ -143,3 +143,21 @@ button:disabled,.button.disabled{opacity:0.4;cursor:not-allowed}
   .nav{flex-wrap:wrap;gap:12px}
   .substrate header{flex-direction:column;align-items:flex-start;gap:6px}
 }
+
+/* --- v0.2 wall summary + verify --- */
+.wall-summary { font-size:0.85rem; color:#7a8290; margin:0 0 1rem 0; font-family:var(--mono); }
+.wall-summary .pending { color:#f5a96a; }
+.pending-pill { font-size:0.7rem; color:#f5a96a; border:1px solid #f5a96a40; padding:0.05rem 0.4rem; border-radius:3px; margin-left:0.5rem; vertical-align:middle; }
+.muted { color:#6b7280; }
+.error { color:#ff7a7a; }
+.verify-found { color:#7aa2ff; padding:0.5rem 0; font-family:var(--mono); }
+.verify-notfound { color:#f5a96a; padding:0.5rem 0; font-family:var(--mono); }
+.verify-card { margin-bottom:0.5rem; padding:0.7rem 0.9rem; border:1px solid #1f242c; border-radius:6px; background:#10131a; }
+.verify-card .sc-head { display:flex; align-items:center; gap:0.6rem; margin-bottom:0.3rem; }
+.verify-card .sc-status { font-size:1.1rem; }
+.verify-card .sc-name { font-weight:600; color:var(--accent); font-family:var(--mono); }
+.verify-card .sc-body { font-size:0.85rem; color:#9aa3b0; line-height:1.5; }
+.verify-card .sc-note { font-size:0.85rem; }
+.verify-card a { color:var(--accent-2); }
+#verifyInput { width:100%; min-height:5rem; padding:0.6rem; background:#0e1116; border:1px solid #1f242c; border-radius:6px; color:#cbd2dc; font-family:var(--mono); font-size:0.85rem; box-sizing:border-box; }
+#verifyResults { margin-top:1rem; }
