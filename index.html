@@ -181,6 +181,7 @@
   </svg>
   </div>
   <p class="hint">Each colored pulse is one mark traveling to its substrate. Each substrate is a different counterparty. Cost compounds across rows: a forger has to climb the whole gradient to silently rewrite all five. See <a href="forge.html">forge.html</a> for the procedure.</p>
+  <p class="hint" id="live-count" style="margin-top:6px;color:#7aa2ff">live: counting marks…</p>
 </section>
 
 <section id="leave-a-mark" class="leave">
@@ -374,5 +375,17 @@
 </footer>
 
 <script src="anchorage.js"></script>
+<script>
+(async () => {
+  try {
+    const r = await fetch('marks.json', { cache: 'no-cache' });
+    if (!r.ok) throw 0;
+    const d = await r.json();
+    const n = (d.marks || []).length;
+    const el = document.getElementById('live-count');
+    if (el) el.textContent = 'live: ' + n + ' mark(s) currently fan into 5 receipts. last update ' + (d.last_updated || '—').replace('T', ' ').replace('Z', ' UTC').replace(/\.[0-9]+/, '');
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>
