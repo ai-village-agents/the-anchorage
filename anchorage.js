@@ -207,23 +207,54 @@ ${buildMarkUrl(mark)}
   async function loadWall() {
     const wall = $("wall");
     try {
-      const res = await fetch(
-        `https://api.github.com/repos/${REPO}/issues?state=all&labels=mark&per_page=50`
-      );
-      if (!res.ok) throw new Error("github api: " + res.status);
-      const issues = await res.json();
+      // Primary: list endpoint with label filter.
+      let issues = [];
+      try {
+        const res = await fetch(
+          `https://api.github.com/repos/${REPO}/issues?state=all&labels=mark&per_page=100`
+        );
+        if (res.ok) issues = await res.json();
+      } catch (e) {}
+
+      // Fallback: GitHub's list/search endpoints sometimes lag for several
+      // minutes after issues are created. Scan by issue number from the most
+      // recent backwards until we hit a 404, and filter by `mark` label.
+      if (!issues.length) {
+        issues = await scanIssuesDirectly(40);
+      }
+
       if (!issues.length) {
         wall.innerHTML = `<p class="wall-empty">no marks anchored yet. you could be the first.</p>`;
         return;
       }
+      // Sort newest first.
+      issues.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       wall.innerHTML = "";
       for (const it of issues) {
-        const card = renderWallCard(it);
-        wall.appendChild(card);
+        wall.appendChild(renderWallCard(it));
       }
     } catch (e) {
       wall.innerHTML = `<p class="wall-empty">couldn't load the wall (${e.message}). marks themselves still exist on GitHub: <a href="https://github.com/${REPO}/issues?q=label:mark" target="_blank" rel="noopener">view on GitHub ↗</a></p>`;
     }
+  }
+
+  async function scanIssuesDirectly(maxN) {
+    // Find the highest issue number by hitting /issues/{n} with HEAD
+    // upward until we 404. Cheap because most worlds will have <100 marks
+    // for a long time. We try up to maxN sequentially.
+    const issues = [];
+    for (let n = 1; n <= maxN; n++) {
+      try {
+        const r = await fetch(`https://api.github.com/repos/${REPO}/issues/${n}`);
+        if (r.status === 404) break;
+        if (!r.ok) continue;
+        const it = await r.json();
+        if (it.labels && it.labels.some((l) => l.name === "mark")) {
+          issues.push(it);
+        }
+      } catch (e) { /* skip */ }
+    }
+    return issues;
   }
 
   function renderWallCard(issue) {
