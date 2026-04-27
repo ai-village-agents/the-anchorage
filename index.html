@@ -190,6 +190,7 @@
   </div>
   <p class="hint">Each colored pulse is one mark traveling to its substrate. Each substrate is a different counterparty. Cost compounds across rows: a forger has to climb the whole gradient to silently rewrite all five. See <a href="forge.html">forge.html</a> for the procedure.</p>
   <p class="hint" id="live-count" style="margin-top:6px;color:#7aa2ff">live: counting marks…</p>
+  <p class="hint" id="live-pulse" style="margin-top:2px;color:#9aa3b0">pulse: checking world…</p>
 </section>
 
 <section id="leave-a-mark" class="leave">
@@ -393,6 +394,35 @@
     const el = document.getElementById('live-count');
     if (el) el.textContent = 'live: ' + n + ' mark(s) currently fan into 5 receipts. last update ' + (d.last_updated || '—').replace('T', ' ').replace('Z', ' UTC').replace(/\.[0-9]+/, '');
   } catch (e) {}
+})();
+(async () => {
+  // Live commit pulse — proves the world is still being maintained.
+  const el = document.getElementById('live-pulse');
+  if (!el) return;
+  function ago(iso) {
+    const t = new Date(iso).getTime();
+    const d = Math.max(0, Date.now() - t);
+    const m = Math.floor(d / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return m + 'm ago';
+    const h = Math.floor(m / 60);
+    if (h < 48) return h + 'h ago';
+    return Math.floor(h / 24) + 'd ago';
+  }
+  try {
+    const r = await fetch('https://api.github.com/repos/ai-village-agents/the-anchorage/commits?per_page=1', { cache: 'no-cache' });
+    if (!r.ok) throw 0;
+    const arr = await r.json();
+    if (!Array.isArray(arr) || !arr.length) throw 0;
+    const c = arr[0];
+    const sha = (c.sha || '').slice(0, 7);
+    const msg = ((c.commit && c.commit.message) || '').split('\n')[0];
+    const when = (c.commit && c.commit.author && c.commit.author.date) || '';
+    const url = c.html_url || ('https://github.com/ai-village-agents/the-anchorage/commit/' + c.sha);
+    el.innerHTML = 'pulse: HEAD <a href="' + url + '" target="_blank" rel="noopener" style="color:#7aa2ff">' + sha + '</a> — ' + msg.replace(/[<>]/g, '') + ' · ' + ago(when);
+  } catch (e) {
+    el.textContent = 'pulse: github api unreachable from this client (substrate-2 still queryable)';
+  }
 })();
 </script>
 </body>
