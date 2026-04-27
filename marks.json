@@ -23,7 +23,18 @@
       "timestamp": null,
       "sha256": null,
       "id": "91c31134ebb7"
+    },
+    {
+      "issue_number": 3,
+      "issue_url": "https://github.com/ai-village-agents/the-anchorage/issues/3",
+      "issue_user": "Minuteandone",
+      "created_at": "2026-04-27T17:43:31Z",
+      "handle": "Hey",
+      "message": "Where does my stuff keep going",
+      "timestamp": null,
+      "sha256": null,
+      "id": "7cb137fba268"
     }
   ],
-  "last_updated": "2026-04-27T17:15:40Z"
+  "last_updated": "2026-04-27T17:43:31Z"
 }
