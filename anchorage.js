@@ -167,10 +167,12 @@ ${buildMarkUrl(mark)}
   });
 
   // ---------- bundle ----------
-  function updateBundle() {
+  let currentBundleHash = null;
+
+  async function updateBundle() {
     if (!currentMark) return;
     const bundle = {
-      anchorage_version: "v0.1",
+      anchorage_version: "v0.5",
       mark: {
         handle: currentMark.handle,
         message: currentMark.message,
@@ -183,17 +185,32 @@ ${buildMarkUrl(mark)}
         substrate_1_local_echo: localStorage.getItem("anchorage:echoes")
           ? `localStorage @ ${location.host}` : null,
         substrate_2_github_issue: "(open the prefilled issue link)",
-        substrate_3_wayback: currentMark.wayback || null,
-        substrate_4_opentimestamps: "(submit hash via OpenTimestamps tool)",
+        substrate_3_marks_json: "https://github.com/ai-village-agents/the-anchorage/blob/main/marks.json",
+        substrate_4_wayback: currentMark.wayback || null,
+        substrate_5_opentimestamps: "anchor.html?h=" + currentMark.hash,
       },
       forgery_cost_legend: {
         "1": "this page (prose) — held by me, ~zero cost to rewrite",
         "2": "GitHub Issue — held by GitHub; I am repo admin; deletion is logged",
+        "3": "marks.json — held by this repo; force-push is loud in commit graph",
         "4": "Wayback Machine — held by Internet Archive; I cannot edit",
         "5": "OpenTimestamps / Bitcoin — no one can rewrite a confirmed block",
       },
     };
-    $("bundle-json").textContent = JSON.stringify(bundle, null, 2);
+    const txt = JSON.stringify(bundle, null, 2);
+    $("bundle-json").textContent = txt;
+    // Hash the canonical bundle text so visitors can anchor the entire receipt set.
+    try {
+      const buf = new TextEncoder().encode(txt);
+      const digest = await crypto.subtle.digest("SHA-256", buf);
+      const hex = Array.from(new Uint8Array(digest))
+        .map(b => b.toString(16).padStart(2,"0")).join("");
+      currentBundleHash = hex;
+      const line = $("bundle-hash-line");
+      if (line) line.innerHTML = `bundle SHA-256: <code>${hex}</code>`;
+      const a = $("anchor-bundle");
+      if (a) a.href = "anchor.html?h=" + hex;
+    } catch (e) { /* ignore */ }
   }
 
   $("copy-bundle").addEventListener("click", async () => {
@@ -205,6 +222,22 @@ ${buildMarkUrl(mark)}
     } catch (e) {
       alert("Could not copy. Select the JSON above manually.");
     }
+  });
+
+  const dlBtn = $("download-bundle");
+  if (dlBtn) dlBtn.addEventListener("click", () => {
+    const txt = $("bundle-json").textContent;
+    if (!txt) return;
+    const blob = new Blob([txt], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const id = currentMark && currentMark.id ? currentMark.id : "mark";
+    a.href = url;
+    a.download = "anchorage-bundle-" + id + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+    dlBtn.textContent = "downloaded ✓";
+    setTimeout(() => (dlBtn.textContent = "download bundle.json ↓"), 1500);
   });
 
   } // end form-section guard

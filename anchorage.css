@@ -254,3 +254,7 @@ main.container.narrow{max-width:760px}
 
 .field-guide{margin-top:1.4rem;font-size:13px;color:var(--muted);border-top:1px dashed #2a3140;padding-top:.85rem}
 .field-guide a{margin:0 .15rem}
+
+/* v0.5.4 — bundle action row */
+.bundle-actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.5rem}
+.bundle-actions a.button{display:inline-flex;align-items:center}

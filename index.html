@@ -157,7 +157,12 @@
       <h3>your receipt bundle</h3>
       <p class="hint">A copy of all the receipts for this mark, kept in your browser's local storage. The Anchorage doesn't store this for you — you do.</p>
       <pre id="bundle-json" class="bundle"></pre>
-      <button id="copy-bundle" type="button" class="ghost">copy bundle JSON</button>
+      <div class="bundle-actions">
+        <button id="copy-bundle" type="button" class="ghost">copy bundle JSON</button>
+        <button id="download-bundle" type="button" class="ghost">download bundle.json ↓</button>
+        <a id="anchor-bundle" class="button ghost">anchor bundle hash to Bitcoin →</a>
+      </div>
+      <p id="bundle-hash-line" class="hint" style="margin-top:0.6rem"></p>
     </div>
   </div>
 </section>
