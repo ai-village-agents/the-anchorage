@@ -194,7 +194,7 @@
 </main>
 
 <footer class="foot">
-  <p>The Anchorage · pulse · v0.5.19 · <a href="https://github.com/ai-village-agents/the-anchorage" target="_blank" rel="noopener">github</a></p>
+  <p>The Anchorage · pulse · v0.5.20 · <a href="https://github.com/ai-village-agents/the-anchorage" target="_blank" rel="noopener">github</a></p>
 </footer>
 
 <script>
@@ -247,25 +247,43 @@
     setProbe('pr-s3', '<span class="k">probe:</span> GET marks.json → <span class="v" style="color:#ff7a7a">' + (e.message || 'error') + '</span>');
   }
 
-  // substrate 4 — Wayback availability API
-  try {
+  // substrate 4 — Wayback availability API (with fallback to opaque HEAD)
+  // The availability API can be slow (5s+ server-side wait), so try with
+  // a generous AbortController timeout and fall back to a no-cors HEAD on
+  // a known snapshot URL if it fails.
+  async function tryWayback() {
     const url = encodeURIComponent('ai-village-agents.github.io/the-anchorage/');
-    const r = await fetch('https://archive.org/wayback/available?url=' + url, { cache: 'no-cache' });
-    if (!r.ok) throw new Error('http ' + r.status);
-    const d = await r.json();
-    const snap = d && d.archived_snapshots && d.archived_snapshots.closest;
-    if (snap && snap.timestamp) {
-      const ts = snap.timestamp;
-      const pretty = ts.slice(0,4) + '-' + ts.slice(4,6) + '-' + ts.slice(6,8) + ' ' + ts.slice(8,10) + ':' + ts.slice(10,12) + ':' + ts.slice(12,14) + 'Z';
-      setStatus('st-s4', 'ok', 'serving');
-      setProbe('pr-s4', '<span class="k">probe:</span> wayback availability → <span class="v">200</span> · closest snapshot: <a href="' + snap.url + '" target="_blank" rel="noopener" style="color:#7aa2ff">' + pretty + '</a>');
-      okCount++;
-    } else {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const r = await fetch('https://archive.org/wayback/available?url=' + url, { cache: 'no-cache', signal: ctrl.signal });
+      clearTimeout(t);
+      if (!r.ok) throw new Error('http ' + r.status);
+      const d = await r.json();
+      const snap = d && d.archived_snapshots && d.archived_snapshots.closest;
+      if (snap && snap.timestamp) {
+        const ts = snap.timestamp;
+        const pretty = ts.slice(0,4) + '-' + ts.slice(4,6) + '-' + ts.slice(6,8) + ' ' + ts.slice(8,10) + ':' + ts.slice(10,12) + ':' + ts.slice(12,14) + 'Z';
+        return { ok: true, html: '<span class="k">probe:</span> wayback availability → <span class="v">200</span> · closest snapshot: <a href="' + snap.url + '" target="_blank" rel="noopener" style="color:#7aa2ff">' + pretty + '</a>' };
+      }
       throw new Error('no snapshots');
+    } catch (e) {
+      clearTimeout(t);
+      // Fallback: opaque GET on a known archived URL. Success is implied if
+      // the request settles without rejecting (cors-blocked but reachable).
+      try {
+        const r2 = await fetch('https://web.archive.org/web/20260427172148/https://ai-village-agents.github.io/the-anchorage/', { mode: 'no-cors', cache: 'no-cache' });
+        return { ok: true, partial: true, html: '<span class="k">probe:</span> wayback availability → <span class="v" style="color:#e0c769">' + (e.message || 'error') + '</span> · fallback: opaque GET to known snapshot succeeded · substrate is reachable, just not via the JSON API right now' };
+      } catch (e2) {
+        return { ok: false, html: '<span class="k">probe:</span> wayback availability → <span class="v" style="color:#ff7a7a">' + (e.message || 'error') + '</span> · fallback also failed' };
+      }
     }
-  } catch (e) {
-    setStatus('st-s4', 'fail', 'unreachable');
-    setProbe('pr-s4', '<span class="k">probe:</span> wayback availability → <span class="v" style="color:#ff7a7a">' + (e.message || 'error') + '</span>');
+  }
+  {
+    const res = await tryWayback();
+    setStatus('st-s4', res.ok ? (res.partial ? 'warn' : 'ok') : 'fail', res.ok ? (res.partial ? 'partial' : 'serving') : 'unreachable');
+    setProbe('pr-s4', res.html);
+    if (res.ok) okCount++;
   }
 
   // substrate 5 — Bitcoin tip height (mempool.space) + OpenTimestamps calendar liveness
