@@ -189,3 +189,9 @@ button:disabled,.button.disabled{opacity:0.4;cursor:not-allowed}
   .fcc-dl{grid-template-columns:1fr}
   .fcc-dl dt{margin-top:6px}
 }
+
+/* the bridge essay-page */
+.container.narrow{max-width:760px}
+.section .lede{font-size:18px;line-height:1.5;color:var(--fg);margin:0 0 22px;padding-left:14px;border-left:2px solid var(--accent-2)}
+.section p code{background:var(--bg-2);padding:1px 6px;border-radius:3px;font-size:13px}
+.topnav nav a.current{color:var(--accent);border-bottom:1px solid var(--accent)}
