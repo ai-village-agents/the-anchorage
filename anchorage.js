@@ -59,8 +59,10 @@ ${buildMarkUrl(mark)}
   }
 
   function buildOtsUrl(mark) {
-    // The OpenTimestamps web tool — visitor pastes their hash there.
-    return "https://opentimestamps.org/?upload=" + mark.hash;
+    // In-page anchor flow (substrate 5). anchor.html POSTs the hash to an
+    // OpenTimestamps calendar server and downloads a .ots file the visitor can
+    // later upgrade against the next Bitcoin block.
+    return "anchor.html?h=" + mark.hash;
   }
 
   // ---------- form-section guard (skips on verify.html) ----------
@@ -473,13 +475,22 @@ ${buildMarkUrl(mark)}
       cards.push(substrateCard({ n: 4, name: "Wayback Machine", fc: 4, status: "○", note: "no issue_url to look up" }));
     }
 
-    // substrate 5 — OpenTimestamps (placeholder for now)
-    cards.push(substrateCard({
-      n: 5, name: "OpenTimestamps / Bitcoin", fc: 5,
-      status: "○",
-      note: "in-page generator coming. for now, you can timestamp the SHA-256 manually at",
-      link: { href: "https://opentimestamps.org/", label: "opentimestamps.org ↗" },
-    }));
+    // substrate 5 — OpenTimestamps anchor (in-page in /anchor.html)
+    {
+      const sha = (kind === "sha256") ? target
+                 : (found && found.sha256) ? found.sha256
+                 : null;
+      cards.push(substrateCard({
+        n: 5, name: "OpenTimestamps / Bitcoin", fc: 5,
+        status: sha ? "→" : "○",
+        note: sha
+          ? "anchor this hash to a Bitcoin block in your browser →"
+          : "paste a 64-char sha256 here to get an anchor link",
+        link: sha
+          ? { href: "anchor.html?h=" + sha, label: "anchor.html → .ots" }
+          : { href: "anchor.html", label: "anchor.html" },
+      }));
+    }
 
     out.innerHTML = "";
     if (found) {
