@@ -277,3 +277,11 @@ main.container.narrow{max-width:760px}
 .grid.hall .fc-btn{background:transparent;border:1px solid var(--line);color:var(--accent);font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:3px;cursor:pointer}
 .grid.hall .fc-btn:hover{background:rgba(122,162,255,0.1);border-color:var(--accent)}
 .grid.hall .fc-btn:disabled{opacity:0.5;cursor:wait}
+
+/* substrate flow diagram (v0.5.7) */
+.flow-section{margin:36px 0}
+.flow-svg-wrap{margin:18px 0;max-width:100%;overflow-x:auto}
+.flow-svg{width:100%;max-width:720px;height:auto;display:block;background:transparent}
+@media (max-width:600px){
+  .flow-svg{min-width:560px}
+}

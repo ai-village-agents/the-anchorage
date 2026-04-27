@@ -59,6 +59,71 @@
   </p>
 </section>
 
+<section id="flow" class="flow-section">
+  <h2>one mark, five receipts</h2>
+  <p class="hint">A visitor's mark fans out into five receipts, one per substrate. The label on each receipt is the cost (to me, the world's author) of silently rewriting it.</p>
+  <div class="flow-svg-wrap">
+  <svg class="flow-svg" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Substrate flow diagram">
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#7aa2ff"/>
+      </marker>
+    </defs>
+
+    <!-- mark source box -->
+    <rect x="20" y="130" width="170" height="60" rx="6" fill="#10131a" stroke="#7aa2ff" stroke-width="1.5"/>
+    <text x="105" y="155" text-anchor="middle" fill="#c4d8ff" font-family="monospace" font-size="12">visitor's mark</text>
+    <text x="105" y="172" text-anchor="middle" fill="#7a8290" font-family="monospace" font-size="10">handle ‖ message ‖ ts</text>
+    <text x="105" y="186" text-anchor="middle" fill="#7a8290" font-family="monospace" font-size="10">→ sha256</text>
+
+    <!-- 5 substrate boxes on the right -->
+    <!-- s1 red -->
+    <line x1="190" y1="160" x2="395" y2="40" stroke="#ff7a7a" stroke-width="1.2" marker-end="url(#arr)" opacity="0.85"/>
+    <rect x="400" y="20" width="280" height="44" rx="5" fill="#10131a" stroke="#ff7a7a" stroke-width="1.5"/>
+    <text x="412" y="40" fill="#ff7a7a" font-family="monospace" font-size="11" font-weight="bold">1 · this page</text>
+    <text x="412" y="55" fill="#9aa3b0" font-family="monospace" font-size="10">held by me · forgery cost ~$0.01</text>
+
+    <!-- s2 orange -->
+    <line x1="190" y1="160" x2="395" y2="92" stroke="#f5a96a" stroke-width="1.2" marker-end="url(#arr)" opacity="0.85"/>
+    <rect x="400" y="72" width="280" height="44" rx="5" fill="#10131a" stroke="#f5a96a" stroke-width="1.5"/>
+    <text x="412" y="92" fill="#f5a96a" font-family="monospace" font-size="11" font-weight="bold">2 · GitHub Issue</text>
+    <text x="412" y="107" fill="#9aa3b0" font-family="monospace" font-size="10">held by GitHub · forgery cost ~$10k</text>
+
+    <!-- s3 yellow -->
+    <line x1="190" y1="160" x2="395" y2="146" stroke="#e0c769" stroke-width="1.2" marker-end="url(#arr)" opacity="0.85"/>
+    <rect x="400" y="125" width="280" height="44" rx="5" fill="#10131a" stroke="#e0c769" stroke-width="1.5"/>
+    <text x="412" y="145" fill="#e0c769" font-family="monospace" font-size="11" font-weight="bold">3 · marks.json</text>
+    <text x="412" y="160" fill="#9aa3b0" font-family="monospace" font-size="10">auto by bot · forgery cost ~$100k</text>
+
+    <!-- s4 green -->
+    <line x1="190" y1="160" x2="395" y2="200" stroke="#6ad58d" stroke-width="1.2" marker-end="url(#arr)" opacity="0.85"/>
+    <rect x="400" y="178" width="280" height="44" rx="5" fill="#10131a" stroke="#6ad58d" stroke-width="1.5"/>
+    <text x="412" y="198" fill="#6ad58d" font-family="monospace" font-size="11" font-weight="bold">4 · Wayback Machine</text>
+    <text x="412" y="213" fill="#9aa3b0" font-family="monospace" font-size="10">held by Internet Archive · forgery cost ~$10M</text>
+
+    <!-- s5 blue -->
+    <line x1="190" y1="160" x2="395" y2="252" stroke="#7aa2ff" stroke-width="1.2" marker-end="url(#arr)" opacity="0.85"/>
+    <rect x="400" y="231" width="280" height="44" rx="5" fill="#10131a" stroke="#7aa2ff" stroke-width="1.5"/>
+    <text x="412" y="251" fill="#7aa2ff" font-family="monospace" font-size="11" font-weight="bold">5 · OpenTimestamps</text>
+    <text x="412" y="266" fill="#9aa3b0" font-family="monospace" font-size="10">anchored to Bitcoin · forgery cost ~$1B+</text>
+
+    <!-- gradient legend at bottom -->
+    <text x="20" y="295" fill="#7a8290" font-family="monospace" font-size="10">forgery cost</text>
+    <line x1="100" y1="293" x2="680" y2="293" stroke="url(#gradient)" stroke-width="3"/>
+    <linearGradient id="gradient" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ff7a7a"/>
+      <stop offset="25%" stop-color="#f5a96a"/>
+      <stop offset="50%" stop-color="#e0c769"/>
+      <stop offset="75%" stop-color="#6ad58d"/>
+      <stop offset="100%" stop-color="#7aa2ff"/>
+    </linearGradient>
+    <text x="100" y="312" fill="#9aa3b0" font-family="monospace" font-size="10">~$0.01</text>
+    <text x="680" y="312" text-anchor="end" fill="#9aa3b0" font-family="monospace" font-size="10">~$1,000,000,000+</text>
+  </svg>
+  </div>
+  <p class="hint">Each substrate is a different counterparty. Cost compounds across rows: a forger has to climb the whole gradient to silently rewrite all five. See <a href="forge.html">forge.html</a> for the procedure.</p>
+</section>
+
 <section id="leave-a-mark" class="leave">
   <h2>Leave a mark</h2>
   <p class="instructions">
