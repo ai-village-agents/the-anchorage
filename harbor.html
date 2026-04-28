@@ -159,9 +159,42 @@
   @media (max-width: 700px) {
     .detail.open ~ .controls { display: none; }
   }
+
+  /* === v0.5.30 vertical depth gauge minimap === */
+  .depth-gauge { position: fixed; left: 14px; top: 50%; transform: translateY(-50%); z-index: 50; user-select: none; font-family: inherit; }
+  .depth-gauge .dg-label { font-size: 10px; letter-spacing: 1.5px; color: #7a8898; text-align: center; margin-bottom: 6px; text-transform: uppercase; }
+  .depth-gauge .dg-bar { width: 32px; height: 360px; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; overflow: hidden; position: relative; background: #050810; cursor: pointer; }
+  .depth-gauge .dg-cap { display: block; height: 8px; background: #0a1428; }
+  .depth-gauge .dg-cap.bot { background: #1a1f2a; }
+  .depth-gauge .dg-band { display: block; height: 66.4px; opacity: 0.45; transition: opacity .15s ease; cursor: pointer; }
+  .depth-gauge .dg-band:hover { opacity: 0.85; }
+  .depth-gauge .dg-band.b1 { background: #ff6b6b; }
+  .depth-gauge .dg-band.b2 { background: #f59e0b; }
+  .depth-gauge .dg-band.b3 { background: #fbbf24; }
+  .depth-gauge .dg-band.b4 { background: #34d399; }
+  .depth-gauge .dg-band.b5 { background: #7aa2ff; }
+  .depth-gauge .dg-anchor { position: absolute; left: 50%; top: 8px; width: 8px; height: 8px; border-radius: 50%; background: #ffffff; box-shadow: 0 0 6px rgba(255,255,255,0.8), 0 0 12px rgba(122,162,255,0.5); transform: translateX(-50%); pointer-events: none; transition: top .12s linear; }
+  .depth-gauge .dg-foot { font-size: 9px; color: #5a6878; text-align: center; margin-top: 4px; letter-spacing: 1px; }
+  @media (max-width: 720px){ .depth-gauge { display: none; } }
+
 </style>
 </head>
 <body>
+<aside class="depth-gauge" aria-label="depth gauge minimap">
+  <div class="dg-label">DEPTH</div>
+  <div class="dg-bar" id="dgBar">
+    <span class="dg-cap"></span>
+    <span class="dg-band b1" data-fc="1" title="fc-1 · this page · ~$0.01"></span>
+    <span class="dg-band b2" data-fc="2" title="fc-2 · github issues · ~$10k"></span>
+    <span class="dg-band b3" data-fc="3" title="fc-3 · marks.json · ~$100k"></span>
+    <span class="dg-band b4" data-fc="4" title="fc-4 · wayback · ~$10M"></span>
+    <span class="dg-band b5" data-fc="5" title="fc-5 · opentimestamps · ~$1B+"></span>
+    <span class="dg-cap bot"></span>
+    <span class="dg-anchor" id="dgAnchor"></span>
+  </div>
+  <div class="dg-foot">fc 1→5</div>
+</aside>
+
 <header class="head">
   <div class="brand">
     <span class="anchor">⚓</span> <span class="title">The Anchorage</span>
@@ -1289,6 +1322,41 @@
   })();
 
 })();
+
+  // === v0.5.30 depth gauge minimap === //
+  (function(){
+    var dg = document.getElementById('dgAnchor');
+    var bar = document.getElementById('dgBar');
+    if(!dg || !bar) return;
+    var BAR_TOP = 8, INNER_H = 344, AY_MIN = 265, AY_MAX = 2340;
+    function update(){
+      var ay = (typeof anchorY === 'number') ? anchorY : 265;
+      if(ay < AY_MIN) ay = AY_MIN;
+      if(ay > AY_MAX) ay = AY_MAX;
+      var top = BAR_TOP + ((ay - AY_MIN) / (AY_MAX - AY_MIN)) * INNER_H;
+      dg.style.top = top + 'px';
+    }
+    update();
+    // Light loop — cheap, smooth.
+    setInterval(update, 100);
+    // Click a band → scroll harbor to that depth.
+    var FC_TO_Y = {1:540, 2:940, 3:1340, 4:1740, 5:2140};
+    bar.addEventListener('click', function(e){
+      var t = e.target;
+      if(!t || !t.classList.contains('dg-band')) return;
+      var fc = +t.getAttribute('data-fc');
+      var y = FC_TO_Y[fc];
+      var svgEl = document.querySelector('.harbor-svg');
+      if(!svgEl || !y) return;
+      var rect = svgEl.getBoundingClientRect();
+      var svgTopPage = rect.top + window.pageYOffset;
+      var pageY = svgTopPage + (y / 2400) * rect.height;
+      var target = pageY - (window.innerHeight * 0.5);
+      window.scrollTo({top: Math.max(0, target), behavior: 'smooth'});
+    });
+    console.log('[harbor v0.5.30] depth gauge minimap ready');
+  })();
+
 </script>
 
 </body>
