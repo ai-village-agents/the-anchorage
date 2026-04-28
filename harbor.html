@@ -542,6 +542,9 @@
     </g>
   </g>
 
+  <!-- Click ripples (spawned dynamically when visitor taps in water) -->
+  <g id="rippleContainer" pointer-events="none"></g>
+
   <!-- Treasure chest on bedrock — opens when anchor reaches the bottom -->
   <g id="treasureChest" class="treasure-chest" transform="translate(880,2330)" pointer-events="auto" data-state="closed">
     <title>treasure chest — descend the anchor to bedrock to discover</title>
@@ -696,7 +699,7 @@
 </section>
 
 <footer class="foot">
-  the anchorage · v0.5.28 · harbor — an immersive depth view of the five substrates
+  the anchorage · v0.5.29 · harbor — an immersive depth view of the five substrates
 </footer>
 
 <script src="anchorage.js"></script>
@@ -1228,6 +1231,61 @@
       setTimeout(loop, nextDelay);
     }
     setTimeout(loop, 3000 + Math.random()*4000);
+  })();
+
+
+  // ===== Click ripples in water — gentle response to any click in the SVG =====
+  (function(){
+    var rc = document.getElementById('rippleContainer');
+    if(!rc || !svg) return;
+    var ns = 'http://www.w3.org/2000/svg';
+    function spawnRipple(svgX, svgY){
+      // Don't ripple in sky/bedrock zones
+      if(svgY < 320 || svgY > 2340) return;
+      var ring = document.createElementNS(ns,'circle');
+      ring.setAttribute('cx', svgX);
+      ring.setAttribute('cy', svgY);
+      ring.setAttribute('r', '0');
+      ring.setAttribute('fill', 'none');
+      ring.setAttribute('stroke', '#7aa2ff');
+      ring.setAttribute('stroke-width', '1.5');
+      ring.setAttribute('opacity', '0.7');
+      rc.appendChild(ring);
+      var start = performance.now();
+      var DUR = 900;
+      function step(t){
+        var k = Math.min(1, (t - start) / DUR);
+        var ek = 1 - Math.pow(1-k, 2);
+        ring.setAttribute('r', (ek * 50).toFixed(1));
+        ring.setAttribute('opacity', (0.7 * (1 - k)).toFixed(2));
+        if(k < 1) requestAnimationFrame(step);
+        else ring.remove();
+      }
+      requestAnimationFrame(step);
+    }
+    svg.addEventListener('click', function(e){
+      // Skip clicks on interactive elements (boat/anchor/chest/wreck/marks)
+      var tgt = e.target;
+      var skip = false;
+      var cur = tgt;
+      while(cur && cur !== svg){
+        var id = cur.id || '';
+        var cls = (cur.getAttribute && cur.getAttribute('class')) || '';
+        if(id === 'boat' || id === 'anchorIcon' || id === 'treasureChest' || id === 'shipwreck' ||
+           id === 'chestLid' || cls.indexOf('mark-glyph') !== -1 || cls.indexOf('zone') !== -1){
+          skip = true; break;
+        }
+        cur = cur.parentNode;
+      }
+      // Allow ripple even on .zone since they cover the water — let it through
+      if(skip && cur && cur.getAttribute && (cur.getAttribute('class')||'').indexOf('zone') === -1) return;
+      var pt = svg.createSVGPoint();
+      pt.x = e.clientX; pt.y = e.clientY;
+      var ctm = svg.getScreenCTM();
+      if(!ctm) return;
+      var p = pt.matrixTransform(ctm.inverse());
+      spawnRipple(p.x, p.y);
+    }, true); // capture phase so we run before zone openDetail
   })();
 
 })();
