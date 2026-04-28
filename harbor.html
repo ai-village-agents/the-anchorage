@@ -311,6 +311,7 @@
   <!-- Shooting stars (spawned dynamically, ~every 6-15s) -->
   <g id="shootingStars" pointer-events="none"></g>
 
+  <g id="constellations" pointer-events="none" fill="none" stroke="#7aa2ff" stroke-width="0.6" opacity="0.85"></g>
   <!-- Moon -->
   <circle cx="180" cy="115" r="36" fill="#f5f0d8" opacity="0.9"/>
   <circle cx="172" cy="108" r="30" fill="#0a1428" opacity="0.6"/>
@@ -1440,6 +1441,115 @@
     // First jump appears 4-10s after load
     setTimeout(function(){ jump(); loop(); }, 4000 + Math.random()*6000);
     console.log('[harbor v0.5.31] dolphins armed');
+  })();
+
+
+  // === v0.5.33 constellations on star click === //
+  (function(){
+    var ns = 'http://www.w3.org/2000/svg';
+    var svg = document.getElementById('harborSvg');
+    var container = document.getElementById('constellations');
+    var starsG = document.getElementById('stars');
+    if(!svg || !container || !starsG) return;
+    var starEls = starsG.querySelectorAll('circle');
+    var stars = [];
+    for(var i=0;i<starEls.length;i++){
+      var c = starEls[i];
+      stars.push({el:c, x:+c.getAttribute('cx'), y:+c.getAttribute('cy')});
+    }
+    function svgPoint(evt){
+      var rect = svg.getBoundingClientRect();
+      var x = (evt.clientX - rect.left) / rect.width * 1200;
+      var y = (evt.clientY - rect.top) / rect.height * 2400;
+      return {x:x, y:y};
+    }
+    function nearest(p){
+      var best = null, bd = Infinity;
+      for(var i=0;i<stars.length;i++){
+        var dx = stars[i].x - p.x, dy = stars[i].y - p.y;
+        var d2 = dx*dx + dy*dy;
+        if(d2 < bd){ bd = d2; best = stars[i]; }
+      }
+      return {star:best, dist: Math.sqrt(bd)};
+    }
+    function topN(target, n){
+      var arr = [];
+      for(var i=0;i<stars.length;i++){
+        if(stars[i] === target) continue;
+        var dx = stars[i].x - target.x, dy = stars[i].y - target.y;
+        arr.push({star:stars[i], d2: dx*dx + dy*dy});
+      }
+      arr.sort(function(a,b){return a.d2 - b.d2;});
+      return arr.slice(0, n).map(function(o){return o.star;});
+    }
+    function pulseStar(star){
+      var orig = +star.el.getAttribute('r');
+      var t0 = performance.now();
+      function f(t){
+        var dt = t - t0, k = Math.min(1, dt/600);
+        var bump = (k < 0.5) ? (k*2) : (1 - (k-0.5)*2);
+        star.el.setAttribute('r', orig + bump * 1.6);
+        if(k < 1) requestAnimationFrame(f);
+        else star.el.setAttribute('r', orig);
+      }
+      requestAnimationFrame(f);
+    }
+    function drawConstellation(start){
+      var neighbors = topN(start, 3);
+      pulseStar(start);
+      neighbors.forEach(function(n, i){
+        var line = document.createElementNS(ns, 'line');
+        line.setAttribute('x1', start.x);
+        line.setAttribute('y1', start.y);
+        line.setAttribute('x2', start.x);
+        line.setAttribute('y2', start.y);
+        line.setAttribute('stroke', '#7aa2ff');
+        line.setAttribute('stroke-width', '0.6');
+        line.setAttribute('opacity', '0');
+        line.setAttribute('stroke-linecap', 'round');
+        container.appendChild(line);
+        // Animate line endpoint to neighbor + opacity in.
+        var t0 = performance.now() + i*120;
+        function anim(t){
+          if(t < t0){ requestAnimationFrame(anim); return; }
+          var dt = t - t0;
+          var grow = Math.min(1, dt/700);
+          var ge = 1 - Math.pow(1-grow, 2.4); // ease out
+          var x2 = start.x + (n.x - start.x) * ge;
+          var y2 = start.y + (n.y - start.y) * ge;
+          line.setAttribute('x2', x2);
+          line.setAttribute('y2', y2);
+          line.setAttribute('opacity', String(0.85 * ge));
+          if(grow < 1) requestAnimationFrame(anim);
+          else {
+            // pulse the neighbor star
+            pulseStar(n);
+            // hold then fade out
+            setTimeout(function(){
+              var f0 = performance.now();
+              function fade(t){
+                var dt = t - f0, k = Math.min(1, dt/1400);
+                line.setAttribute('opacity', String(0.85 * (1-k)));
+                if(k < 1) requestAnimationFrame(fade);
+                else if(line.parentNode) line.parentNode.removeChild(line);
+              }
+              requestAnimationFrame(fade);
+            }, 4000);
+          }
+        }
+        requestAnimationFrame(anim);
+      });
+    }
+    svg.addEventListener('click', function(e){
+      var p = svgPoint(e);
+      if(p.y > 270) return; // sky only
+      var n = nearest(p);
+      if(!n.star) return;
+      // accept clicks within 35 svg units of the nearest star
+      if(n.dist > 35) return;
+      drawConstellation(n.star);
+    });
+    console.log('[harbor v0.5.33] constellations armed (' + stars.length + ' stars)');
   })();
 
 </script>
