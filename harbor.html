@@ -774,6 +774,7 @@
   <div class="panel">
     <p style="margin:0;color:#7a8290;font-size:10px;">drag the boat. drop the anchor. it descends through every substrate, leaving a glowing receipt at each.</p>
     <p style="margin:6px 0 0 0;color:#7a8290;font-size:10px;">pilot the yellow submersible: WASD or arrow keys. press E near the vent, kraken, shipwreck, or chest to inspect.</p>
+    <p style="margin:4px 0 0 0;color:#7a8290;font-size:9px;">press T for guided tour · HUD bottom-right</p>
   </div>
 </div>
 
@@ -1694,6 +1695,14 @@
     var depthLabel = document.getElementById("subDepthLabel");
     var bubbles = [];
     var bubbleSpawnCounter = 0;
+    // v0.5.43 — tour mode state
+    var tourActive = false;
+    var tourIndex = 0;
+    var tourPhase = "travel"; // 'travel' | 'arriving' | 'inspecting' | 'leaving'
+    var tourPhaseTime = 0;
+    var tourBanner = null;
+    // v0.5.43 — HUD panel ref
+    var hudPanel = null;
     var SVG_NS = "http://www.w3.org/2000/svg";
     function spawnBubble(bx, by){
       if (!bubblesG) return;
@@ -1724,6 +1733,9 @@
       { name: "kraken", x: 540, y: 2120, sel: "#kraken" },
       { name: "chest", x: 880, y: 2330, sel: "#treasureChest" }
     ];
+    // v0.5.43 — tour route order
+    var TOUR_ORDER = ["shipwreck", "kraken", "vent", "chest"];
+    function targetByName(n){ for (var i=0;i<TARGETS.length;i++) if (TARGETS[i].name===n) return TARGETS[i]; return null; }
 
     function isNavKey(code, key){
       return code === "KeyW" || code === "KeyA" || code === "KeyS" || code === "KeyD" ||
@@ -1758,6 +1770,22 @@
           }
         }
       }
+      // v0.5.43 — T toggles guided tour
+      if (e.key === "t" || e.key === "T") {
+        tourActive = !tourActive;
+        tourIndex = 0;
+        tourPhase = "travel";
+        tourPhaseTime = 0;
+        if (!launched) launched = true;
+        if (tourActive) {
+          console.log("[harbor v0.5.43] tour mode engaged \u2014 " + TOUR_ORDER.join(" \u2192 "));
+        } else {
+          console.log("[harbor v0.5.43] tour mode disengaged");
+          var detT = document.getElementById("detail");
+          if (detT) detT.classList.remove("open");
+        }
+        e.preventDefault();
+      }
     });
     window.addEventListener("keyup", function(e){
       keys[e.code] = false;
@@ -1766,10 +1794,53 @@
     var ACCEL = 0.18, FRICTION = 0.94, MAXV = 2.6;
     function frame(){
       var ax = 0, ay = 0;
-      if (keys["KeyW"] || keys["ArrowUp"])    ay -= 1;
-      if (keys["KeyS"] || keys["ArrowDown"])  ay += 1;
-      if (keys["KeyA"] || keys["ArrowLeft"])  ax -= 1;
-      if (keys["KeyD"] || keys["ArrowRight"]) ax += 1;
+      // v0.5.43 — tour autopilot
+      if (tourActive) {
+        var tname = TOUR_ORDER[tourIndex];
+        var tgt = targetByName(tname);
+        if (tgt) {
+          if (tourPhase === "travel") {
+            var ddx = tgt.x - x, ddy = tgt.y - y;
+            var dist = Math.sqrt(ddx*ddx + ddy*ddy);
+            if (Math.abs(ddx) > 2) ax = ddx < 0 ? -1 : 1;
+            if (Math.abs(ddy) > 2) ay = ddy < 0 ? -1 : 1;
+            if (dist < 70) { tourPhase = "arriving"; tourPhaseTime = 0; }
+          } else if (tourPhase === "arriving") {
+            if ((Math.abs(vx) + Math.abs(vy)) < 0.15) {
+              var elT = document.querySelector(tgt.sel);
+              if (elT) elT.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+              tourPhase = "inspecting";
+              tourPhaseTime = 0;
+            }
+          } else if (tourPhase === "inspecting") {
+            tourPhaseTime++;
+            if (tourPhaseTime >= 360) {
+              var detI = document.getElementById("detail");
+              if (detI) detI.classList.remove("open");
+              tourPhase = "leaving";
+              tourPhaseTime = 0;
+            }
+          } else if (tourPhase === "leaving") {
+            tourPhaseTime++;
+            if (tourPhaseTime >= 30) {
+              tourIndex++;
+              if (tourIndex >= TOUR_ORDER.length) {
+                tourActive = false;
+                tourIndex = 0;
+                console.log("[harbor v0.5.43] tour complete");
+              } else {
+                tourPhase = "travel";
+                tourPhaseTime = 0;
+              }
+            }
+          }
+        }
+      } else {
+        if (keys["KeyW"] || keys["ArrowUp"])    ay -= 1;
+        if (keys["KeyS"] || keys["ArrowDown"])  ay += 1;
+        if (keys["KeyA"] || keys["ArrowLeft"])  ax -= 1;
+        if (keys["KeyD"] || keys["ArrowRight"]) ax += 1;
+      }
       vx += ax * ACCEL;
       vy += ay * ACCEL;
       vx *= FRICTION;
@@ -1846,6 +1917,74 @@
         depthLabel.setAttribute("x", x.toFixed(1));
         depthLabel.setAttribute("y", (y - 28).toFixed(1));
         depthLabel.setAttribute("opacity", launched ? "0.7" : "0");
+      }
+
+      // v0.5.43 — tour banner
+      if (!tourBanner) {
+        tourBanner = document.createElement("div");
+        tourBanner.id = "tourBanner";
+        tourBanner.style.cssText = "position:fixed;top:14px;left:50%;transform:translateX(-50%);background:rgba(10,15,25,0.86);color:#cfe6ff;font:11px ui-monospace,monospace;padding:6px 14px;border:1px solid rgba(123,162,255,0.4);border-radius:6px;z-index:60;pointer-events:none;letter-spacing:0.04em;display:none;";
+        document.body.appendChild(tourBanner);
+      }
+      if (tourActive) {
+        var verb = (tourPhase === "travel") ? "approaching" : (tourPhase === "arriving") ? "arriving at" : (tourPhase === "inspecting") ? "inspecting" : "leaving";
+        tourBanner.textContent = "TOUR \u00b7 " + (tourIndex + 1) + "/" + TOUR_ORDER.length + " \u00b7 " + verb + " " + TOUR_ORDER[tourIndex] + "  (T to cancel)";
+        tourBanner.style.display = "block";
+      } else if (tourBanner) {
+        tourBanner.style.display = "none";
+      }
+
+      // v0.5.43 — submersible HUD panel (bottom right)
+      if (!hudPanel) {
+        hudPanel = document.createElement("div");
+        hudPanel.id = "subHUD";
+        hudPanel.style.cssText = "position:fixed;bottom:14px;right:14px;padding:8px 12px;background:rgba(10,15,25,0.78);color:#cfe6ff;font:10px ui-monospace,monospace;border:1px solid rgba(123,162,255,0.35);border-radius:6px;z-index:41;line-height:1.5;pointer-events:none;min-width:170px;display:none;";
+        hudPanel.innerHTML = "<div style=\"font-weight:600;color:#7aa2ff;margin-bottom:4px;letter-spacing:0.06em;\">SUBMERSIBLE</div>" +
+          "<div><span style=\"display:inline-block;width:62px;color:#7a8290;\">x</span><span id=\"hudX\">0</span></div>" +
+          "<div><span style=\"display:inline-block;width:62px;color:#7a8290;\">y</span><span id=\"hudY\">0</span></div>" +
+          "<div><span style=\"display:inline-block;width:62px;color:#7a8290;\">depth</span><span id=\"hudDepth\">0 su</span></div>" +
+          "<div><span style=\"display:inline-block;width:62px;color:#7a8290;\">substrate</span><span id=\"hudSub\">fc-1</span></div>" +
+          "<div><span style=\"display:inline-block;width:62px;color:#7a8290;\">speed</span><span id=\"hudSpeed\">0.00 su/f</span></div>" +
+          "<div><span style=\"display:inline-block;width:62px;color:#7a8290;\">heading</span><span id=\"hudHead\">\u00b7</span></div>";
+        document.body.appendChild(hudPanel);
+      }
+      // v0.5.43 — auto-scroll page to keep submersible visible during tour
+      if (tourActive) {
+        var svgElT = document.querySelector(".harbor-svg");
+        if (svgElT) {
+          var rectT = svgElT.getBoundingClientRect();
+          var svgTopPageT = rectT.top + window.pageYOffset;
+          var subPageY = svgTopPageT + (y / 2400) * rectT.height;
+          var targetScroll = subPageY - (window.innerHeight * 0.5);
+          window.scrollTo({ top: Math.max(0, targetScroll), behavior: "auto" });
+        }
+      }
+
+      if (launched) {
+        hudPanel.style.display = "block";
+        var hX = document.getElementById("hudX");
+        var hY = document.getElementById("hudY");
+        var hD = document.getElementById("hudDepth");
+        var hS = document.getElementById("hudSub");
+        var hSp = document.getElementById("hudSpeed");
+        var hH = document.getElementById("hudHead");
+        var sub2 = "fc-1";
+        if (y >= 740 && y < 1140) sub2 = "fc-2";
+        else if (y >= 1140 && y < 1540) sub2 = "fc-3";
+        else if (y >= 1540 && y < 1940) sub2 = "fc-4";
+        else if (y >= 1940) sub2 = "fc-5";
+        var spd = Math.sqrt(vx*vx + vy*vy);
+        var head = "\u00b7";
+        if (spd > 0.15) {
+          if (Math.abs(vx) > Math.abs(vy)) head = vx > 0 ? "\u2192" : "\u2190";
+          else head = vy > 0 ? "\u2193" : "\u2191";
+        }
+        if (hX) hX.textContent = Math.round(x);
+        if (hY) hY.textContent = Math.round(y);
+        if (hD) hD.textContent = Math.max(0, Math.round(y - 340)) + " su";
+        if (hS) hS.textContent = sub2;
+        if (hSp) hSp.textContent = spd.toFixed(2) + " su/f";
+        if (hH) hH.textContent = head;
       }
 
       requestAnimationFrame(frame);
