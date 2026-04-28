@@ -602,6 +602,9 @@
     <text id="subPrompt" x="0" y="-22" text-anchor="middle" fill="#ffe88a" font-size="11" font-family="ui-sans-serif,system-ui,sans-serif" opacity="0" pointer-events="none">press E to inspect</text>
   </g>
   <g id="rippleContainer" pointer-events="none"></g>
+  <!-- v0.5.40 propeller bubble trail + depth/substrate label -->
+  <g id="subBubbles" pointer-events="none"></g>
+  <text id="subDepthLabel" pointer-events="none" x="600" y="480" text-anchor="middle" font-size="9" font-family="ui-monospace, monospace" fill="#7a8290" opacity="0"></text>
 
   <!-- Hydrothermal vent (black smoker) — fc-5 / Bitcoin proof-of-work as thermal commitment -->
   <g id="vent" class="vent" pointer-events="auto" transform="translate(320,2340)">
@@ -736,7 +739,7 @@
     <circle id="r5" cx="600" cy="2140" r="0" fill="url(#glow5)"/>
   </g>
 
-  <!-- v0.5.39 — pulsing halo around nearest inspectable target -->
+  <!-- v0.5.40 — pulsing halo around nearest inspectable target -->
   <g id="targetHaloGroup" pointer-events="none" opacity="0">
     <circle id="targetHalo" cx="0" cy="0" r="34" fill="none" stroke="#ffe88a" stroke-width="1.4" opacity="0.7">
       <animate attributeName="r" values="30;42;30" dur="1.6s" repeatCount="indefinite"/>
@@ -794,7 +797,7 @@
 </section>
 
 <footer class="foot">
-  the anchorage · v0.5.39 · harbor — an immersive depth view of the five substrates
+  the anchorage · v0.5.40 · harbor — an immersive depth view of the five substrates
 </footer>
 
 <script src="anchorage.js"></script>
@@ -1686,6 +1689,34 @@
     var x = 600, y = 500, vx = 0, vy = 0, lastDir = 1;
     var keys = Object.create(null);
     var launched = false;
+    // v0.5.40 — bubble trail + depth label state
+    var bubblesG = document.getElementById("subBubbles");
+    var depthLabel = document.getElementById("subDepthLabel");
+    var bubbles = [];
+    var bubbleSpawnCounter = 0;
+    var SVG_NS = "http://www.w3.org/2000/svg";
+    function spawnBubble(bx, by){
+      if (!bubblesG) return;
+      var c = document.createElementNS(SVG_NS, "circle");
+      var r = (1.4 + Math.random()*1.6).toFixed(1);
+      c.setAttribute("r", r);
+      c.setAttribute("cx", bx.toFixed(1));
+      c.setAttribute("cy", by.toFixed(1));
+      c.setAttribute("fill", "none");
+      c.setAttribute("stroke", "#cfe6ff");
+      c.setAttribute("stroke-width", "0.6");
+      c.setAttribute("opacity", "0.7");
+      bubblesG.appendChild(c);
+      bubbles.push({
+        el: c,
+        x: bx,
+        y: by,
+        life: 0,
+        maxLife: 70 + Math.random()*40,
+        vx: (Math.random()-0.5)*0.3,
+        vy: -0.4 - Math.random()*0.4
+      });
+    }
 
     var TARGETS = [
       { name: "vent", x: 320, y: 2340, sel: "#vent" },
@@ -1766,7 +1797,7 @@
       }
       prompt.setAttribute("opacity", (near && nearD < 60) ? "0.95" : "0");
 
-      // v0.5.39 — show pulsing halo around nearest target when in range
+      // v0.5.40 — show pulsing halo around nearest target when in range
       var haloGroup = document.getElementById("targetHaloGroup");
       var halo = document.getElementById("targetHalo");
       var haloInner = document.getElementById("targetHaloInner");
@@ -1778,6 +1809,43 @@
         } else {
           haloGroup.setAttribute("opacity", "0");
         }
+      }
+
+      // v0.5.40 — propeller bubble trail
+      if (moving && bubbles.length < 60) {
+        bubbleSpawnCounter++;
+        if (bubbleSpawnCounter >= 4) {
+          bubbleSpawnCounter = 0;
+          var px = x - 22 * lastDir;
+          spawnBubble(px, y);
+        }
+      }
+      for (var bi = bubbles.length - 1; bi >= 0; bi--) {
+        var b = bubbles[bi];
+        b.life++;
+        b.x += b.vx;
+        b.y += b.vy;
+        b.el.setAttribute("cx", b.x.toFixed(1));
+        b.el.setAttribute("cy", b.y.toFixed(1));
+        b.el.setAttribute("opacity", (0.7 * (1 - b.life/b.maxLife)).toFixed(2));
+        if (b.life >= b.maxLife) {
+          if (b.el.parentNode) b.el.parentNode.removeChild(b.el);
+          bubbles.splice(bi, 1);
+        }
+      }
+
+      // v0.5.40 — depth/substrate readout floating above submersible
+      if (depthLabel) {
+        var lbl = "";
+        if (y < 740) lbl = "fc-1 · this page";
+        else if (y < 1140) lbl = "fc-2 · github issue";
+        else if (y < 1540) lbl = "fc-3 · marks.json";
+        else if (y < 1940) lbl = "fc-4 · wayback";
+        else lbl = "fc-5 · bedrock · OTS";
+        depthLabel.textContent = lbl;
+        depthLabel.setAttribute("x", x.toFixed(1));
+        depthLabel.setAttribute("y", (y - 28).toFixed(1));
+        depthLabel.setAttribute("opacity", launched ? "0.7" : "0");
       }
 
       requestAnimationFrame(frame);
