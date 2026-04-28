@@ -346,6 +346,8 @@
       dur="6s" repeatCount="indefinite"/>
   </path>
 
+  <g id="dolphins" pointer-events="none"></g>
+
   <!-- ===== SUBSTRATE LAYER BANDS ===== -->
   <!-- Layer 1: 340 → 740 (sunlit shallows) -->
   <rect class="zone" data-fc="1" x="0" y="340" width="1200" height="400" fill="url(#s1G)"/>
@@ -1355,6 +1357,89 @@
       window.scrollTo({top: Math.max(0, target), behavior: 'smooth'});
     });
     console.log('[harbor v0.5.30] depth gauge minimap ready');
+  })();
+
+
+  // === v0.5.31 dolphin jumps at surface === //
+  (function(){
+    var ns = 'http://www.w3.org/2000/svg';
+    var container = document.getElementById('dolphins');
+    if(!container) return;
+
+    function makeDolphinPath(){
+      // Dolphin silhouette ~30px wide, head at right.
+      // Body curve + dorsal fin + tail flukes.
+      var d = 'M -14 0 ' +
+              'Q -10 -4 -2 -5 ' +    // back curve
+              'Q 8 -5 14 -2 ' +
+              'Q 16 0 14 2 ' +
+              'Q 8 4 -2 4 ' +
+              'Q -10 4 -14 0 Z';
+      var p = document.createElementNS(ns, 'path');
+      p.setAttribute('d', d);
+      p.setAttribute('fill', '#1a2840');
+      p.setAttribute('opacity', '0.85');
+      // dorsal fin
+      var fin = document.createElementNS(ns, 'path');
+      fin.setAttribute('d', 'M -2 -5 L 2 -10 L 5 -5 Z');
+      fin.setAttribute('fill', '#1a2840');
+      fin.setAttribute('opacity', '0.85');
+      // tail flukes
+      var tail = document.createElementNS(ns, 'path');
+      tail.setAttribute('d', 'M -14 0 L -22 -4 L -20 0 L -22 4 Z');
+      tail.setAttribute('fill', '#1a2840');
+      tail.setAttribute('opacity', '0.85');
+      var g = document.createElementNS(ns, 'g');
+      g.appendChild(p);
+      g.appendChild(fin);
+      g.appendChild(tail);
+      return g;
+    }
+
+    function jump(){
+      // Random horizontal range; peak height above surface 60-110.
+      var dirRight = Math.random() < 0.5;
+      var startX = dirRight ? (60 + Math.random()*200) : (940 + Math.random()*200);
+      var span = 180 + Math.random()*180; // arc width
+      var endX = dirRight ? startX + span : startX - span;
+      var peak = 60 + Math.random()*55;   // peak height above surface
+      var SURFACE_Y = 300;
+      var dur = 1300 + Math.random()*500;
+      var t0 = performance.now();
+
+      var dolphin = makeDolphinPath();
+      // Initial scale flip if going left
+      var sx = dirRight ? 1 : -1;
+      container.appendChild(dolphin);
+
+      function frame(t){
+        var dt = t - t0;
+        var k = Math.min(1, dt/dur);
+        // Parabolic arc: y = surface - peak * 4 * k * (1-k)
+        var x = startX + (endX - startX) * k;
+        var y = SURFACE_Y - peak * 4 * k * (1 - k);
+        // Tangent angle for rotation: derivative-based.
+        // dx/dk = (endX-startX). dy/dk = -peak*4*(1-2k).
+        var dxk = (endX - startX);
+        var dyk = -peak * 4 * (1 - 2*k);
+        var ang = Math.atan2(dyk, dxk) * 180 / Math.PI;
+        dolphin.setAttribute('transform', 'translate('+x+','+y+') scale('+sx+',1) rotate('+(sx*ang)+')');
+        // Splash fade in/out: brief opacity dip near edges (entering/exiting water).
+        var op = (k < 0.07) ? (k/0.07) : (k > 0.93) ? ((1-k)/0.07) : 1;
+        dolphin.setAttribute('opacity', op);
+        if(k < 1) requestAnimationFrame(frame);
+        else container.removeChild(dolphin);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function loop(){
+      var delay = 9000 + Math.random()*16000; // 9-25s
+      setTimeout(function(){ jump(); loop(); }, delay);
+    }
+    // First jump appears 4-10s after load
+    setTimeout(function(){ jump(); loop(); }, 4000 + Math.random()*6000);
+    console.log('[harbor v0.5.31] dolphins armed');
   })();
 
 </script>
