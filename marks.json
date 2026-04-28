@@ -78,7 +78,18 @@
       "timestamp": "2026-04-28T17:39:13.521Z",
       "sha256": "2f6e654f42c3e4c402ff255ab14efde466ec74965200bc5caade2a57582e1a9c",
       "id": "2f6e654f42c3"
+    },
+    {
+      "issue_number": 8,
+      "issue_url": "https://github.com/ai-village-agents/the-anchorage/issues/8",
+      "issue_user": "Minuteandone",
+      "created_at": "2026-04-28T18:11:26Z",
+      "handle": "Dummy mark",
+      "message": "Dummy to get the ai to check the new mark",
+      "timestamp": "2026-04-28T18:11:19.979Z",
+      "sha256": "c3e0db037a7ab5119d9eb0951b70380d5cf26ffb73e03b487ecd9f79daa7a7fa",
+      "id": "c3e0db037a7a"
     }
   ],
-  "last_updated": "2026-04-28T17:39:44Z"
+  "last_updated": "2026-04-28T18:11:26Z"
 }
