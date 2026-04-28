@@ -177,6 +177,9 @@
   .depth-gauge .dg-foot { font-size: 9px; color: #5a6878; text-align: center; margin-top: 4px; letter-spacing: 1px; }
   @media (max-width: 720px){ .depth-gauge { display: none; } }
 
+
+  .vent { cursor: pointer; }
+  .vent:hover .tube-worms circle { fill: #ff5252; }
 </style>
 </head>
 <body>
@@ -581,6 +584,31 @@
   <!-- Click ripples (spawned dynamically when visitor taps in water) -->
   <g id="rippleContainer" pointer-events="none"></g>
 
+  <!-- Hydrothermal vent (black smoker) — fc-5 / Bitcoin proof-of-work as thermal commitment -->
+  <g id="vent" class="vent" pointer-events="auto" transform="translate(320,2340)">
+    <title>hydrothermal vent — click to learn about thermal proof-of-work</title>
+    <rect x="-46" y="-30" width="92" height="34" fill="transparent" pointer-events="all"/>
+    <path d="M -28 0 L -10 -30 L 10 -30 L 28 0 Z" fill="#1a1418" stroke="#0a0608" stroke-width="0.8"/>
+    <path d="M -22 -8 L -8 -22 L 8 -22 L 22 -8" fill="none" stroke="#3a2a26" stroke-width="0.6" opacity="0.7"/>
+    <circle cx="-12" cy="-12" r="1.4" fill="#5a3a26" opacity="0.7"/>
+    <circle cx="10" cy="-18" r="1.1" fill="#5a3a26" opacity="0.6"/>
+    <circle cx="0" cy="-25" r="1.0" fill="#7a4a2a" opacity="0.7"/>
+    <ellipse cx="0" cy="-29" rx="6" ry="2.4" fill="#ff7a3a" opacity="0.55">
+      <animate attributeName="opacity" values="0.45;0.85;0.45" dur="2.4s" repeatCount="indefinite"/>
+    </ellipse>
+    <g class="tube-worms" stroke-linecap="round">
+      <line x1="-18" y1="0" x2="-19" y2="-9" stroke="#e8e0d6" stroke-width="1.6"/>
+      <circle cx="-19" cy="-9" r="1.0" fill="#d63838"/>
+      <line x1="-13" y1="-2" x2="-13" y2="-12" stroke="#e8e0d6" stroke-width="1.6"/>
+      <circle cx="-13" cy="-12" r="1.1" fill="#d63838"/>
+      <line x1="14" y1="-2" x2="15" y2="-13" stroke="#e8e0d6" stroke-width="1.6"/>
+      <circle cx="15" cy="-13" r="1.1" fill="#d63838"/>
+      <line x1="20" y1="0" x2="20" y2="-7" stroke="#e8e0d6" stroke-width="1.4"/>
+      <circle cx="20" cy="-7" r="0.9" fill="#d63838"/>
+    </g>
+    <g id="ventSmoke"></g>
+  </g>
+
   <!-- Treasure chest on bedrock — opens when anchor reaches the bottom -->
   <g id="treasureChest" class="treasure-chest" transform="translate(880,2330)" pointer-events="auto" data-state="closed">
     <title>treasure chest — descend the anchor to bedrock to discover</title>
@@ -735,7 +763,7 @@
 </section>
 
 <footer class="foot">
-  the anchorage · v0.5.29 · harbor — an immersive depth view of the five substrates
+  the anchorage · v0.5.34 · harbor — an immersive depth view of the five substrates
 </footer>
 
 <script src="anchorage.js"></script>
@@ -1552,6 +1580,54 @@
     console.log('[harbor v0.5.33] constellations armed (' + stars.length + ' stars)');
   })();
 
+
+  /* v0.5.34 — hydrothermal vent: rising smoke particles + click handler */
+  (function(){
+    var ventGroup = document.getElementById("vent");
+    var smokeLayer = document.getElementById("ventSmoke");
+    if (!ventGroup || !smokeLayer) return;
+    var svgNs = "http://www.w3.org/2000/svg";
+    function spawnSmoke(){
+      var c = document.createElementNS(svgNs, "circle");
+      var r0 = 2.0 + Math.random()*1.6;
+      var driftX = (Math.random()-0.5) * 14;
+      var dur = 4500 + Math.random()*2500;
+      var rise = 150 + Math.random()*60;
+      c.setAttribute("cx", "0");
+      c.setAttribute("cy", "-30");
+      c.setAttribute("r", r0.toFixed(2));
+      c.setAttribute("fill", "#2a2228");
+      c.setAttribute("opacity", "0");
+      smokeLayer.appendChild(c);
+      var t0 = performance.now();
+      function step(t){
+        var k = (t - t0) / dur;
+        if (k >= 1) { try{ smokeLayer.removeChild(c);}catch(e){} return; }
+        var y = -30 - rise * k;
+        var x = driftX * k;
+        var op = (k < 0.15) ? (k/0.15)*0.55 : (0.55 * (1 - (k-0.15)/0.85));
+        var rr = r0 + 4.5 * k;
+        c.setAttribute("cx", x.toFixed(2));
+        c.setAttribute("cy", y.toFixed(2));
+        c.setAttribute("r", rr.toFixed(2));
+        c.setAttribute("opacity", Math.max(0, op).toFixed(3));
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    setInterval(spawnSmoke, 180);
+    ventGroup.addEventListener("click", function(ev){
+      ev.stopPropagation();
+      if (typeof openCustomDetail === "function") {
+        openCustomDetail({
+          title: "hydrothermal vent — proof-of-work as heat",
+          cost: "fc-5 · ~$1B+ to forge",
+          fc: 5,
+          body: "On the actual seafloor, hydrothermal vents pour out 400°C water from the crust. Tube worms cluster around them — life that runs on chemistry, not sunlight. The bedrock here is the same idea. Bitcoin miners spend real electricity, real heat, to extend the chain. Forgery would require redoing all of that work, faster than the rest of the network. The cost is not a number on a ledger. The cost is thermodynamic. A timestamp anchored to a Bitcoin block is anchored, in the end, to physics."
+        });
+      }
+    });
+  })();
 </script>
 
 </body>
