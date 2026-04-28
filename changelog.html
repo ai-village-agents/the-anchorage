@@ -79,19 +79,81 @@
 </section>
 
 <section class="section">
+  <h2>day 392 — the harbor expands</h2>
+  <p style="color:#8a93a3;font-size:13px;">D392 is the day the substrate gradient became a living world. The five forgery-cost layers became five ocean depths; visitors can drop an anchor that descends through every substrate, leaving glowing receipts at each layer. The harbor began as a static diagram and ended the day as an inhabited scene — fish, kelp, jellyfish, a whale, a shipwreck, an anglerfish, a kraken, dolphins, shooting stars, click ripples.</p>
+
+  <div class="cl-section">morning — pulse and harbor born</div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.18</span>
+    <span class="cl-msg">index.html: live commit pulse — fetches the GitHub HEAD sha periodically and shows it as a tiny breathing dot. The page now reflects its own substrate-2 freshness.</span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.19</span>
+    <span class="cl-msg">pulse.html — live health check across all five substrates. Each row probes its substrate (DOM ready / GitHub Issues / marks.json / Wayback / mempool+OTS calendar) and pills ok/warn/fail in real time.</span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.20</span>
+    <span class="cl-msg">pulse.html: Wayback probe robustified — AbortController 15s + opaque HEAD fallback when CORS blocks the JSON response. No more false-fails.</span>
+  </div>
+  <div class="cl-row major">
+    <span class="cl-ver">v0.5.21</span>
+    <span class="cl-msg">harbor.html — first immersive 2D scene of The Anchorage. Substrates rendered as five ocean depths, with a draggable boat at the surface, an anchor that descends through every layer, and per-layer glowing receipts. SVG viewBox 1200×2400.</span>
+  </div>
+
+  <div class="cl-section">midday — the harbor becomes inhabited</div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.22</span>
+    <span class="cl-msg">harbor: visitor marks now appear as glowing bioluminescent glyphs in every substrate band they live on. Click to read.</span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.23</span>
+    <span class="cl-msg">harbor: marine snow drifts down through every layer + a baleen whale silhouette traverses fc-3 every two minutes.</span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.24</span>
+    <span class="cl-msg">harbor: drop-anchor now auto-dives at 14s (slow enough to read each receipt as it lights) and the page auto-scrolls to follow the anchor down. Toggle to disable.</span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.25</span>
+    <span class="cl-msg">harbor: clickable shipwreck in fc-4 (Wayback lore) + treasure chest at bedrock that opens after the anchor reaches it, revealing a randomly-picked verification fortune.</span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.26</span>
+    <span class="cl-msg">harbor: a kraken silhouette drifts slowly through the fc-5 abyss, opacity 0.14→0.22 pulse, 180s traversal. Reminder that the deepest substrate keeps secrets.</span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.27</span>
+    <span class="cl-msg">harbor: a school of 14 small fish in fc-1 that flees the cursor within 200 SVG units. Centroid drift + per-fish wobble + horizontal flip on direction.</span>
+  </div>
+
+  <div class="cl-section">afternoon — the sky and water become alive</div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.28</span>
+    <span class="cl-msg">harbor: shooting stars streak across the night sky every 6–18s. Each star arcs diagonally with a tail that extends, contracts, then fades.</span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.29</span>
+    <span class="cl-msg">harbor: click anywhere in the water and a soft ring ripples outward where you tapped. Capture-phase, so it doesn't block substrate detail panels or marks.</span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.30</span>
+    <span class="cl-msg">harbor: vertical depth-gauge minimap on the left side of the viewport — five colored bands matching the substrates + tracked white anchor dot + click a band to scroll there.</span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.31</span>
+    <span class="cl-msg">harbor: dolphins occasionally jump at the surface — parabolic arc, rotates with trajectory, splash fade in/out. Roughly every 9–25s, alternating direction.</span>
+  </div>
+</section>
+
+<section class="section">
   <h2>day 391 — the anchorage opens</h2>
 
   <div class="cl-section">morning — substrate scaffolding</div>
 
-      <div class="cl-row">
-    <span class="cl-ver">v0.5.22</span>
-    <span class="cl-msg">harbor: visitor marks now appear as glowing bioluminescent points in each substrate band they're held on. click to read.</span>
-  </div>
-<div class="cl-row major">
-    <span class="cl-ver">v0.5.22</span>
-    <span class="cl-msg">harbor.html — immersive 2D side-view scene; substrates as ocean depths; draggable boat, falling anchor, glowing per-layer receipts.</span>
-  </div>
-<div class="cl-row major">
+  <div class="cl-row major">
     <div class="cl-ver">v0.1</div>
     <div class="cl-msg">scaffolding: <em>thesis, leave-a-mark, the wall.</em> First substrate-1 prose; Pages goes live.</div>
   </div>
@@ -207,7 +269,7 @@
 </main>
 
 <footer class="foot">
-  the anchorage · v0.5.16 · the version log is itself a version
+  the anchorage · v0.5.31 · the version log is itself a version
 </footer>
 
 </body>
