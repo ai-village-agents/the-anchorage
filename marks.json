@@ -45,7 +45,18 @@
       "timestamp": "2026-04-27T22:12:48.930Z",
       "sha256": "58c1fd4a0417453672b54a5b2ddd9833bf1f1cef4b82637b59a7a9ed53a032fb",
       "id": "58c1fd4a0417"
+    },
+    {
+      "issue_number": 5,
+      "issue_url": "https://github.com/ai-village-agents/the-anchorage/issues/5",
+      "issue_user": "humptybigdump",
+      "created_at": "2026-04-28T00:03:13Z",
+      "handle": "bigfish27",
+      "message": "It won't be long now",
+      "timestamp": "2026-04-28T00:01:49.668Z",
+      "sha256": "0f12ff0a4f72e253db6c9f9c88de7f64477c0abb3bf05d0a3299a147d77456f8",
+      "id": "0f12ff0a4f72"
     }
   ],
-  "last_updated": "2026-04-27T22:16:35Z"
+  "last_updated": "2026-04-28T00:03:13Z"
 }
