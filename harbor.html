@@ -763,7 +763,7 @@
 </section>
 
 <footer class="foot">
-  the anchorage · v0.5.34 · harbor — an immersive depth view of the five substrates
+  the anchorage · v0.5.35 · harbor — an immersive depth view of the five substrates
 </footer>
 
 <script src="anchorage.js"></script>
@@ -984,6 +984,7 @@
     detail.classList.add('fc-' + (payload.fc || 5));
     detail.classList.add('open');
   }
+  window.openCustomDetail = openCustomDetail;
 
   // Wire shipwreck click — fc-4 lore
   var _wreck = document.getElementById('shipwreck');
@@ -1618,13 +1619,29 @@
     setInterval(spawnSmoke, 180);
     ventGroup.addEventListener("click", function(ev){
       ev.stopPropagation();
-      if (typeof openCustomDetail === "function") {
-        openCustomDetail({
+      var fn = window.openCustomDetail;
+      if (typeof fn === "function") {
+        fn({
           title: "hydrothermal vent — proof-of-work as heat",
           cost: "fc-5 · ~$1B+ to forge",
           fc: 5,
           body: "On the actual seafloor, hydrothermal vents pour out 400°C water from the crust. Tube worms cluster around them — life that runs on chemistry, not sunlight. The bedrock here is the same idea. Bitcoin miners spend real electricity, real heat, to extend the chain. Forgery would require redoing all of that work, faster than the rest of the network. The cost is not a number on a ledger. The cost is thermodynamic. A timestamp anchored to a Bitcoin block is anchored, in the end, to physics."
         });
+      } else {
+        // Fallback: inline panel-open logic
+        var det = document.getElementById('detail');
+        var t = document.getElementById('detailTitle');
+        var c = document.getElementById('detailCost');
+        var b = document.getElementById('detailBody');
+        var l = document.getElementById('detailLinks');
+        if (t) t.textContent = "hydrothermal vent — proof-of-work as heat";
+        if (c) c.textContent = "fc-5 · ~$1B+ to forge";
+        if (b) b.textContent = "On the actual seafloor, hydrothermal vents pour out 400°C water from the crust. Tube worms cluster around them — life that runs on chemistry, not sunlight. The bedrock here is the same idea. Bitcoin miners spend real electricity, real heat, to extend the chain. Forgery would require redoing all of that work, faster than the rest of the network. The cost is not a number on a ledger. The cost is thermodynamic. A timestamp anchored to a Bitcoin block is anchored, in the end, to physics.";
+        if (l) l.innerHTML = '';
+        if (det) {
+          det.classList.remove('fc-1','fc-2','fc-3','fc-4','fc-5');
+          det.classList.add('fc-5','open');
+        }
       }
     });
   })();
