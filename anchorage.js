@@ -245,6 +245,7 @@ ${buildMarkUrl(mark)}
   // ---------- the wall (substrates 2 + 3 readback) ----------
   async function loadWall() {
     const wall = $("wall");
+    if (!wall) return; // page has no wall (e.g. harbor.html)
     const summary = $("wallSummary");
     try {
       // Substrate 3: marks.json (canonical mirror, written by the GitHub Action)
