@@ -355,6 +355,9 @@
       values="1100,580; 100,580; 1100,580" dur="55s" repeatCount="indefinite"/>
   </g>
 
+  <!-- School of small fish drifting in fc-1; populated dynamically and respond to cursor proximity -->
+  <g id="fishSchool" pointer-events="none"></g>
+
   <!-- Layer 2: kelp forest silhouette -->
   <g opacity="0.55">
     <path d="M120,1140 Q130,1000 115,900 Q108,820 130,740" stroke="#3a5a3a" stroke-width="6" fill="none" stroke-linecap="round"/>
@@ -690,7 +693,7 @@
 </section>
 
 <footer class="foot">
-  the anchorage · v0.5.26 · harbor — an immersive depth view of the five substrates
+  the anchorage · v0.5.27 · harbor — an immersive depth view of the five substrates
 </footer>
 
 <script src="anchorage.js"></script>
@@ -1066,6 +1069,111 @@
       openDetail(parseInt(r.getAttribute('data-fc'),10));
     });
   });
+
+
+  // ===== School of small fish in fc-1 — gentle drift, flees cursor =====
+  (function(){
+    var school = document.getElementById('fishSchool');
+    if(!school || !svg) return;
+    var FISH_COUNT = 14;
+    var fishies = [];
+    var ns = 'http://www.w3.org/2000/svg';
+    // School centroid state (SVG coords)
+    var cx = 600, cy = 500, vx = 0.4, vy = 0.05;
+    var mouseX = -9999, mouseY = -9999;
+    // Build fish elements
+    for(var i=0;i<FISH_COUNT;i++){
+      var g = document.createElementNS(ns,'g');
+      g.setAttribute('class','schoolFish');
+      // body
+      var body = document.createElementNS(ns,'ellipse');
+      body.setAttribute('cx','0'); body.setAttribute('cy','0');
+      body.setAttribute('rx', (5 + Math.random()*2.4).toFixed(1));
+      body.setAttribute('ry', (1.8 + Math.random()*0.8).toFixed(1));
+      body.setAttribute('fill', i%3===0 ? '#c0d0e6' : '#9aa3b0');
+      body.setAttribute('opacity','0.78');
+      g.appendChild(body);
+      // tail
+      var tail = document.createElementNS(ns,'polygon');
+      var rx = parseFloat(body.getAttribute('rx'));
+      tail.setAttribute('points', (-rx)+',0 '+(-rx-5)+',-3 '+(-rx-5)+',3');
+      tail.setAttribute('fill', body.getAttribute('fill'));
+      tail.setAttribute('opacity','0.7');
+      g.appendChild(tail);
+      school.appendChild(g);
+      // per-fish offset target (relative to school center) + wobble phase
+      fishies.push({
+        ox: (Math.random()-0.5)*120,
+        oy: (Math.random()-0.5)*60,
+        px: cx, py: cy,           // current
+        ph: Math.random()*Math.PI*2,
+        spd: 0.6 + Math.random()*0.6,
+        el: g,
+        flipped: false
+      });
+    }
+    // Track cursor in SVG coords
+    function svgPt(e){
+      var pt = svg.createSVGPoint();
+      pt.x = e.clientX; pt.y = e.clientY;
+      var ctm = svg.getScreenCTM();
+      if(!ctm) return null;
+      return pt.matrixTransform(ctm.inverse());
+    }
+    window.addEventListener('pointermove', function(e){
+      var p = svgPt(e); if(!p) return;
+      mouseX = p.x; mouseY = p.y;
+    });
+    window.addEventListener('pointerleave', function(){ mouseX = -9999; mouseY = -9999; });
+    // Boundaries — keep school inside fc-1 sunlit shallows
+    var X_MIN = 80, X_MAX = 1120;
+    var Y_MIN = 380, Y_MAX = 700;
+    var lastT = performance.now();
+    function frame(t){
+      var dt = Math.min(64, t - lastT); lastT = t;
+      // gentle drift
+      vx += (Math.random()-0.5)*0.06;
+      vy += (Math.random()-0.5)*0.03;
+      // soft wall: gently steer away from boundaries
+      if(cx < X_MIN+40) vx += 0.04;
+      if(cx > X_MAX-40) vx -= 0.04;
+      if(cy < Y_MIN+30) vy += 0.04;
+      if(cy > Y_MAX-30) vy -= 0.04;
+      // cursor flee
+      var dx = cx - mouseX, dy = cy - mouseY;
+      var d2 = dx*dx + dy*dy;
+      if(d2 < 200*200){
+        var d = Math.sqrt(d2) || 1;
+        var force = 24 / Math.max(40, d);
+        vx += (dx/d) * force * 0.6;
+        vy += (dy/d) * force * 0.5;
+      }
+      // damp
+      vx *= 0.985; vy *= 0.985;
+      // clamp speed
+      var sp = Math.sqrt(vx*vx + vy*vy);
+      if(sp > 3.2){ vx = vx/sp*3.2; vy = vy/sp*3.2; }
+      cx += vx * (dt/16); cy += vy * (dt/16);
+      // hard clamp
+      if(cx < X_MIN) cx = X_MIN; if(cx > X_MAX) cx = X_MAX;
+      if(cy < Y_MIN) cy = Y_MIN; if(cy > Y_MAX) cy = Y_MAX;
+      // determine school facing direction (1 right, -1 left)
+      var faceLeft = vx < 0;
+      // update each fish — ease toward (cx+ox, cy+oy) with wobble
+      for(var i=0;i<fishies.length;i++){
+        var f = fishies[i];
+        f.ph += 0.06 * f.spd;
+        var tx = cx + f.ox + Math.sin(f.ph)*4;
+        var ty = cy + f.oy + Math.cos(f.ph*0.8)*2.5;
+        f.px += (tx - f.px) * 0.08;
+        f.py += (ty - f.py) * 0.08;
+        var scaleX = faceLeft ? -1 : 1;
+        f.el.setAttribute('transform','translate('+f.px.toFixed(1)+','+f.py.toFixed(1)+') scale('+scaleX+',1)');
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  })();
 
 })();
 </script>
