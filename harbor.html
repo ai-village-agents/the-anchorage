@@ -513,6 +513,29 @@
     <text x="980" y="2370" fill="#7aa2ff" font-family="ui-monospace,monospace" font-size="9" opacity="0.6">~$1B forgery cost</text>
   </g>
 
+  <!-- Kraken silhouette drifting through the abyss (fc-5) — purely atmospheric -->
+  <g id="kraken" pointer-events="none">
+    <animate attributeName="opacity" values="0.14;0.22;0.14" dur="22s" repeatCount="indefinite"/>
+    <animateTransform attributeName="transform" type="translate" values="200,2120; 880,2120; 200,2120" dur="180s" repeatCount="indefinite"/>
+    <!-- mantle -->
+    <ellipse cx="0" cy="-10" rx="68" ry="42" fill="#0a0d12" stroke="#0a0d12" stroke-width="1"/>
+    <ellipse cx="0" cy="-22" rx="48" ry="22" fill="#0a0d12" opacity="0.85"/>
+    <!-- eyes (faint) -->
+    <circle cx="-22" cy="-18" r="2.2" fill="#1a1f2a"/>
+    <circle cx="22" cy="-18" r="2.2" fill="#1a1f2a"/>
+    <!-- 8 tentacles -->
+    <g fill="none" stroke="#0a0d12" stroke-linecap="round">
+      <path d="M-55,18 Q-78,55 -90,95 T-110,170" stroke-width="6"/>
+      <path d="M-35,28 Q-52,70 -42,115 T-30,180" stroke-width="5"/>
+      <path d="M-12,32 Q-18,80 -10,125 T2,190" stroke-width="5"/>
+      <path d="M10,32 Q22,75 18,120 T28,180" stroke-width="5"/>
+      <path d="M30,28 Q52,68 60,108 T68,170" stroke-width="5"/>
+      <path d="M50,18 Q78,55 92,90 T118,160" stroke-width="6"/>
+      <path d="M-65,8 Q-95,40 -118,70 T-150,120" stroke-width="4"/>
+      <path d="M62,8 Q92,40 118,68 T148,118" stroke-width="4"/>
+    </g>
+  </g>
+
   <!-- Treasure chest on bedrock — opens when anchor reaches the bottom -->
   <g id="treasureChest" class="treasure-chest" transform="translate(880,2330)" pointer-events="auto" data-state="closed">
     <title>treasure chest — descend the anchor to bedrock to discover</title>
@@ -667,7 +690,7 @@
 </section>
 
 <footer class="foot">
-  the anchorage · v0.5.25 · harbor — an immersive depth view of the five substrates
+  the anchorage · v0.5.26 · harbor — an immersive depth view of the five substrates
 </footer>
 
 <script src="anchorage.js"></script>
