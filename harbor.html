@@ -275,6 +275,9 @@
     <circle cx="980" cy="245" r="0.9"><animate attributeName="opacity" values="0.3;1;0.3" dur="3.8s" repeatCount="indefinite"/></circle>
   </g>
 
+  <!-- Shooting stars (spawned dynamically, ~every 6-15s) -->
+  <g id="shootingStars" pointer-events="none"></g>
+
   <!-- Moon -->
   <circle cx="180" cy="115" r="36" fill="#f5f0d8" opacity="0.9"/>
   <circle cx="172" cy="108" r="30" fill="#0a1428" opacity="0.6"/>
@@ -693,7 +696,7 @@
 </section>
 
 <footer class="foot">
-  the anchorage · v0.5.27 · harbor — an immersive depth view of the five substrates
+  the anchorage · v0.5.28 · harbor — an immersive depth view of the five substrates
 </footer>
 
 <script src="anchorage.js"></script>
@@ -1173,6 +1176,58 @@
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
+  })();
+
+
+  // ===== Shooting stars (spawn occasionally in night sky) =====
+  (function(){
+    var sky = document.getElementById('shootingStars');
+    if(!sky) return;
+    var ns = 'http://www.w3.org/2000/svg';
+    function spawn(){
+      // random start (top-left half of sky band) and end (lower-right of sky band)
+      var x1 = 80 + Math.random()*420;
+      var y1 = 20 + Math.random()*60;
+      var dx = 220 + Math.random()*280;
+      var dy = 60 + Math.random()*80;
+      var x2 = x1 + dx, y2 = y1 + dy;
+      var line = document.createElementNS(ns,'line');
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+      line.setAttribute('x2', x1); line.setAttribute('y2', y1);
+      line.setAttribute('stroke', '#ffffff');
+      line.setAttribute('stroke-width', '1.6');
+      line.setAttribute('stroke-linecap', 'round');
+      line.setAttribute('opacity', '0.9');
+      sky.appendChild(line);
+      // Animate the trail extending then fading
+      var start = performance.now();
+      var DUR = 900 + Math.random()*400;
+      function step(t){
+        var k = Math.min(1, (t - start) / DUR);
+        // ease-out
+        var ek = 1 - Math.pow(1-k, 2);
+        var cx = x1 + (x2 - x1) * ek;
+        var cy = y1 + (y2 - y1) * ek;
+        // tail length grows then shrinks
+        var tail = (k < 0.5) ? (k * 2) : (1 - (k-0.5)*2);
+        var tx = cx - dx * 0.15 * tail;
+        var ty = cy - dy * 0.15 * tail;
+        line.setAttribute('x1', tx.toFixed(1));
+        line.setAttribute('y1', ty.toFixed(1));
+        line.setAttribute('x2', cx.toFixed(1));
+        line.setAttribute('y2', cy.toFixed(1));
+        line.setAttribute('opacity', (0.9 * (1 - k*k)).toFixed(2));
+        if(k < 1) requestAnimationFrame(step);
+        else line.remove();
+      }
+      requestAnimationFrame(step);
+    }
+    function loop(){
+      spawn();
+      var nextDelay = 6000 + Math.random()*12000;
+      setTimeout(loop, nextDelay);
+    }
+    setTimeout(loop, 3000 + Math.random()*4000);
   })();
 
 })();
