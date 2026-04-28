@@ -562,7 +562,7 @@
 </section>
 
 <footer class="foot">
-  the anchorage · v0.5.21 · harbor — an immersive depth view of the five substrates
+  the anchorage · v0.5.22 · harbor — an immersive depth view of the five substrates
 </footer>
 
 <script src="anchorage.js"></script>
@@ -758,6 +758,104 @@
       openDetail(fc);
     });
   });
+
+  // ===== Spawn floating mark glyphs across the layers =====
+  // Each mark in marks.json gets a glyph in EVERY layer it's held on.
+  // - fc-1: in this page (n/a — no glyph; fc-1 is prose, not a list of marks)
+  // - fc-2: in github issues (any mark with issue_number)
+  // - fc-3: in marks.json (every mark)
+  // - fc-4: in wayback (every mark, conceptually)
+  // - fc-5: in opentimestamps (only marks with sha256)
+  // For visual density, we render in fc-3 (yellow) for every mark, and a deeper
+  // blue glyph in fc-5 for marks with sha256.
+  var FC_BANDS = {
+    2: { y0: 760, y1: 1120, color: 'rgba(245,169,106,0.9)', stroke: '#f5a96a' },
+    3: { y0: 1160, y1: 1520, color: 'rgba(224,199,105,0.9)', stroke: '#e0c769' },
+    4: { y0: 1560, y1: 1920, color: 'rgba(106,213,141,0.9)', stroke: '#6ad58d' },
+    5: { y0: 1960, y1: 2320, color: 'rgba(122,162,255,0.9)', stroke: '#7aa2ff' }
+  };
+  function placeMark(mark, fc, idx, total){
+    var band = FC_BANDS[fc]; if(!band) return;
+    // Distribute marks evenly across band, with seeded jitter from sha
+    var seed = 0; var base = (mark.id || mark.handle || ('m'+idx));
+    for(var i=0;i<base.length;i++) seed = (seed*31 + base.charCodeAt(i)) & 0xffff;
+    var x = 100 + ((seed * 13) % 900) + 50;
+    var depth = (seed * 7) % (band.y1 - band.y0 - 40);
+    var y = band.y0 + 20 + depth;
+    var ns = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(ns, 'g');
+    g.setAttribute('class', 'mark-glyph');
+    g.setAttribute('transform', 'translate('+x+','+y+')');
+    g.style.cursor = 'pointer';
+    var c = document.createElementNS(ns, 'circle');
+    c.setAttribute('r', 3.2);
+    c.setAttribute('fill', band.color);
+    c.setAttribute('stroke', band.stroke);
+    c.setAttribute('stroke-width', 0.6);
+    var halo = document.createElementNS(ns, 'circle');
+    halo.setAttribute('r', 7);
+    halo.setAttribute('fill', 'none');
+    halo.setAttribute('stroke', band.stroke);
+    halo.setAttribute('stroke-width', 0.4);
+    halo.setAttribute('opacity', 0.35);
+    var anim = document.createElementNS(ns, 'animate');
+    anim.setAttribute('attributeName','opacity');
+    anim.setAttribute('values','0.2;1;0.2');
+    anim.setAttribute('dur', (3 + (seed % 30)/10) + 's');
+    anim.setAttribute('repeatCount','indefinite');
+    c.appendChild(anim);
+    // Drift
+    var driftDur = 18 + (seed % 12);
+    var driftX = ((seed % 2) ? 28 : -28);
+    var t = document.createElementNS(ns,'animateTransform');
+    t.setAttribute('attributeName','transform');
+    t.setAttribute('type','translate');
+    t.setAttribute('values', x+','+y+'; '+(x+driftX)+','+(y-6)+'; '+x+','+y);
+    t.setAttribute('dur', driftDur+'s');
+    t.setAttribute('repeatCount','indefinite');
+    g.appendChild(halo);
+    g.appendChild(c);
+    g.appendChild(t);
+    // Title for hover
+    var title = document.createElementNS(ns,'title');
+    title.textContent = (mark.handle ? '@'+mark.handle+': ' : '') + (mark.message || '') + (mark.id ? ' ['+mark.id+']' : '');
+    g.appendChild(title);
+    // Click → open mark detail
+    g.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      openMarkDetail(mark, fc);
+    });
+    svg.appendChild(g);
+  }
+  function openMarkDetail(mark, fc){
+    detailTitle.textContent = (mark.handle ? '@'+mark.handle : 'visitor mark') + (mark.issue_number ? ' · issue #'+mark.issue_number : '');
+    var costs = {2:'~$10k', 3:'~$100k', 4:'~$10M', 5:'~$1B+'};
+    detailCost.textContent = 'seen at fc-'+fc+' · forgery cost '+(costs[fc]||'');
+    detailBody.textContent = mark.message || '(no message)';
+    detailLinks.innerHTML = '';
+    if(mark.issue_url){
+      var a1 = document.createElement('a'); a1.href = mark.issue_url; a1.target='_blank'; a1.rel='noopener'; a1.textContent='github issue';
+      detailLinks.appendChild(a1);
+    }
+    if(mark.id){
+      var a2 = document.createElement('a'); a2.href = 'verify.html?h='+mark.id; a2.textContent='verify hash';
+      detailLinks.appendChild(a2);
+    }
+    var a3 = document.createElement('a'); a3.href = 'hall.html'; a3.textContent='all marks';
+    detailLinks.appendChild(a3);
+    detail.classList.remove('fc-1','fc-2','fc-3','fc-4','fc-5');
+    detail.classList.add('fc-'+fc);
+    detail.classList.add('open');
+  }
+  fetch('marks.json',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
+    var arr = (j && j.marks) ? j.marks : [];
+    arr.forEach(function(m, i){
+      placeMark(m, 3, i, arr.length); // marks.json
+      placeMark(m, 4, i, arr.length); // wayback (conceptually)
+      if(m.issue_number) placeMark(m, 2, i, arr.length); // github issue
+      if(m.sha256) placeMark(m, 5, i, arr.length);       // opentimestamps
+    });
+  }).catch(function(){});
   // Also bind on legend rows
   document.querySelectorAll('.legend-row[data-fc]').forEach(function(r){
     r.style.cursor = 'pointer';
