@@ -55,6 +55,8 @@
   }
   .controls .panel p { margin: 2px 0; color: #8a93a3; font-size: 11px; }
   .controls .panel .v { color: #c4d8ff; }
+  .controls .auto-dive-toggle { display:flex; align-items:center; gap:8px; font-size: 11px; color: #9aa3b0; margin: 6px 0 8px 0; user-select:none; cursor:pointer; }
+  .controls .auto-dive-toggle input { accent-color:#6ad58d; cursor:pointer; }
   .controls button.drop {
     width: 100%;
     padding: 10px 12px;
@@ -593,6 +595,7 @@
     <p>anchor depth: <span class="v" id="anchorDepth">0</span> m</p>
     <p>last hash: <span class="v" id="anchorHash">—</span></p>
   </div>
+  <label class="auto-dive-toggle"><input type="checkbox" id="autoDiveChk" checked> follow anchor (auto-dive)</label>
   <button class="drop" id="dropBtn">⚓ drop anchor</button>
   <div class="panel">
     <h3>substrates</h3>
@@ -627,7 +630,7 @@
 </section>
 
 <footer class="foot">
-  the anchorage · v0.5.23 · harbor — an immersive depth view of the five substrates
+  the anchorage · v0.5.24 · harbor — an immersive depth view of the five substrates
 </footer>
 
 <script src="anchorage.js"></script>
@@ -639,6 +642,7 @@
   var boatX = 600;
   var anchorY = 265;
   var dropping = false;
+  var autoDive = true;
   var BOAT_MIN = 80, BOAT_MAX = 1120;
   var SURFACE_Y = 320;
   var BEDROCK_Y = 2300;
@@ -727,6 +731,8 @@
     }).catch(function(){return null;});
   }
 
+  var autoDiveChk = document.getElementById('autoDiveChk');
+  if(autoDiveChk){ autoDiveChk.addEventListener('change', function(){ autoDive = autoDiveChk.checked; }); }
   dropBtn.addEventListener('click', function(){
     if(dropping) return;
     dropping = true;
@@ -739,7 +745,7 @@
     chainLine.setAttribute('y2', 265);
     var startY = 265;
     var endY = BEDROCK_Y;
-    var duration = 8000; // 8s
+    var duration = 14000; // 14s — slow enough to read each receipt
     var t0 = performance.now();
     function frame(t){
       var dt = t - t0;
@@ -752,6 +758,17 @@
       chainLine.setAttribute('x2', boatX);
       chainLine.setAttribute('y2', anchorY);
       anchorDepthEl.textContent = Math.round(((anchorY - SURFACE_Y) / (BEDROCK_Y - SURFACE_Y)) * 2000);
+      // Auto-dive: keep the anchor centered in the viewport while it descends
+      if(autoDive){
+        var svgEl = document.querySelector('.harbor-svg');
+        if(svgEl){
+          var rect = svgEl.getBoundingClientRect();
+          var svgTopPage = rect.top + window.pageYOffset;
+          var anchorPageY = svgTopPage + (anchorY / 2400) * rect.height;
+          var target = anchorPageY - (window.innerHeight * 0.5);
+          window.scrollTo({top: Math.max(0, target), behavior: 'auto'});
+        }
+      }
       // Pulse receipts as we cross each band
       for(var i=0;i<5;i++){
         if(!receiptsLit[i] && anchorY >= RECEIPT_YS[i]) pulseReceipt(i);
