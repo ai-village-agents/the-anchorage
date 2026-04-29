@@ -3072,6 +3072,115 @@
   } catch(err) { try { console.error('[harbor v0.5.65] dive trail error', err); } catch(e){} }
 })();
 
+(function(){
+  'use strict';
+  // v0.5.66 kelp forest in fc-2 — swaying stalks anchored at y=1120
+  try {
+    var svg = document.querySelector('svg');
+    if (!svg) return;
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+
+    // 8 kelp stalks across fc-2
+    var STALKS = [
+      { bx: 80,  baseY: 1120, height: 340, phase: 0.0,  thickness: 4,   leaves: 5 },
+      { bx: 165, baseY: 1120, height: 300, phase: 0.7,  thickness: 3.5, leaves: 4 },
+      { bx: 250, baseY: 1120, height: 360, phase: 1.5,  thickness: 4,   leaves: 5 },
+      { bx: 420, baseY: 1120, height: 320, phase: 2.4,  thickness: 3.8, leaves: 4 },
+      { bx: 620, baseY: 1120, height: 340, phase: 3.1,  thickness: 4,   leaves: 5 },
+      { bx: 800, baseY: 1120, height: 300, phase: 3.9,  thickness: 3.5, leaves: 4 },
+      { bx: 940, baseY: 1120, height: 360, phase: 4.6,  thickness: 4,   leaves: 5 },
+      { bx: 1090,baseY: 1120, height: 320, phase: 5.4,  thickness: 3.8, leaves: 4 }
+    ];
+
+    // Insert behind submersible/pipefish but in front of background
+    var subEl = document.getElementById('submersible');
+    var kelpG = document.createElementNS(SVG_NS, 'g');
+    kelpG.setAttribute('id', 'kelpForest');
+    kelpG.style.pointerEvents = 'none';
+    if (subEl && subEl.parentNode === svg) {
+      svg.insertBefore(kelpG, subEl);
+    } else {
+      svg.appendChild(kelpG);
+    }
+
+    var stalks = STALKS.map(function(s){
+      var g = document.createElementNS(SVG_NS, 'g');
+
+      // holdfast: base triangle
+      var hf = document.createElementNS(SVG_NS, 'polygon');
+      hf.setAttribute('points', (s.bx-7) + ',' + s.baseY + ' ' + (s.bx+7) + ',' + s.baseY + ' ' + s.bx + ',' + (s.baseY-6));
+      hf.setAttribute('fill', '#1f3a1d');
+      g.appendChild(hf);
+
+      // stalk path
+      var stalk = document.createElementNS(SVG_NS, 'path');
+      stalk.setAttribute('stroke', '#2e4a2c');
+      stalk.setAttribute('stroke-width', String(s.thickness));
+      stalk.setAttribute('stroke-linecap', 'round');
+      stalk.setAttribute('fill', 'none');
+      stalk.setAttribute('opacity', '0.85');
+      g.appendChild(stalk);
+
+      // leaves: positions are relative t in [0,1] from base to tip
+      var leaves = [];
+      for (var i = 0; i < s.leaves; i++) {
+        var t = (i + 1) / (s.leaves + 1);
+        var leaf = document.createElementNS(SVG_NS, 'ellipse');
+        leaf.setAttribute('rx', '12');
+        leaf.setAttribute('ry', '4');
+        leaf.setAttribute('fill', '#3a5e3a');
+        leaf.setAttribute('opacity', '0.7');
+        g.appendChild(leaf);
+        leaves.push({ el: leaf, t: t, side: i % 2 === 0 ? 1 : -1 });
+      }
+
+      kelpG.appendChild(g);
+      return { def: s, stalkEl: stalk, leaves: leaves };
+    });
+
+    function tick(){
+      var now = performance.now();
+      stalks.forEach(function(k){
+        var s = k.def;
+        var amp = 14;
+        var sway = Math.sin(now * 0.0010 + s.phase) * amp;
+        var sway2 = Math.sin(now * 0.0014 + s.phase * 0.6) * (amp * 0.3);
+        // path: from base, wavy curve to top with sway at top
+        var x0 = s.bx, y0 = s.baseY;
+        var xMid = s.bx + sway2 * 0.5;
+        var yMid = y0 - s.height * 0.5;
+        var xTop = s.bx + sway;
+        var yTop = y0 - s.height;
+        // cubic bezier base->top with two control points
+        k.stalkEl.setAttribute('d',
+          'M ' + x0 + ' ' + y0 +
+          ' C ' + (x0 + sway2*0.3).toFixed(1) + ' ' + (y0 - s.height*0.33).toFixed(1) +
+          ', ' + (xMid + sway2*0.5).toFixed(1) + ' ' + (yMid).toFixed(1) +
+          ', ' + xTop.toFixed(1) + ' ' + yTop.toFixed(1));
+
+        // leaves along the curve at parameter t
+        k.leaves.forEach(function(L){
+          var t = L.t;
+          // approximate point on cubic bezier (linear in t for simplicity)
+          var lx = x0 * (1-t) + xTop * t + Math.sin(t * Math.PI) * sway2 * 0.6;
+          var ly = y0 * (1-t) + yTop * t;
+          // angle: derivative — roughly sway * (1 - cos)
+          var ang = Math.atan2(xTop - x0, -(yTop - y0)) * (180 / Math.PI);
+          // offset leaf to one side
+          lx += L.side * 8;
+          L.el.setAttribute('cx', lx.toFixed(1));
+          L.el.setAttribute('cy', ly.toFixed(1));
+          L.el.setAttribute('transform', 'rotate(' + (ang * 0.3).toFixed(1) + ' ' + lx.toFixed(1) + ' ' + ly.toFixed(1) + ')');
+        });
+      });
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    try { console.log('[harbor v0.5.67] kelp forest armed (' + STALKS.length + ' stalks in fc-2)'); } catch(e){}
+  } catch(err) { try { console.error('[harbor v0.5.67] kelp error', err); } catch(e){} }
+})();
+
 
 (function(){
   // v0.5.60 stratum boundary glow — brief horizontal flash + substrate name
