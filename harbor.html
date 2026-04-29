@@ -3332,6 +3332,103 @@
 
 
 (function(){
+  // v0.5.71 bioluminescent burst — R key triggers an expanding green/cyan ring
+  // from the submersible and momentarily brightens the bioluminescent jellies.
+  try {
+    var svg = document.querySelector('svg.ocean') || document.getElementById('ocean') || document.querySelector('svg');
+    if (!svg) return;
+    var subEl = document.getElementById('submersible');
+    function getSubXY(){
+      if (!subEl) return null;
+      var tr = subEl.getAttribute('transform') || '';
+      var m = tr.match(/translate\(\s*([\-0-9.]+)\s*,\s*([\-0-9.]+)\s*\)/);
+      if (!m) return null;
+      return { x: parseFloat(m[1]), y: parseFloat(m[2]) };
+    }
+
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    var burstLayer = document.createElementNS(SVG_NS,'g');
+    burstLayer.setAttribute('id','bioBurstLayer');
+    burstLayer.setAttribute('pointer-events','none');
+    svg.appendChild(burstLayer);
+
+    var hud = document.createElement('div');
+    hud.id = 'bioBurstHud';
+    hud.style.cssText = 'position:fixed;top:280px;left:50%;transform:translateX(-50%);background:rgba(8,16,24,0.78);color:#9aeec0;font:11px monospace;letter-spacing:0.12em;padding:6px 12px;border:1px solid #3a7a5c;border-radius:3px;z-index:60;opacity:0;pointer-events:none;transition:opacity 0.25s';
+    hud.textContent = 'BIOLUMINESCENT BURST';
+    document.body.appendChild(hud);
+
+    var DUR = 1600;
+    var lastFire = 0;
+
+    function fireBurst(){
+      var now = (performance.now?performance.now():Date.now());
+      if (now - lastFire < 400) return;
+      lastFire = now;
+      var pos = getSubXY() || { x: 600, y: 1400 };
+      var t0 = now;
+      var ring = document.createElementNS(SVG_NS,'circle');
+      ring.setAttribute('cx', pos.x);
+      ring.setAttribute('cy', pos.y);
+      ring.setAttribute('r', 6);
+      ring.setAttribute('fill','none');
+      ring.setAttribute('stroke','#6ad58d');
+      ring.setAttribute('stroke-width','2.2');
+      ring.setAttribute('opacity','0.9');
+      burstLayer.appendChild(ring);
+
+      var ring2 = document.createElementNS(SVG_NS,'circle');
+      ring2.setAttribute('cx', pos.x);
+      ring2.setAttribute('cy', pos.y);
+      ring2.setAttribute('r', 4);
+      ring2.setAttribute('fill','none');
+      ring2.setAttribute('stroke','#aef3ff');
+      ring2.setAttribute('stroke-width','1.4');
+      ring2.setAttribute('opacity','0.75');
+      burstLayer.appendChild(ring2);
+
+      hud.style.opacity = '1';
+      setTimeout(function(){ hud.style.opacity = '0'; }, 1100);
+
+      var jellies = document.getElementById('bioJellies');
+      var oldJellyOp = jellies ? jellies.getAttribute('opacity') : null;
+      if (jellies) jellies.setAttribute('opacity','1');
+
+      function step(){
+        var t = (performance.now?performance.now():Date.now()) - t0;
+        var k = t / DUR;
+        if (k >= 1){
+          if (ring.parentNode) ring.parentNode.removeChild(ring);
+          if (ring2.parentNode) ring2.parentNode.removeChild(ring2);
+          if (jellies){
+            if (oldJellyOp === null) jellies.removeAttribute('opacity');
+            else jellies.setAttribute('opacity', oldJellyOp);
+          }
+          return;
+        }
+        ring.setAttribute('r', (6 + k*420).toFixed(1));
+        ring.setAttribute('opacity', (0.9 * (1 - k*k)).toFixed(3));
+        ring2.setAttribute('r', (4 + k*260).toFixed(1));
+        ring2.setAttribute('opacity', (0.75 * (1 - k)).toFixed(3));
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    document.addEventListener('keydown', function(e){
+      if (e.key !== 'r' && e.key !== 'R') return;
+      var t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      e.preventDefault();
+      fireBurst();
+    });
+
+    try { console.log('[harbor v0.5.71] bioluminescent burst armed (R key)'); } catch(e){}
+  } catch(err) { try { console.error('[harbor v0.5.71] bioluminescent burst error', err); } catch(e){} }
+})();
+
+
+(function(){
   // v0.5.60 stratum boundary glow — brief horizontal flash + substrate name
   // when the submersible crosses a substrate boundary (y in {740,1140,1540,1940}).
   try {
