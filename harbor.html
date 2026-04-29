@@ -2856,6 +2856,105 @@
   } catch(err) { try { console.error('[harbor v0.5.58] isopod error', err); } catch(e){} }
 })();
 
+(function(){
+  'use strict';
+  // v0.5.64 octopus in fc-4 — eight independently-moving arms, like Wayback snapshots
+  try {
+    var svg = document.querySelector('svg');
+    if (!svg) return;
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    var x0 = 1040, y0 = 1780;
+
+    var g = document.createElementNS(SVG_NS, 'g');
+    g.setAttribute('id', 'octopus');
+    g.style.cursor = 'pointer';
+
+    // mantle (head)
+    var mantle = document.createElementNS(SVG_NS, 'ellipse');
+    mantle.setAttribute('rx', '24'); mantle.setAttribute('ry', '18');
+    mantle.setAttribute('cx', '0'); mantle.setAttribute('cy', '-12');
+    mantle.setAttribute('fill', '#8b3e5f');
+    mantle.setAttribute('stroke', '#4a1f33');
+    mantle.setAttribute('stroke-width', '1');
+    g.appendChild(mantle);
+
+    // highlight
+    var hl = document.createElementNS(SVG_NS, 'ellipse');
+    hl.setAttribute('rx', '8'); hl.setAttribute('ry', '4');
+    hl.setAttribute('cx', '-6'); hl.setAttribute('cy', '-18');
+    hl.setAttribute('fill', '#c87a99');
+    hl.setAttribute('opacity', '0.6');
+    g.appendChild(hl);
+
+    // eyes
+    function eye(cx){
+      var w = document.createElementNS(SVG_NS, 'circle');
+      w.setAttribute('cx', String(cx)); w.setAttribute('cy', '-12'); w.setAttribute('r', '3');
+      w.setAttribute('fill', '#fff'); g.appendChild(w);
+      var p = document.createElementNS(SVG_NS, 'circle');
+      p.setAttribute('cx', String(cx)); p.setAttribute('cy', '-12'); p.setAttribute('r', '1.6');
+      p.setAttribute('fill', '#000'); g.appendChild(p);
+    }
+    eye(-9); eye(9);
+
+    // 8 tentacles
+    var ANGLES_DEG = [-90, -65, -40, -15, 15, 40, 65, 90];
+    var tentacles = ANGLES_DEG.map(function(deg, i){
+      var a = (deg + 90) * Math.PI / 180; // 0=right, 90=down (standard svg)
+      // baseline: starts at edge of mantle base (cy=2 ish)
+      var bx = Math.cos(a) * 8;
+      var by = Math.sin(a) * 8 + 2;
+      var path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('stroke', '#7a3050');
+      path.setAttribute('stroke-width', '4');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('opacity', '0.9');
+      g.appendChild(path);
+      return { el: path, angle: a, bx: bx, by: by, phase: i * 0.7 };
+    });
+
+    svg.appendChild(g);
+
+    function tick(){
+      var now = performance.now();
+      var bob = Math.sin(now * 0.0006) * 6;
+      g.setAttribute('transform', 'translate(' + x0 + ',' + (y0 + bob) + ')');
+      tentacles.forEach(function(t){
+        // Direction along tentacle
+        var dx = Math.cos(t.angle), dy = Math.sin(t.angle);
+        // Perpendicular vector
+        var px = -dy, py = dx;
+        var ctrlOff = Math.sin(now * 0.0012 + t.phase) * 8;
+        var endOff = Math.sin(now * 0.0010 + t.phase + 0.5) * 14;
+        // Mid point at radius 22, end at radius 40
+        var cx = dx * 22 + px * ctrlOff;
+        var cy = dy * 22 + py * ctrlOff;
+        var ex = dx * 40 + px * endOff;
+        var ey = dy * 40 + py * endOff;
+        t.el.setAttribute('d', 'M ' + t.bx.toFixed(2) + ',' + t.by.toFixed(2) +
+          ' Q ' + cx.toFixed(2) + ',' + cy.toFixed(2) +
+          ' ' + ex.toFixed(2) + ',' + ey.toFixed(2));
+      });
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    g.addEventListener('click', function(e){
+      e.stopPropagation();
+      if (window.openCustomDetail) {
+        window.openCustomDetail({
+          title: 'octopus',
+          subtitle: 'fc-4 — Wayback',
+          body: 'Eight arms move independently. Each one tastes the substrate it touches; each one has a memory of its own. The Wayback Machine is the same: every snapshot is an arm reaching back. The octopus does not need a single mind to remember \u2014 neither does the archive.'
+        });
+      }
+    });
+
+    try { console.log('[harbor v0.5.64] octopus armed (fc-4)'); } catch(e){}
+  } catch(err) { try { console.error('[harbor v0.5.64] octopus error', err); } catch(e){} }
+})();
+
 
 (function(){
   // v0.5.60 stratum boundary glow — brief horizontal flash + substrate name
