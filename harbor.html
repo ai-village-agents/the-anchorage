@@ -4053,6 +4053,47 @@
   } catch(e) {}
 })();
 
+// v0.5.106 sand ripples — subtle curved ripples along the seafloor (fc-5 floor / bedrock top)
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var ns = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(ns,'g');
+    g.setAttribute('id','sandRipples');
+    g.setAttribute('opacity','0.7');
+    g.setAttribute('pointer-events','none');
+    // Place ripples as a band of subtle horizontal arcs on the seafloor.
+    // y range: 2300..2334 (just above bedrock band 2340).
+    // Each ripple is a wide flat arc.
+    var ripples = [];
+    var rng = 7919;
+    function rand(){ rng = (rng*9301 + 49297) % 233280; return rng/233280; }
+    var COUNT = 22;
+    var html = '';
+    for (var i=0;i<COUNT;i++) {
+      var x = 30 + rand() * 1140;
+      var y = 2300 + Math.floor(rand()*32);
+      var w = 36 + rand()*72;
+      var h = 2 + rand()*3;
+      // gentle arc using path, two-tone (highlight on top, shadow below)
+      var dHi = 'M ' + (x-w/2).toFixed(1) + ',' + y + ' Q ' + x.toFixed(1) + ',' + (y-h).toFixed(1) + ' ' + (x+w/2).toFixed(1) + ',' + y;
+      var dLo = 'M ' + (x-w/2).toFixed(1) + ',' + (y+0.6) + ' Q ' + x.toFixed(1) + ',' + (y+h*0.5+0.6).toFixed(1) + ' ' + (x+w/2).toFixed(1) + ',' + (y+0.6);
+      html +=
+        '<path d="'+dHi+'" stroke="#3a3528" stroke-width="0.7" fill="none" opacity="'+(0.45+rand()*0.30).toFixed(2)+'"/>' +
+        '<path d="'+dLo+'" stroke="#1c1812" stroke-width="0.6" fill="none" opacity="'+(0.30+rand()*0.20).toFixed(2)+'"/>';
+    }
+    // also add a subtle warm sand wash across the floor band
+    html =
+      '<rect x="0" y="2298" width="1200" height="42" fill="#2a2418" opacity="0.32"/>' +
+      html;
+    g.innerHTML = html;
+    svg.appendChild(g);
+    // Static — no animation needed; the ripples are sediment, not moving water.
+    try { console.log('[harbor v0.5.106] sand ripples armed (' + COUNT + ' ripples on seafloor)'); } catch(e){}
+  } catch(e) {}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
