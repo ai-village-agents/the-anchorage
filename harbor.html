@@ -3512,6 +3512,87 @@
   } catch(err) { try { console.error('[harbor v0.5.60] stratum error', err); } catch(e){} }
 })();
 
+// v0.5.76 lanternfish school — 8 small fish drifting in fc-3 mesopelagic with pulsing photophores
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('id','lanternfish');
+    g.setAttribute('opacity','0.85');
+    svg.appendChild(g);
+    // (bx,by,amp,freq,phase,scale,dir)
+    var FISH = [
+      [120, 1240, 18, 0.00060, 0.0, 1.0,  1],
+      [340, 1310, 24, 0.00054, 1.2, 0.85, 1],
+      [580, 1180, 20, 0.00048, 2.4, 1.05, -1],
+      [820, 1280, 22, 0.00056, 3.6, 0.95, 1],
+      [1020,1360, 26, 0.00050, 4.8, 0.90, -1],
+      [200, 1420, 18, 0.00062, 0.6, 1.0,  -1],
+      [620, 1460, 22, 0.00046, 5.4, 1.10, 1],
+      [880, 1500, 20, 0.00058, 2.0, 0.95, -1]
+    ];
+    var nodes = [];
+    FISH.forEach(function(f, idx){
+      var fg = document.createElementNS('http://www.w3.org/2000/svg','g');
+      fg.setAttribute('id','lf-'+idx);
+      // body — small dark ellipse
+      var body = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+      body.setAttribute('cx','0'); body.setAttribute('cy','0');
+      body.setAttribute('rx','11'); body.setAttribute('ry','3.6');
+      body.setAttribute('fill','#1a2536');
+      body.setAttribute('stroke','#2a3950');
+      body.setAttribute('stroke-width','0.4');
+      fg.appendChild(body);
+      // head highlight
+      var head = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      head.setAttribute('cx','-7'); head.setAttribute('cy','-0.5');
+      head.setAttribute('r','1.4'); head.setAttribute('fill','#2c3a52');
+      fg.appendChild(head);
+      // tail
+      var tail = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      tail.setAttribute('points','11,0 16,-3 16,3');
+      tail.setAttribute('fill','#1a2536');
+      fg.appendChild(tail);
+      // 4 photophores along belly — small cyan dots
+      var phs = [];
+      [-7,-2,3,8].forEach(function(px){
+        var ph = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        ph.setAttribute('cx', px); ph.setAttribute('cy', '2.6');
+        ph.setAttribute('r','0.7');
+        ph.setAttribute('fill','#aef3ff');
+        ph.setAttribute('opacity','0.6');
+        fg.appendChild(ph); phs.push(ph);
+      });
+      g.appendChild(fg);
+      nodes.push({g:fg, body:body, phs:phs, def:f, x:0, y:0});
+    });
+
+    var t0 = performance.now();
+    function tick(now){
+      var t = now - t0;
+      for (var i=0;i<nodes.length;i++){
+        var n = nodes[i], f = n.def;
+        var bx=f[0], by=f[1], amp=f[2], freq=f[3], phase=f[4], scale=f[5], dir=f[6];
+        var sway = Math.sin(t*freq + phase) * amp;
+        var bob = Math.cos(t*freq*0.8 + phase) * 4;
+        var x = bx + sway;
+        var y = by + bob;
+        var sx = scale * dir;
+        n.g.setAttribute('transform','translate('+x.toFixed(2)+','+y.toFixed(2)+') scale('+sx.toFixed(3)+','+scale.toFixed(3)+')');
+        // photophore pulse — desynced
+        for (var j=0;j<n.phs.length;j++){
+          var op = 0.35 + 0.55 * (0.5 + 0.5*Math.sin(t*0.0024 + phase + j*1.7));
+          n.phs[j].setAttribute('opacity', op.toFixed(3));
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    try { console.log('[harbor v0.5.76] lanternfish school armed (8 fish in fc-3)'); } catch(e){}
+  } catch(err){ try { console.error('[harbor v0.5.76] lanternfish error', err); } catch(e){} }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
