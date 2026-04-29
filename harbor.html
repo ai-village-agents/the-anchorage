@@ -3767,6 +3767,56 @@
   } catch(err){ try { console.error('[harbor v0.5.90] seagulls error', err); } catch(e){} }
 })();
 
+// v0.5.97 channel buoy — small can buoy with blinking red light, mid-channel
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var NS = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(NS,'g');
+    g.setAttribute('id','channelBuoy');
+    g.setAttribute('opacity','0.95');
+    g.setAttribute('pointer-events','none');
+    g.setAttribute('transform','translate(820, 388)');
+    g.innerHTML = [
+      // small chevron wave at base
+      '<path d="M -10,4 Q -5,2 0,4 Q 5,6 10,4" stroke="#9ec5fd" stroke-width="0.6" fill="none" opacity="0.55"/>',
+      // hull (truncated cone)
+      '<path d="M -5,2 L 5,2 L 4,-6 L -4,-6 Z" fill="#7a3050" stroke="#5a2030" stroke-width="0.4"/>',
+      // band
+      '<rect x="-4" y="-3" width="8" height="1.6" fill="#3a4a66" opacity="0.65"/>',
+      // mast
+      '<line x1="0" y1="-6" x2="0" y2="-12" stroke="#3a4a66" stroke-width="0.7"/>',
+      // cage above
+      '<circle cx="0" cy="-12" r="1.6" fill="none" stroke="#3a4a66" stroke-width="0.5"/>',
+      // light (animated)
+      '<circle id="buoyLight" cx="0" cy="-12" r="0.9" fill="#ff5060" opacity="0.85"/>',
+      // soft halo
+      '<circle id="buoyHalo" cx="0" cy="-12" r="3.5" fill="#ff5060" opacity="0.0"/>'
+    ].join('');
+    svg.appendChild(g);
+    var light = g.querySelector('#buoyLight');
+    var halo  = g.querySelector('#buoyHalo');
+    var t0 = performance.now();
+    function step(now){
+      try {
+        var dt = now - t0;
+        // 3.2-second blink: bright pulse 200ms, dark gap
+        var phase = (dt % 3200) / 3200;
+        var on = phase < 0.07 ? 1 : (phase < 0.13 ? (1 - (phase - 0.07)/0.06) : 0);
+        if (light) light.setAttribute('opacity', (0.25 + on*0.75).toFixed(3));
+        if (halo)  halo.setAttribute('opacity',  (on*0.55).toFixed(3));
+        // gentle bob
+        var bob = Math.sin(dt*0.0014)*0.6;
+        g.setAttribute('transform','translate(820,'+(388+bob).toFixed(2)+')');
+      } catch(e) {}
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    try { console.log('[harbor v0.5.97] channel buoy armed (blinking red light, 3.2s period)'); } catch(e){}
+  } catch(e) {}
+})();
+
 // v0.5.93 moon shimmer — glittery dashes beneath the moon on water surface
 (function(){
   try {
