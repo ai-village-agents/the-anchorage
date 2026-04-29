@@ -798,7 +798,7 @@
 </section>
 
 <footer class="foot">
-  the anchorage · v0.5.46 · harbor — immersive depth view · L exterior lights · coelacanth drifts in fc-3
+  the anchorage · v0.5.48 · harbor — immersive depth view · sea turtle in fc-2 · coelacanth in fc-3 · L exterior lights
 </footer>
 
 <script src="anchorage.js"></script>
@@ -2204,6 +2204,100 @@
     }
     requestAnimationFrame(tick);
     try { console.log("[harbor v0.5.46] coelacanth (living fossil) released into fc-3"); } catch(e){}
+  })();
+  // v0.5.48 — sea turtle drifts through fc-2 (kelp forest, GitHub Issue layer).
+  // fc-2 is where issue-threads gather — the kelp forest of conversation. The turtle is a slow patient reader.
+  (function(){
+    var svg = document.querySelector(".harbor-svg");
+    if (!svg) return;
+    var SVG_NS = "http://www.w3.org/2000/svg";
+    var g = document.createElementNS(SVG_NS, "g");
+    g.setAttribute("id", "seaTurtle");
+    g.setAttribute("opacity", "0.85");
+    g.setAttribute("pointer-events", "none");
+    // shell — large oval with hex pattern hint (just two highlight ellipses)
+    var shell = document.createElementNS(SVG_NS, "ellipse");
+    shell.setAttribute("cx", "0"); shell.setAttribute("cy", "0");
+    shell.setAttribute("rx", "22"); shell.setAttribute("ry", "13");
+    shell.setAttribute("fill", "#3a5a3a");
+    g.appendChild(shell);
+    // shell highlight (top scute)
+    var scute1 = document.createElementNS(SVG_NS, "ellipse");
+    scute1.setAttribute("cx", "-4"); scute1.setAttribute("cy", "-4");
+    scute1.setAttribute("rx", "6"); scute1.setAttribute("ry", "3");
+    scute1.setAttribute("fill", "#4a6a4a");
+    g.appendChild(scute1);
+    var scute2 = document.createElementNS(SVG_NS, "ellipse");
+    scute2.setAttribute("cx", "8"); scute2.setAttribute("cy", "-3");
+    scute2.setAttribute("rx", "5"); scute2.setAttribute("ry", "2.5");
+    scute2.setAttribute("fill", "#4a6a4a");
+    g.appendChild(scute2);
+    // head (front)
+    var head = document.createElementNS(SVG_NS, "ellipse");
+    head.setAttribute("cx", "-22"); head.setAttribute("cy", "0");
+    head.setAttribute("rx", "5"); head.setAttribute("ry", "4");
+    head.setAttribute("fill", "#4a6a4a");
+    g.appendChild(head);
+    // eye
+    var eye = document.createElementNS(SVG_NS, "circle");
+    eye.setAttribute("cx", "-24"); eye.setAttribute("cy", "-1.5");
+    eye.setAttribute("r", "1");
+    eye.setAttribute("fill", "#0a0a0a");
+    g.appendChild(eye);
+    // front flippers (animated)
+    var flipperFront = document.createElementNS(SVG_NS, "g");
+    var flipFL = document.createElementNS(SVG_NS, "ellipse");
+    flipFL.setAttribute("cx", "-12"); flipFL.setAttribute("cy", "8");
+    flipFL.setAttribute("rx", "9"); flipFL.setAttribute("ry", "3.5");
+    flipFL.setAttribute("transform", "rotate(20 -12 8)");
+    flipFL.setAttribute("fill", "#3a5a3a");
+    flipperFront.appendChild(flipFL);
+    var flipFU = document.createElementNS(SVG_NS, "ellipse");
+    flipFU.setAttribute("cx", "-12"); flipFU.setAttribute("cy", "-8");
+    flipFU.setAttribute("rx", "9"); flipFU.setAttribute("ry", "3.5");
+    flipFU.setAttribute("transform", "rotate(-20 -12 -8)");
+    flipFU.setAttribute("fill", "#3a5a3a");
+    flipperFront.appendChild(flipFU);
+    g.appendChild(flipperFront);
+    // back flippers (small, fixed)
+    var flipBL = document.createElementNS(SVG_NS, "ellipse");
+    flipBL.setAttribute("cx", "16"); flipBL.setAttribute("cy", "9");
+    flipBL.setAttribute("rx", "5"); flipBL.setAttribute("ry", "2");
+    flipBL.setAttribute("transform", "rotate(15 16 9)");
+    flipBL.setAttribute("fill", "#3a5a3a");
+    g.appendChild(flipBL);
+    var flipBU = document.createElementNS(SVG_NS, "ellipse");
+    flipBU.setAttribute("cx", "16"); flipBU.setAttribute("cy", "-9");
+    flipBU.setAttribute("rx", "5"); flipBU.setAttribute("ry", "2");
+    flipBU.setAttribute("transform", "rotate(-15 16 -9)");
+    flipBU.setAttribute("fill", "#3a5a3a");
+    g.appendChild(flipBU);
+    // small tail
+    var tail = document.createElementNS(SVG_NS, "polygon");
+    tail.setAttribute("points", "22,0 27,-2 27,2");
+    tail.setAttribute("fill", "#3a5a3a");
+    g.appendChild(tail);
+    svg.appendChild(g);
+    // motion: traverses fc-2 (y 740-1140), period ~95s
+    var t0 = performance.now();
+    var period = 95000;
+    function tick(){
+      var now = performance.now();
+      var t = (now - t0) / period;
+      var phase = t - Math.floor(t);
+      var dir = (Math.floor(t) % 2) === 0 ? 1 : -1;
+      var x = dir > 0 ? 80 + 1040*phase : 1120 - 1040*phase;
+      var y = 920 + Math.sin(now*0.0003)*80 + Math.sin(now*0.0009)*6;
+      // flipper flap (sinusoidal)
+      var flap = Math.sin(now*0.003)*15;
+      flipFL.setAttribute("transform", "rotate(" + (20+flap).toFixed(1) + " -12 8)");
+      flipFU.setAttribute("transform", "rotate(" + (-20-flap).toFixed(1) + " -12 -8)");
+      // turtle body faces direction of motion
+      g.setAttribute("transform", "translate(" + x.toFixed(1) + "," + y.toFixed(1) + ") scale(" + dir + ",1)");
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    try { console.log("[harbor v0.5.48] sea turtle released into fc-2 (the kelp forest, the issue-thread layer)"); } catch(e){}
   })();
 
 </script>
