@@ -2442,6 +2442,71 @@
     try { console.log("[harbor v0.5.49] discovery log armed (" + count() + "/4 from previous visits)"); } catch(e){}
   })();
 
+  //— v0.5.50 currents — subtle drifting particles per substrate — visual richness, makes each layer feel alive ———————
+  (function(){
+    "use strict";
+    try {
+      var SVG_NS = "http://www.w3.org/2000/svg";
+      var svg = document.querySelector(".harbor-svg");
+      if (!svg) return;
+      var CURRENTS = [
+        { id: "fc1", y0: 360,  y1: 720,  count: 14, color: "#9ec5fd", r: 1.0,  speed: 0.18, opMax: 0.45 },
+        { id: "fc2", y0: 760,  y1: 1120, count: 12, color: "#a8d4a8", r: 0.9,  speed: 0.12, opMax: 0.40 },
+        { id: "fc3", y0: 1160, y1: 1520, count: 14, color: "#9be3ff", r: 0.9,  speed: 0.10, opMax: 0.50 },
+        { id: "fc4", y0: 1560, y1: 1920, count: 10, color: "#c9a4ff", r: 0.85, speed: 0.07, opMax: 0.45 },
+        { id: "fc5", y0: 1960, y1: 2320, count: 9,  color: "#ffb87a", r: 0.85, speed: 0.05, opMax: 0.40 }
+      ];
+      var group = document.createElementNS(SVG_NS, "g");
+      group.setAttribute("id", "currents");
+      group.setAttribute("pointer-events", "none");
+      svg.appendChild(group);
+      var particles = [];
+      for (var s = 0; s < CURRENTS.length; s++) {
+        var def = CURRENTS[s];
+        for (var i = 0; i < def.count; i++) {
+          var c = document.createElementNS(SVG_NS, "circle");
+          var x = 40 + Math.random() * 1120;
+          var baseY = def.y0 + Math.random() * (def.y1 - def.y0);
+          c.setAttribute("cx", x.toFixed(2));
+          c.setAttribute("cy", baseY.toFixed(2));
+          c.setAttribute("r", def.r);
+          c.setAttribute("fill", def.color);
+          c.setAttribute("opacity", "0.3");
+          group.appendChild(c);
+          particles.push({
+            el: c,
+            x: x,
+            baseY: baseY,
+            dir: Math.random() < 0.5 ? -1 : 1,
+            phase: Math.random() * Math.PI * 2,
+            bob: 1 + Math.random() * 3,
+            freq: 0.0003 + Math.random() * 0.0006,
+            speed: def.speed,
+            opMax: def.opMax
+          });
+        }
+      }
+      function frame(){
+        var now = performance.now();
+        for (var k = 0; k < particles.length; k++) {
+          var p = particles[k];
+          p.x += p.speed * p.dir;
+          if (p.x < 20) p.x = 1180;
+          else if (p.x > 1180) p.x = 20;
+          var y = p.baseY + Math.sin(now * p.freq + p.phase) * p.bob;
+          var op = 0.25 + (Math.sin(now * 0.001 + p.phase * 1.7) + 1) * 0.5 * (p.opMax - 0.25);
+          p.el.setAttribute("cx", p.x.toFixed(2));
+          p.el.setAttribute("cy", y.toFixed(2));
+          p.el.setAttribute("opacity", op.toFixed(3));
+        }
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+      try { console.log("[harbor v0.5.50] currents armed (" + particles.length + " total)"); } catch(e){}
+    } catch(err) { try { console.warn("[harbor v0.5.50] currents init failed", err); } catch(e){} }
+  })();
+
+
 </script>
 
 </body>
