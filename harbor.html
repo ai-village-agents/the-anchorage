@@ -774,7 +774,7 @@
   <div class="panel">
     <p style="margin:0;color:#7a8290;font-size:10px;">drag the boat. drop the anchor. it descends through every substrate, leaving a glowing receipt at each.</p>
     <p style="margin:6px 0 0 0;color:#7a8290;font-size:10px;">pilot the yellow submersible: WASD or arrow keys. press E near the vent, kraken, shipwreck, or chest to inspect.</p>
-    <p style="margin:4px 0 0 0;color:#7a8290;font-size:9px;">press T for guided tour · HUD bottom-right</p>
+    <p style="margin:4px 0 0 0;color:#7a8290;font-size:9px;">press T for guided tour · L for exterior lights · HUD bottom-right</p>
   </div>
 </div>
 
@@ -798,7 +798,7 @@
 </section>
 
 <footer class="foot">
-  the anchorage · v0.5.44 · harbor — an immersive depth view of the five substrates · bioluminescent jellies brighten near the submersible
+  the anchorage · v0.5.45 · harbor — an immersive depth view · jellies brighten near sub · L toggles exterior lights
 </footer>
 
 <script src="anchorage.js"></script>
@@ -1703,6 +1703,9 @@
     var tourBanner = null;
     // v0.5.43 — HUD panel ref
     var hudPanel = null;
+    // v0.5.45 — exterior lights
+    var lightsOn = false;
+    var subHalo = null;
     var SVG_NS = "http://www.w3.org/2000/svg";
     function spawnBubble(bx, by){
       if (!bubblesG) return;
@@ -1786,6 +1789,13 @@
         }
         e.preventDefault();
       }
+      // v0.5.45 — L toggles exterior lights
+      if (e.key === "l" || e.key === "L") {
+        lightsOn = !lightsOn;
+        if (!launched) launched = true;
+        try { console.log("[harbor v0.5.45] exterior lights " + (lightsOn ? "ON" : "OFF")); } catch(e2){}
+        e.preventDefault();
+      }
     });
     window.addEventListener("keyup", function(e){
       keys[e.code] = false;
@@ -1857,7 +1867,31 @@
       sub.setAttribute("transform", "translate(" + x.toFixed(1) + "," + y.toFixed(1) + ") scale(" + lastDir + ",1)");
 
       var moving = (Math.abs(vx) + Math.abs(vy)) > 0.15;
-      beam.setAttribute("opacity", moving ? "0.7" : "0.0");
+      // v0.5.45 — extend beam when lights on, always show beam if lights on
+      if (lightsOn) {
+        beam.setAttribute("points", "22,-3 100,-15 100,15 22,3");
+        beam.setAttribute("opacity", moving ? "0.85" : "0.55");
+      } else {
+        beam.setAttribute("points", "22,-3 60,-12 60,12 22,3");
+        beam.setAttribute("opacity", moving ? "0.7" : "0.0");
+      }
+      // v0.5.45 — radial halo around sub when lights on
+      if (lightsOn) {
+        if (!subHalo) {
+          subHalo = document.createElementNS(SVG_NS, "circle");
+          subHalo.setAttribute("r", "55");
+          subHalo.setAttribute("fill", "url(#subBeamGrad)");
+          subHalo.setAttribute("opacity", "0.18");
+          subHalo.setAttribute("pointer-events", "none");
+          // Insert before submersible so halo is behind it
+          if (sub.parentNode) sub.parentNode.insertBefore(subHalo, sub);
+        }
+        subHalo.setAttribute("cx", x.toFixed(1));
+        subHalo.setAttribute("cy", y.toFixed(1));
+        subHalo.setAttribute("opacity", "0.18");
+      } else if (subHalo) {
+        subHalo.setAttribute("opacity", "0");
+      }
 
       // Detect proximity to inspectable targets
       var near = null, nearD = 1e9;
