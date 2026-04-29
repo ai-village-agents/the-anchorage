@@ -3593,6 +3593,44 @@
   } catch(err){ try { console.error('[harbor v0.5.76] lanternfish error', err); } catch(e){} }
 })();
 
+
+// v0.5.79 horizon fishing trawler — slow drift across surface
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) { console.warn('[harbor v0.5.79] no .harbor-svg'); return; }
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(SVG_NS, 'g');
+    g.setAttribute('id', 'trawler');
+    g.setAttribute('opacity', '0.85');
+    g.innerHTML = ''
+      + '<path d="M -28,0 L 28,0 L 22,8 L -24,8 Z" fill="#1a2030" stroke="#2a3950" stroke-width="0.6"/>'
+      + '<rect x="-6" y="-10" width="12" height="10" fill="#2a3950" stroke="#3a4960" stroke-width="0.4"/>'
+      + '<circle cx="0" cy="-5" r="1.2" fill="#aef3ff" opacity="0.55"/>'
+      + '<line x1="0" y1="-10" x2="0" y2="-22" stroke="#2a3950" stroke-width="0.8"/>'
+      + '<path d="M 0,-22 L 6,-20 L 0,-18 Z" fill="#7a3050"/>'
+      + '<line x1="-24" y1="4" x2="-44" y2="14" stroke="#5a6a82" stroke-width="0.6" opacity="0.7"/>'
+      + '<circle cx="-44" cy="14" r="1.4" fill="#cfd8e8" opacity="0.7"/>'
+      + '<path d="M 28,7 Q 36,7 42,9" fill="none" stroke="#9ec5fd" stroke-width="0.6" opacity="0.55"/>';
+    svg.appendChild(g);
+    var x = -60;
+    var Y = 392;
+    var SPEED = 0.012;
+    var last = performance.now();
+    function tick(now){
+      var dt = Math.min(64, now - last);
+      last = now;
+      x += SPEED * dt;
+      if (x > 1260) x = -60;
+      var bob = Math.sin(now * 0.0009) * 0.6;
+      g.setAttribute('transform', 'translate(' + x.toFixed(2) + ',' + (Y + bob).toFixed(2) + ')');
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    try { console.log('[harbor v0.5.79] horizon trawler armed (drift left-to-right, ~100s loop)'); } catch(e){}
+  } catch(err){ try { console.error('[harbor v0.5.79] trawler error', err); } catch(e){} }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
