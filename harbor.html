@@ -2507,6 +2507,149 @@
   })();
 
 
+  //— v0.5.52 sonar ping (P) — expanding ring from submersible + brief target readout in HUD ———————
+  (function(){
+    "use strict";
+    try {
+      var SVG_NS = "http://www.w3.org/2000/svg";
+      var svg = document.querySelector(".harbor-svg");
+      var sub = document.getElementById("submersible");
+      if (!svg || !sub) return;
+      // Targets matching submersible IIFE
+      var TARGETS = [
+        { name: "shipwreck", x: 220, y: 1820 },
+        { name: "kraken",    x: 540, y: 2120 },
+        { name: "vent",      x: 320, y: 2340 },
+        { name: "chest",     x: 880, y: 2330 }
+      ];
+      function bearing(dx, dy){
+        // 8-rose: N, NE, E, SE, S, SW, W, NW. SVG y grows downward.
+        if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return "·";
+        var ang = Math.atan2(dy, dx) * 180 / Math.PI; // -180..180
+        // 0 deg = east. SVG y down => 90 deg = south.
+        var a = (ang + 360) % 360;
+        if (a < 22.5 || a >= 337.5) return "E";
+        if (a < 67.5)  return "SE";
+        if (a < 112.5) return "S";
+        if (a < 157.5) return "SW";
+        if (a < 202.5) return "W";
+        if (a < 247.5) return "NW";
+        if (a < 292.5) return "N";
+        return "NE";
+      }
+      function getSubXY(){
+        var t = sub.getAttribute("transform") || "";
+        var m = t.match(/translate\(\s*([-0-9.]+)\s*,\s*([-0-9.]+)\s*\)/);
+        if (!m) return { x: 600, y: 500 };
+        return { x: parseFloat(m[1]), y: parseFloat(m[2]) };
+      }
+      // HUD readout panel — separate from #subHUD so it can list multiple lines and fade
+      var pingPanel = document.createElement("div");
+      pingPanel.id = "pingPanel";
+      pingPanel.style.cssText = "position:fixed;top:230px;left:50%;transform:translateX(-50%);z-index:60;padding:8px 12px;background:rgba(10,15,25,0.78);color:#cfe6ff;font:10px ui-monospace,Menlo,Consolas,monospace;border:1px solid rgba(123,162,255,0.35);border-radius:6px;line-height:1.5;pointer-events:none;min-width:170px;opacity:0;transition:opacity 0.35s ease;display:none;";
+      pingPanel.innerHTML = '<div style="color:#7aa2ff;font-weight:600;letter-spacing:0.06em;margin-bottom:3px;">SONAR · ping</div><div id="pingList"></div>';
+      document.body.appendChild(pingPanel);
+      var pingList = pingPanel.querySelector("#pingList");
+
+      var pingActive = false;
+      function fireSonar(){
+        if (pingActive) return;
+        pingActive = true;
+        var pos = getSubXY();
+        // Create expanding ring
+        var ring = document.createElementNS(SVG_NS, "circle");
+        ring.setAttribute("cx", pos.x);
+        ring.setAttribute("cy", pos.y);
+        ring.setAttribute("r", 5);
+        ring.setAttribute("fill", "none");
+        ring.setAttribute("stroke", "#7be3ff");
+        ring.setAttribute("stroke-width", 1.4);
+        ring.setAttribute("opacity", 0.85);
+        ring.setAttribute("pointer-events", "none");
+        svg.appendChild(ring);
+        // Target highlight blips
+        var blips = TARGETS.map(function(t){
+          var c = document.createElementNS(SVG_NS, "circle");
+          c.setAttribute("cx", t.x);
+          c.setAttribute("cy", t.y);
+          c.setAttribute("r", 0);
+          c.setAttribute("fill", "none");
+          c.setAttribute("stroke", "#fef3c7");
+          c.setAttribute("stroke-width", 1.4);
+          c.setAttribute("opacity", 0);
+          c.setAttribute("pointer-events", "none");
+          svg.appendChild(c);
+          return { el: c, target: t };
+        });
+        // Populate readout
+        var rows = TARGETS.map(function(t){
+          var dx = t.x - pos.x;
+          var dy = t.y - pos.y;
+          var d = Math.sqrt(dx*dx + dy*dy);
+          return { name: t.name, dist: d, bearing: bearing(dx, dy) };
+        });
+        rows.sort(function(a,b){ return a.dist - b.dist; });
+        pingList.innerHTML = rows.map(function(r){
+          return '<div style="display:flex;justify-content:space-between;gap:10px;"><span>' + r.name + '</span><span style="color:#9eb8d4;">' + Math.round(r.dist) + ' SU ' + r.bearing + '</span></div>';
+        }).join("");
+        pingPanel.style.display = "block";
+        // force reflow then fade in
+        void pingPanel.offsetWidth;
+        pingPanel.style.opacity = "1";
+
+        var t0 = performance.now();
+        var DUR = 1400;
+        function step(now){
+          var k = Math.min(1, (now - t0) / DUR);
+          var r = 5 + k * 320;
+          ring.setAttribute("r", r.toFixed(1));
+          ring.setAttribute("opacity", (0.85 * (1 - k * k)).toFixed(3));
+          // each blip pulses when wavefront reaches it
+          for (var i = 0; i < blips.length; i++) {
+            var b = blips[i];
+            var dx = b.target.x - pos.x;
+            var dy = b.target.y - pos.y;
+            var d = Math.sqrt(dx*dx + dy*dy);
+            var arrival = d / 320; // fraction of DUR when ring reaches target
+            var local = k - arrival;
+            if (local >= 0 && local < 0.25) {
+              var lk = local / 0.25;
+              b.el.setAttribute("r", (8 + lk * 14).toFixed(1));
+              b.el.setAttribute("opacity", (0.85 * (1 - lk)).toFixed(3));
+            } else {
+              b.el.setAttribute("opacity", "0");
+            }
+          }
+          if (k < 1) {
+            requestAnimationFrame(step);
+          } else {
+            try { svg.removeChild(ring); } catch(e){}
+            blips.forEach(function(b){ try { svg.removeChild(b.el); } catch(e){} });
+            // Fade out the readout after 2s
+            setTimeout(function(){
+              pingPanel.style.opacity = "0";
+              setTimeout(function(){ pingPanel.style.display = "none"; }, 400);
+            }, 2200);
+            pingActive = false;
+          }
+        }
+        requestAnimationFrame(step);
+        try { console.log("[harbor v0.5.52] sonar ping at (" + Math.round(pos.x) + "," + Math.round(pos.y) + ")"); } catch(e){}
+      }
+
+      window.addEventListener("keydown", function(e){
+        if (e.key !== "p" && e.key !== "P") return;
+        var ae = document.activeElement;
+        if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable)) return;
+        e.preventDefault();
+        fireSonar();
+      });
+
+      try { console.log("[harbor v0.5.52] sonar armed (P key)"); } catch(e){}
+    } catch(err) { try { console.warn("[harbor v0.5.52] sonar init failed", err); } catch(e){} }
+  })();
+
+
 </script>
 
 </body>
