@@ -3394,6 +3394,10 @@
       var oldJellyOp = jellies ? jellies.getAttribute('opacity') : null;
       if (jellies) jellies.setAttribute('opacity','1');
 
+      var lantern = document.getElementById('lanternfish');
+      var oldLanternOp = lantern ? lantern.getAttribute('opacity') : null;
+      if (lantern) lantern.setAttribute('opacity','1');
+
       function step(){
         var t = (performance.now?performance.now():Date.now()) - t0;
         var k = t / DUR;
@@ -3403,6 +3407,10 @@
           if (jellies){
             if (oldJellyOp === null) jellies.removeAttribute('opacity');
             else jellies.setAttribute('opacity', oldJellyOp);
+          }
+          if (lantern){
+            if (oldLanternOp === null) lantern.removeAttribute('opacity');
+            else lantern.setAttribute('opacity', oldLanternOp);
           }
           return;
         }
