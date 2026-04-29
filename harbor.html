@@ -3949,6 +3949,57 @@
   } catch(e) {}
 })();
 
+// v0.5.102 moon halo — soft radial corona around the crescent moon, behind moon
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var ns = 'http://www.w3.org/2000/svg';
+    // Find the moon (cx=180 cy=115 r=36)
+    var moon = null;
+    var circles = svg.querySelectorAll('circle');
+    for (var i=0;i<circles.length;i++) {
+      var c = circles[i];
+      if (c.getAttribute('cx') === '180' && c.getAttribute('cy') === '115' && c.getAttribute('r') === '36') {
+        moon = c; break;
+      }
+    }
+    var g = document.createElementNS(ns,'g');
+    g.setAttribute('id','moonHalo');
+    g.setAttribute('opacity','0.85');
+    g.setAttribute('pointer-events','none');
+    // Concentric soft halos
+    // Add a smooth radial gradient to defs so the halo fades cleanly
+    var defs = svg.querySelector('defs');
+    if (defs && !document.getElementById('moonHaloGrad')) {
+      var grad = document.createElementNS(ns,'radialGradient');
+      grad.setAttribute('id','moonHaloGrad');
+      grad.setAttribute('cx','0.5'); grad.setAttribute('cy','0.5'); grad.setAttribute('r','0.5');
+      grad.innerHTML =
+        '<stop offset="0%" stop-color="#f5f0d8" stop-opacity="0.42"/>' +
+        '<stop offset="35%" stop-color="#f5f0d8" stop-opacity="0.18"/>' +
+        '<stop offset="70%" stop-color="#f5f0d8" stop-opacity="0.05"/>' +
+        '<stop offset="100%" stop-color="#f5f0d8" stop-opacity="0"/>';
+      defs.appendChild(grad);
+    }
+    g.innerHTML = '<circle cx="180" cy="115" r="80" fill="url(#moonHaloGrad)"/>';
+    if (moon && moon.parentNode) {
+      moon.parentNode.insertBefore(g, moon);
+    } else {
+      svg.appendChild(g);
+    }
+    // Subtle breathing on the whole halo
+    function step(t) {
+      var f = 0.5 + 0.5 * Math.sin(t * 0.0010);
+      var op = 0.55 + 0.18 * f;     // group 0.55..0.73
+      g.setAttribute('opacity', op.toFixed(3));
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    try { console.log('[harbor v0.5.103] moon halo armed (smooth radial corona, breathing)'); } catch(e){}
+  } catch(e) {}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
