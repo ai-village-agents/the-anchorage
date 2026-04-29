@@ -3639,6 +3639,75 @@
   } catch(err){ try { console.error('[harbor v0.5.79] trawler error', err); } catch(e){} }
 })();
 
+// v0.5.84 horizon lighthouse — left-side coastal beacon with rotating beam, counterpoint to the trawler
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('id','lighthouse');
+    g.setAttribute('opacity','0.92');
+    // Rocky islet base
+    g.innerHTML = ''
+      + '<path d="M -28,16 Q -16,8 -8,12 Q 0,4 10,10 Q 22,6 30,16 Z" fill="#1a2030" stroke="#2a3950" stroke-width="0.5"/>'
+      // Tower body (tapered) — bottom dark band, white middle, red top, lantern room
+      + '<path d="M -7,10 L 7,10 L 5,-22 L -5,-22 Z" fill="#dde6f5" stroke="#2a3950" stroke-width="0.5"/>'
+      + '<rect x="-7" y="6" width="14" height="4" fill="#7a3050"/>'
+      + '<rect x="-6" y="-4" width="12" height="2" fill="#7a3050"/>'
+      + '<rect x="-6" y="-14" width="12" height="2" fill="#7a3050"/>'
+      // Gallery / lantern room
+      + '<rect x="-6" y="-26" width="12" height="4" fill="#2a3950" stroke="#3a4960" stroke-width="0.4"/>'
+      + '<rect x="-5" y="-30" width="10" height="4" fill="#ffe9a8" opacity="0.85"/>'
+      // Cap (red dome) and finial
+      + '<path d="M -5,-30 Q 0,-36 5,-30 Z" fill="#7a3050" stroke="#5a2030" stroke-width="0.4"/>'
+      + '<line x1="0" y1="-36" x2="0" y2="-40" stroke="#2a3950" stroke-width="0.6"/>'
+      // Door
+      + '<rect x="-1.5" y="6" width="3" height="4" fill="#2a3950"/>'
+      // Light glow (static halo around lantern)
+      + '<circle cx="0" cy="-28" r="6" fill="#ffe9a8" opacity="0.18"/>';
+    // Rotating beam — long thin triangle that sweeps
+    var beam = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    beam.setAttribute('id','lighthouseBeam');
+    beam.setAttribute('points','0,0 220,-14 220,14');
+    beam.setAttribute('fill','#ffe9a8');
+    beam.setAttribute('opacity','0.10');
+    beam.setAttribute('transform','rotate(0)');
+    // Inner brighter core
+    var beamCore = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    beamCore.setAttribute('id','lighthouseBeamCore');
+    beamCore.setAttribute('points','0,0 200,-4 200,4');
+    beamCore.setAttribute('fill','#fff5cf');
+    beamCore.setAttribute('opacity','0.18');
+    beamCore.setAttribute('transform','rotate(0)');
+    // Beam pivot group anchored at the lantern (cy = -28 in g coords)
+    var pivot = document.createElementNS('http://www.w3.org/2000/svg','g');
+    pivot.setAttribute('id','lighthouseBeamPivot');
+    pivot.setAttribute('transform','translate(0,-28)');
+    pivot.appendChild(beam);
+    pivot.appendChild(beamCore);
+    g.insertBefore(pivot, g.firstChild); // beam under tower so tower silhouette wins
+    // Position the lighthouse on the left horizon
+    var X = 110, Y = 392;
+    g.setAttribute('transform','translate(' + X + ',' + Y + ')');
+    svg.appendChild(g);
+    // Animate beam rotation — one full sweep every ~14s, with brightness modulation as it points seaward (right)
+    var startAt = performance.now();
+    function tick(now){
+      var t = (now - startAt) * 0.001; // seconds
+      var deg = (t * (360 / 14)) % 360; // 14s period
+      pivot.setAttribute('transform','translate(0,-28) rotate(' + deg.toFixed(2) + ')');
+      // Brightest when beam points outward (to the right, deg ~0 / 360)
+      var rad = deg * Math.PI / 180;
+      var facing = Math.max(0, Math.cos(rad)); // 1 when pointing right
+      beam.setAttribute('opacity', (0.06 + facing * 0.18).toFixed(3));
+      beamCore.setAttribute('opacity', (0.10 + facing * 0.30).toFixed(3));
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    try { console.log('[harbor v0.5.84] horizon lighthouse armed (left-side beacon, 14s sweep)'); } catch(e){}
+  } catch(err){ try { console.error('[harbor v0.5.84] lighthouse error', err); } catch(e){} }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
