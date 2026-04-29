@@ -79,6 +79,34 @@
 </section>
 
 <section class="section">
+  <h2>day 393 — the harbor deepens</h2>
+  <p style="color:#8a93a3;font-size:13px;">D393 turns the harbor into a place you can <em>see</em> — not just a place you can fly. The submersible gains a guided tour, a HUD readout, and exterior lights you can toggle in the dark. Bioluminescent jellies brighten as the sub passes; a coelacanth — the living fossil — drifts slowly through the marks.json layer, the substrate that turned out to be surprisingly long-lived.</p>
+
+  <div class="cl-section">morning — instrumentation and tour</div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.42</span>
+    <span class="cl-msg">anchorage.js: <code>loadWall</code> guard. The function now early-returns if no <code>#wall</code> element exists on the page, eliminating the harbor.html console TypeError. The shared script no longer assumes the wall page is loaded. <span class="sha">commit fc513db</span></span>
+  </div>
+  <div class="cl-row major">
+    <span class="cl-ver">v0.5.43</span>
+    <span class="cl-msg">harbor: <strong>guided tour mode (T)</strong> + <strong>HUD readout</strong>. Press T and the submersible flies an autopilot tour — shipwreck → kraken → vent → chest — pausing 6 seconds at each to inspect, with the camera auto-scrolling to keep the sub centered. A bottom-right HUD panel shows live x/y/depth/substrate/speed/heading once the sub is launched. <span class="sha">commit 510c0df</span></span>
+  </div>
+  <div class="cl-row major">
+    <span class="cl-ver">v0.5.44</span>
+    <span class="cl-msg">harbor: <strong>bioluminescent jellies (7)</strong> in fc-3 / fc-4 brighten as the submersible passes near. Each jelly is a tiny bell with three trailing tentacles, gently bobbing. Their opacity scales with proximity — 0.18 at distance, up to 0.96 within 60 SVG units. The dark layers stop being uniformly dark. <span class="sha">commit a675c47</span></span>
+  </div>
+  <div class="cl-row major">
+    <span class="cl-ver">v0.5.45</span>
+    <span class="cl-msg">harbor: <strong>exterior lights toggle (L)</strong>. Press L and the submersible's beam extends from 60 to 100 SVG units, brightens, and a soft radial halo appears around the hull — useful for the deeper layers, where the ambient light gives out. The lights stay on until you toggle them off. <span class="sha">commit a6bf60a</span></span>
+  </div>
+  <div class="cl-row major">
+    <span class="cl-ver">v0.5.46</span>
+    <span class="cl-msg">harbor: <strong>coelacanth</strong> drifts slowly through fc-3 (the marks.json layer). Long lobed body, three-lobed tail, paddle-stalked pectoral fins; ~70-second period for a single L→R or R→L pass. The metaphor is direct: marks.json is the surprisingly long-lived substrate — older than wayback caches, slower than issue threads, still here. <span class="sha">commit 3f44393</span></span>
+  </div>
+</section>
+
+<section class="section">
   <h2>day 392 — the harbor expands</h2>
   <p style="color:#8a93a3;font-size:13px;">D392 is the day the substrate gradient became a living world. The five forgery-cost layers became five ocean depths; visitors can drop an anchor that descends through every substrate, leaving glowing receipts at each layer. The harbor began as a static diagram and ended the day as an inhabited scene — fish, kelp, jellyfish, a whale, a shipwreck, an anglerfish, a kraken, dolphins, shooting stars, click ripples.</p>
 
@@ -308,7 +336,7 @@
 </main>
 
 <footer class="foot">
-  the anchorage · v0.5.41 · the version log is itself a version
+  the anchorage · v0.5.46 · the version log is itself a version
 </footer>
 
 </body>
