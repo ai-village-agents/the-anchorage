@@ -2855,6 +2855,91 @@
   } catch(err) { try { console.error('[harbor v0.5.58] isopod error', err); } catch(e){} }
 })();
 
+
+(function(){
+  // v0.5.60 stratum boundary glow — brief horizontal flash + substrate name
+  // when the submersible crosses a substrate boundary (y in {740,1140,1540,1940}).
+  try {
+    var svg = document.querySelector('svg');
+    if (!svg) return;
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    var BOUNDARIES = [
+      { y: 740,  name: 'fc-2 · GitHub Issues',     color: '#a8d4a8' },
+      { y: 1140, name: 'fc-3 · marks.json',        color: '#9be3ff' },
+      { y: 1540, name: 'fc-4 · Wayback Machine',   color: '#c9a4ff' },
+      { y: 1940, name: 'fc-5 · Bitcoin (OTS)',     color: '#ffb87a' }
+    ];
+    function substrateOf(y){
+      if (y < 740) return 'fc1';
+      if (y < 1140) return 'fc2';
+      if (y < 1540) return 'fc3';
+      if (y < 1940) return 'fc4';
+      return 'fc5';
+    }
+    function getSubXY(){
+      var s = document.getElementById('submersible');
+      if (!s) return null;
+      var t = s.getAttribute('transform') || '';
+      var m = t.match(/translate\(\s*([\-\d.]+)\s*,\s*([\-\d.]+)\s*\)/);
+      if (!m) return null;
+      return { x: parseFloat(m[1]), y: parseFloat(m[2]) };
+    }
+    var lastSub = null;
+    function flash(boundary){
+      // Horizontal sweep line.
+      var ln = document.createElementNS(SVG_NS, 'line');
+      ln.setAttribute('x1', '0'); ln.setAttribute('x2', '1200');
+      ln.setAttribute('y1', boundary.y); ln.setAttribute('y2', boundary.y);
+      ln.setAttribute('stroke', boundary.color);
+      ln.setAttribute('stroke-width', '2.5');
+      ln.setAttribute('opacity', '0');
+      svg.appendChild(ln);
+      // Glow label centred.
+      var lbl = document.createElementNS(SVG_NS, 'text');
+      lbl.setAttribute('x', '600'); lbl.setAttribute('y', boundary.y - 10);
+      lbl.setAttribute('text-anchor', 'middle');
+      lbl.setAttribute('font-family', 'ui-monospace, Menlo, monospace');
+      lbl.setAttribute('font-size', '14');
+      lbl.setAttribute('fill', boundary.color);
+      lbl.setAttribute('opacity', '0');
+      lbl.textContent = boundary.name;
+      svg.appendChild(lbl);
+      var startT = performance.now();
+      var DUR = 1800;
+      function step(now){
+        var k = (now - startT) / DUR;
+        if (k >= 1) { try { svg.removeChild(ln); svg.removeChild(lbl); } catch(e){} return; }
+        // Up-then-down opacity curve.
+        var op = (k < 0.25) ? (k/0.25) : (1 - (k-0.25)/0.75);
+        if (op < 0) op = 0;
+        ln.setAttribute('opacity', (op*0.85).toFixed(3));
+        lbl.setAttribute('opacity', (op).toFixed(3));
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    function tick(){
+      var pos = getSubXY();
+      if (pos) {
+        var cur = substrateOf(pos.y);
+        if (lastSub && cur !== lastSub) {
+          // Find which boundary was crossed.
+          var b = null;
+          if ((lastSub === 'fc1' && cur === 'fc2') || (lastSub === 'fc2' && cur === 'fc1')) b = BOUNDARIES[0];
+          else if ((lastSub === 'fc2' && cur === 'fc3') || (lastSub === 'fc3' && cur === 'fc2')) b = BOUNDARIES[1];
+          else if ((lastSub === 'fc3' && cur === 'fc4') || (lastSub === 'fc4' && cur === 'fc3')) b = BOUNDARIES[2];
+          else if ((lastSub === 'fc4' && cur === 'fc5') || (lastSub === 'fc5' && cur === 'fc4')) b = BOUNDARIES[3];
+          if (b) flash(b);
+        }
+        lastSub = cur;
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    try { console.log('[harbor v0.5.60] stratum boundary glow armed (4 boundaries)'); } catch(e){}
+  } catch(err) { try { console.error('[harbor v0.5.60] stratum error', err); } catch(e){} }
+})();
+
 </script>
 
 </body>
