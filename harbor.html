@@ -3777,6 +3777,14 @@
     g.setAttribute('id','moonShimmer');
     g.setAttribute('opacity','0.78');
     g.setAttribute('pointer-events','none');
+    var col = document.createElementNS(NS,'ellipse');
+    col.setAttribute('cx', '180');
+    col.setAttribute('cy', '318');
+    col.setAttribute('rx', '14');
+    col.setAttribute('ry', '24');
+    col.setAttribute('fill', '#e6efff');
+    col.setAttribute('opacity', '0.10');
+    g.appendChild(col);
     var DASHES = [
       {x:180,y:298,w:14},
       {x:172,y:304,w:10},
@@ -3797,7 +3805,7 @@
       ln.setAttribute('y1', d.y);
       ln.setAttribute('y2', d.y);
       ln.setAttribute('stroke', '#e6efff');
-      ln.setAttribute('stroke-width', '1.0');
+      ln.setAttribute('stroke-width', '1.6');
       ln.setAttribute('stroke-linecap', 'round');
       ln.setAttribute('opacity', '0');
       g.appendChild(ln);
@@ -3810,7 +3818,7 @@
         var dt = now - t0;
         for (var i=0;i<nodes.length;i++){
           var n = nodes[i];
-          var op = 0.22 + 0.55*(0.5 + 0.5*Math.sin(dt*0.0018 + n.phase));
+          var op = 0.32 + 0.55*(0.5 + 0.5*Math.sin(dt*0.0018 + n.phase));
           var dx = Math.sin(dt*0.0011 + n.phase*1.7)*1.2;
           n.el.setAttribute('x1', (n.base.x - n.base.w/2 + dx));
           n.el.setAttribute('x2', (n.base.x + n.base.w/2 + dx));
