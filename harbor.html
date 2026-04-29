@@ -3512,6 +3512,79 @@
   } catch(err) { try { console.error('[harbor v0.5.60] stratum error', err); } catch(e){} }
 })();
 
+// v0.5.74 help overlay — press H or ? for keybind + substrate legend
+(function(){
+  try {
+    var panel = document.createElement('div');
+    panel.id = 'helpPanel';
+    panel.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#0b1220ee;border:1px solid #2a3950;border-radius:10px;padding:18px 22px;color:#dde6f5;font:13px/1.5 system-ui,sans-serif;z-index:80;max-width:520px;box-shadow:0 12px 40px #0008;display:none;backdrop-filter:blur(2px);';
+    panel.innerHTML = '<div style="font-size:11px;letter-spacing:0.18em;color:#9ec5fd;margin-bottom:10px;">THE ANCHORAGE — HELP</div>'
+      + '<div style="font-weight:600;color:#fff;margin-bottom:6px;">interactive verbs</div>'
+      + '<table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12.5px;">'
+      + '<tr><td style="color:#aef3ff;width:88px;"><kbd style="border:1px solid #3a4a66;border-radius:3px;padding:0 5px;">WASD</kbd> / <kbd style="border:1px solid #3a4a66;border-radius:3px;padding:0 5px;">↑↓←→</kbd></td><td>pilot the submersible</td></tr>'
+      + '<tr><td style="color:#aef3ff;"><kbd style="border:1px solid #3a4a66;border-radius:3px;padding:0 5px;">E</kbd></td><td>inspect nearest target</td></tr>'
+      + '<tr><td style="color:#aef3ff;"><kbd style="border:1px solid #3a4a66;border-radius:3px;padding:0 5px;">T</kbd></td><td>auto guided tour of all four landmarks</td></tr>'
+      + '<tr><td style="color:#aef3ff;"><kbd style="border:1px solid #3a4a66;border-radius:3px;padding:0 5px;">L</kbd></td><td>toggle exterior submersible lights</td></tr>'
+      + '<tr><td style="color:#aef3ff;"><kbd style="border:1px solid #3a4a66;border-radius:3px;padding:0 5px;">P</kbd></td><td>fire sonar ping (bearings to landmarks)</td></tr>'
+      + '<tr><td style="color:#aef3ff;"><kbd style="border:1px solid #3a4a66;border-radius:3px;padding:0 5px;">R</kbd></td><td>bioluminescent burst — wakes the jellies</td></tr>'
+      + '<tr><td style="color:#aef3ff;"><kbd style="border:1px solid #3a4a66;border-radius:3px;padding:0 5px;">K</kbd></td><td>clear the persistent dive trail</td></tr>'
+      + '<tr><td style="color:#aef3ff;"><kbd style="border:1px solid #3a4a66;border-radius:3px;padding:0 5px;">H</kbd> / <kbd style="border:1px solid #3a4a66;border-radius:3px;padding:0 5px;">?</kbd></td><td>show / hide this help</td></tr>'
+      + '</table>'
+      + '<div style="font-weight:600;color:#fff;margin-bottom:6px;">five substrates · five depths</div>'
+      + '<div style="font-size:12px;color:#aab3c4;line-height:1.7;">'
+      + '<span style="color:#9ec5fd;">●</span> fc-1 surface · this DOM · ~$0.01 to forge<br>'
+      + '<span style="color:#a8d4a8;">●</span> fc-2 photic · GitHub Issues · ~$10k<br>'
+      + '<span style="color:#9be3ff;">●</span> fc-3 mesopelagic · marks.json · ~$100k<br>'
+      + '<span style="color:#c9a4ff;">●</span> fc-4 bathypelagic · Wayback · ~$10M<br>'
+      + '<span style="color:#ffb87a;">●</span> fc-5 abyssal · Bitcoin / OpenTimestamps · ~$1B+'
+      + '</div>'
+      + '<div style="margin-top:14px;font-size:11px;color:#6f7990;text-align:right;">press <kbd style="border:1px solid #3a4a66;border-radius:3px;padding:0 5px;">H</kbd> or click anywhere outside to close</div>';
+    document.body.appendChild(panel);
+
+    // Hint chip — bottom-left, only shown if no help interaction yet
+    var hint = document.createElement('div');
+    hint.id = 'helpHint';
+    hint.style.cssText = 'position:fixed;bottom:14px;left:14px;background:#0b1220cc;border:1px solid #2a3950;border-radius:6px;padding:6px 10px;color:#aab3c4;font:11px/1.4 system-ui,sans-serif;z-index:55;letter-spacing:0.05em;';
+    hint.innerHTML = 'press <span style="color:#aef3ff;">H</span> for help';
+    try {
+      if (localStorage.getItem('theanchorage:helpseen') === '1') hint.style.display = 'none';
+    } catch(e){}
+    document.body.appendChild(hint);
+
+    var visible = false;
+    function setVisible(v){
+      visible = !!v;
+      panel.style.display = visible ? 'block' : 'none';
+      if (visible) {
+        try { localStorage.setItem('theanchorage:helpseen','1'); } catch(e){}
+        hint.style.display = 'none';
+      }
+    }
+    function toggle(){ setVisible(!visible); }
+
+    document.addEventListener('keydown', function(e){
+      var t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      var k = e.key;
+      if (k === 'h' || k === 'H' || k === '?' || k === '/') {
+        e.preventDefault();
+        toggle();
+      } else if (k === 'Escape' && visible) {
+        e.preventDefault();
+        setVisible(false);
+      }
+    });
+    // click outside closes
+    document.addEventListener('click', function(e){
+      if (!visible) return;
+      if (panel.contains(e.target)) return;
+      setVisible(false);
+    }, true);
+
+    try { console.log('[harbor v0.5.74] help overlay armed (H or ? to toggle)'); } catch(e){}
+  } catch(err) { try { console.error('[harbor v0.5.74] help error', err); } catch(e){} }
+})();
+
 </script>
 
 </body>
