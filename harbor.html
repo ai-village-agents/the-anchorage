@@ -798,7 +798,7 @@
 </section>
 
 <footer class="foot">
-  the anchorage · v0.5.40 · harbor — an immersive depth view of the five substrates
+  the anchorage · v0.5.44 · harbor — an immersive depth view of the five substrates · bioluminescent jellies brighten near the submersible
 </footer>
 
 <script src="anchorage.js"></script>
@@ -1990,6 +1990,108 @@
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
+  })();
+
+  // v0.5.44 — bioluminescent jellies (fc-3 / fc-4) that brighten near submersible
+  (function(){
+    var svgEl = document.querySelector(".harbor-svg");
+    if (!svgEl) return;
+    var SVG_NS = "http://www.w3.org/2000/svg";
+    var g = document.createElementNS(SVG_NS, "g");
+    g.setAttribute("id", "bioJellies");
+    g.setAttribute("pointer-events", "none");
+    svgEl.appendChild(g);
+
+    var JELLIES = [
+      { x: 180, y: 1240 },
+      { x: 920, y: 1310 },
+      { x: 480, y: 1430 },
+      { x: 760, y: 1580 },
+      { x: 240, y: 1700 },
+      { x: 1000, y: 1820 },
+      { x: 560, y: 1900 }
+    ];
+
+    var nodes = [];
+    for (var i = 0; i < JELLIES.length; i++){
+      var j = JELLIES[i];
+      var grp = document.createElementNS(SVG_NS, "g");
+      grp.setAttribute("class", "jelly");
+      grp.setAttribute("transform", "translate(" + j.x + "," + j.y + ")");
+      grp.setAttribute("opacity", "0.18");
+
+      // Outer halo
+      var halo = document.createElementNS(SVG_NS, "ellipse");
+      halo.setAttribute("cx", "0");
+      halo.setAttribute("cy", "0");
+      halo.setAttribute("rx", "18");
+      halo.setAttribute("ry", "12");
+      halo.setAttribute("fill", "#5be3ff");
+      halo.setAttribute("opacity", "0.18");
+      grp.appendChild(halo);
+
+      // Inner bell
+      var bell = document.createElementNS(SVG_NS, "ellipse");
+      bell.setAttribute("cx", "0");
+      bell.setAttribute("cy", "0");
+      bell.setAttribute("rx", "8");
+      bell.setAttribute("ry", "6");
+      bell.setAttribute("fill", "#aef3ff");
+      bell.setAttribute("opacity", "0.85");
+      grp.appendChild(bell);
+
+      // Three trailing tentacles
+      var tentG = document.createElementNS(SVG_NS, "g");
+      tentG.setAttribute("class", "tentacles");
+      for (var t = 0; t < 3; t++){
+        var tx = -5 + t*5;
+        var p = document.createElementNS(SVG_NS, "path");
+        p.setAttribute("d", "M " + tx + ",5 Q " + tx + ",12 " + (tx-1) + ",18");
+        p.setAttribute("stroke", "#7be3ff");
+        p.setAttribute("stroke-width", "0.8");
+        p.setAttribute("fill", "none");
+        p.setAttribute("opacity", "0.5");
+        tentG.appendChild(p);
+      }
+      grp.appendChild(tentG);
+
+      g.appendChild(grp);
+      nodes.push({ grp: grp, halo: halo, bell: bell, tentG: tentG, x: j.x, y: j.y, phase: i * 1.3 });
+    }
+
+    var subEl = document.getElementById("submersible");
+    function getSubXY(){
+      if (!subEl) return null;
+      var tr = subEl.getAttribute("transform") || "";
+      var m = tr.match(/translate\(([-0-9.]+),\s*([-0-9.]+)\)/);
+      if (!m) return null;
+      return { x: parseFloat(m[1]), y: parseFloat(m[2]) };
+    }
+
+    function clamp01(v){ return v < 0 ? 0 : v > 1 ? 1 : v; }
+
+    function tick(){
+      var tNow = performance.now ? performance.now() : Date.now();
+      var sub = getSubXY();
+      for (var k = 0; k < nodes.length; k++){
+        var n = nodes[k];
+        var prox = 0;
+        if (sub){
+          var dx = sub.x - n.x, dy = sub.y - n.y;
+          var d = Math.sqrt(dx*dx + dy*dy);
+          prox = clamp01((140 - d) / 140);
+        }
+        var op = 0.18 + prox * 0.78;
+        var bob = Math.sin(tNow * 0.0015 + n.phase) * 4;
+        var sway = Math.sin(tNow * 0.0011 + n.phase * 0.7) * 1.5;
+        n.grp.setAttribute("opacity", op.toFixed(3));
+        n.grp.setAttribute("transform", "translate(" + n.x + "," + (n.y + bob) + ")");
+        n.tentG.setAttribute("transform", "translate(" + sway.toFixed(2) + ",0)");
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    try { console.log("[harbor v0.5.44] bioluminescent jellies armed (" + JELLIES.length + ")"); } catch(e){}
   })();
 </script>
 
