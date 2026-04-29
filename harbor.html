@@ -3708,6 +3708,65 @@
   } catch(err){ try { console.error('[harbor v0.5.84] lighthouse error', err); } catch(e){} }
 })();
 
+// v0.5.90 seagulls — small M-shaped birds drifting across the sky in lazy arcs
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var layer = document.createElementNS('http://www.w3.org/2000/svg','g');
+    layer.setAttribute('id','seagulls');
+    layer.setAttribute('opacity','0.85');
+    layer.setAttribute('pointer-events','none');
+    svg.appendChild(layer);
+    // Each gull: bx (x base), by (y base), amp (vertical bob), freq, phase, scale, dir, speed, period
+    var GULLS = [
+      { bx:  60, by: 150, amp: 12, freq: 0.0014, phase: 0.0, scale: 1.0, dir:  1, speed: 0.030 },
+      { bx: 940, by: 110, amp:  9, freq: 0.0012, phase: 1.4, scale: 0.85, dir: -1, speed: 0.024 },
+      { bx: 320, by: 200, amp: 14, freq: 0.0010, phase: 2.8, scale: 1.10, dir:  1, speed: 0.018 },
+      { bx: 700, by: 170, amp: 10, freq: 0.0016, phase: 4.1, scale: 0.95, dir: -1, speed: 0.022 },
+      { bx: 480, by: 130, amp:  8, freq: 0.0013, phase: 5.5, scale: 0.80, dir:  1, speed: 0.028 }
+    ];
+    var gulls = GULLS.map(function(G){
+      var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+      g.setAttribute('class','seagull');
+      // Gull body: simple "M" wing path. Animated via separate paths swapped or via stroke trick.
+      // Use one path with two states sketched as two arcs; we redraw the d attr each frame.
+      var wing = document.createElementNS('http://www.w3.org/2000/svg','path');
+      wing.setAttribute('d','M -6,0 Q -3,-3 0,0 Q 3,-3 6,0');
+      wing.setAttribute('stroke','#cfd8e8');
+      wing.setAttribute('stroke-width','1.2');
+      wing.setAttribute('fill','none');
+      wing.setAttribute('stroke-linecap','round');
+      g.appendChild(wing);
+      layer.appendChild(g);
+      return { g:g, wing:wing, x:G.bx, G:G };
+    });
+    var last = performance.now();
+    function tick(now){
+      var dt = Math.min(now - last, 64); last = now;
+      var t = now;
+      for (var i=0;i<gulls.length;i++){
+        var gd = gulls[i], G = gd.G;
+        gd.x += G.speed * G.dir * dt;
+        // Wrap horizontally
+        if (G.dir > 0 && gd.x > 1260) gd.x = -60;
+        if (G.dir < 0 && gd.x < -60) gd.x = 1260;
+        var y = G.by + Math.sin(t * G.freq + G.phase) * G.amp;
+        // Flap: wing depth oscillates
+        var flap = Math.sin(t * 0.012 + G.phase) * 0.5 + 0.5; // 0..1
+        var depth = 1.5 + flap * 2.2; // shallow vs deep M
+        var d = 'M -6,0 Q -3,' + (-depth).toFixed(2) + ' 0,0 Q 3,' + (-depth).toFixed(2) + ' 6,0';
+        gd.wing.setAttribute('d', d);
+        var sx = G.dir < 0 ? -G.scale : G.scale;
+        gd.g.setAttribute('transform','translate(' + gd.x.toFixed(2) + ',' + y.toFixed(2) + ') scale(' + sx + ',' + G.scale + ')');
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    try { console.log('[harbor v0.5.90] seagulls armed (' + GULLS.length + ' gulls drifting)'); } catch(e){}
+  } catch(err){ try { console.error('[harbor v0.5.90] seagulls error', err); } catch(e){} }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
