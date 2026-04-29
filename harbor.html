@@ -4000,6 +4000,59 @@
   } catch(e) {}
 })();
 
+// v0.5.104 manta ray — graceful glide through fc-4 (wayback layer), wings flap slowly
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var ns = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(ns,'g');
+    g.setAttribute('id','mantaRay');
+    g.setAttribute('opacity','0.92');
+    g.setAttribute('pointer-events','none');
+    // Wing tips animate via SVG path. Diamond body with two trailing tail filaments.
+    g.innerHTML =
+      '<g id="mantaWing">' +
+        '<path id="mantaPath" d="M 0,0 Q -22,-6 -38,0 Q -22,4 0,0 Q 22,-6 38,0 Q 22,4 0,0 Z" fill="#1a2030" stroke="#2a3950" stroke-width="0.6"/>' +
+        // body central
+        '<ellipse cx="0" cy="0" rx="6" ry="2.4" fill="#0e1626"/>' +
+        // cephalic horns (front)
+        '<path d="M -4,-2 Q -7,-4 -8,-1" stroke="#0e1626" stroke-width="0.8" fill="none"/>' +
+        '<path d="M  4,-2 Q  7,-4  8,-1" stroke="#0e1626" stroke-width="0.8" fill="none"/>' +
+        // tail
+        '<path d="M 0,2 Q 0,10 1,18 Q -0.5,12 0,2 Z" fill="#1a2030"/>' +
+      '</g>';
+    svg.appendChild(g);
+    var path = g.querySelector('#mantaPath');
+    var INNER_AMP = 6;       // wing-tip vertical flap range
+    var SPEED = 0.013;       // px/ms horizontal
+    var Y_CENTER = 1740;     // mid fc-4
+    var Y_AMP = 18;          // gentle bob
+    var X_MIN = -80, X_MAX = 1280;
+    var x = X_MIN, dir = 1;
+    var last = 0;
+    function step(t) {
+      if (!last) last = t;
+      var dt = Math.min(64, t - last);
+      last = t;
+      x += SPEED * dt * dir;
+      if (x > X_MAX) { x = X_MAX; dir = -1; }
+      if (x < X_MIN) { x = X_MIN; dir = 1; }
+      var y = Y_CENTER + Math.sin(t * 0.0006) * Y_AMP;
+      // Flap: bend the diamond's wing tip y values
+      var flap = Math.sin(t * 0.0018);  // -1..1
+      var w = (-6) + flap * 4;          // wingtip top y -10..-2
+      var w2 = 4 - flap * 4;            // wingtip bottom y 8..0
+      var d = 'M 0,0 Q -22,' + w + ' -38,0 Q -22,' + w2 + ' 0,0 Q 22,' + w + ' 38,0 Q 22,' + w2 + ' 0,0 Z';
+      path.setAttribute('d', d);
+      g.setAttribute('transform','translate(' + x.toFixed(1) + ',' + y.toFixed(1) + ') scale(' + (dir>0?1:-1) + ',1)');
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    try { console.log('[harbor v0.5.104] manta ray armed (fc-4 wayback drift, ~120s loop)'); } catch(e){}
+  } catch(e) {}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
