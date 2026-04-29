@@ -3882,6 +3882,73 @@
   } catch(e) {}
 })();
 
+// v0.5.100 distant village lights — small twinkling yellow dots on the far shore (above water)
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var ns = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(ns,'g');
+    g.setAttribute('id','villageLights');
+    g.setAttribute('opacity','0.9');
+    g.setAttribute('pointer-events','none');
+    // Lights on the far-shore silhouette band: x in [60..1140], y in [248..262] (just above water y=280)
+    var LIGHTS = [
+      [ 92,254, 0.0, '#ffe9a8'],
+      [148,250, 0.7, '#ffd97a'],
+      [206,256, 1.4, '#ffe9a8'],
+      [268,252, 2.1, '#ffd97a'],
+      [336,254, 2.8, '#ffe9a8'],
+      [402,250, 3.5, '#ffd97a'],
+      [482,256, 4.2, '#ffe9a8'],
+      [556,252, 4.9, '#ffd97a'],
+      [638,254, 5.6, '#ffe9a8'],
+      [712,250, 6.3, '#ffd97a'],
+      [786,256, 0.4, '#ffe9a8'],
+      [858,252, 1.1, '#ffd97a'],
+      [932,254, 1.8, '#ffe9a8'],
+      [994,250, 2.5, '#ffd97a'],
+      [1066,256,3.2, '#ffe9a8'],
+      [1118,252,3.9, '#ffd97a']
+    ];
+    var dots = [];
+    for (var i=0;i<LIGHTS.length;i++) {
+      var L = LIGHTS[i];
+      var c = document.createElementNS(ns,'circle');
+      c.setAttribute('cx', L[0]);
+      c.setAttribute('cy', L[1]);
+      c.setAttribute('r', 0.9);
+      c.setAttribute('fill', L[3]);
+      c.setAttribute('opacity', 0.85);
+      g.appendChild(c);
+      // soft halo
+      var h = document.createElementNS(ns,'circle');
+      h.setAttribute('cx', L[0]);
+      h.setAttribute('cy', L[1]);
+      h.setAttribute('r', 2.2);
+      h.setAttribute('fill', L[3]);
+      h.setAttribute('opacity', 0.18);
+      g.appendChild(h);
+      dots.push({c:c,h:h,phase:L[2]});
+    }
+    svg.appendChild(g);
+    function step(t) {
+      for (var i=0;i<dots.length;i++) {
+        var d = dots[i];
+        var f = 0.5+0.5*Math.sin(t*0.0021 + d.phase*1.7);
+        var f2 = 0.5+0.5*Math.sin(t*0.0013 + d.phase);
+        var op = 0.55 + 0.40*f;       // dot 0.55..0.95
+        var ho = 0.10 + 0.18*f2;       // halo 0.10..0.28
+        d.c.setAttribute('opacity', op.toFixed(3));
+        d.h.setAttribute('opacity', ho.toFixed(3));
+      }
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    try { console.log('[harbor v0.5.100] village lights armed (' + LIGHTS.length + ' twinkling lights on far shore)'); } catch(e){}
+  } catch(e) {}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
