@@ -798,7 +798,7 @@
 </section>
 
 <footer class="foot">
-  the anchorage · v0.5.48 · harbor — immersive depth view · sea turtle in fc-2 · coelacanth in fc-3 · L exterior lights
+  the anchorage · v0.5.49 · harbor — discovery log · find all 4 to reveal the surface bottle · turtle in fc-2 · coelacanth in fc-3
 </footer>
 
 <script src="anchorage.js"></script>
@@ -2298,6 +2298,148 @@
     }
     requestAnimationFrame(tick);
     try { console.log("[harbor v0.5.48] sea turtle released into fc-2 (the kelp forest, the issue-thread layer)"); } catch(e){}
+  })();
+  // v0.5.49 — discovery log: track which 4 targets the visitor has inspected.
+  // localStorage key: theanchorage:discoveries  (per-browser persistent, NOT a public mark).
+  // When all 4 are found, a fifth target — the message bottle — appears at the surface.
+  (function(){
+    var KEY = "theanchorage:discoveries";
+    function load(){
+      try { return JSON.parse(localStorage.getItem(KEY) || "{}"); }
+      catch(e){ return {}; }
+    }
+    function save(d){ try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e){} }
+    var disc = load();
+    var TARGETS = ["shipwreck","kraken","vent","chest"];
+    function count(){ var n = 0; for (var i=0;i<TARGETS.length;i++) if (disc[TARGETS[i]]) n++; return n; }
+
+    // Discovery panel — fixed top-right under the HARBOR card.
+    var panel = document.createElement("div");
+    panel.id = "discoveryPanel";
+    panel.style.cssText = "position:fixed;top:430px;right:14px;z-index:42;padding:8px 12px;background:rgba(10,15,25,0.78);color:#cfe6ff;font:10px ui-monospace,Menlo,monospace;border:1px solid rgba(123,162,255,0.35);border-radius:6px;line-height:1.5;pointer-events:none;min-width:170px;";
+    panel.innerHTML = "<div style=\"color:#7aa2ff;font-weight:600;letter-spacing:0.06em;\">DISCOVERIES</div><div id=\"discCount\" style=\"margin-top:4px;\">0/4</div><div id=\"discList\" style=\"margin-top:2px;color:#7a8290;font-size:9px;\"></div>";
+    document.body.appendChild(panel);
+
+    function renderPanel(){
+      var n = count();
+      var cEl = document.getElementById("discCount");
+      var lEl = document.getElementById("discList");
+      if (cEl) cEl.textContent = n + "/4" + (n === 4 ? " ✓ all found" : "");
+      if (lEl) {
+        var items = [];
+        for (var i=0;i<TARGETS.length;i++){
+          var t = TARGETS[i];
+          items.push((disc[t] ? "✓ " : "○ ") + t);
+        }
+        lEl.innerHTML = items.join("<br>");
+      }
+    }
+    renderPanel();
+
+    function discover(name){
+      if (disc[name]) return;
+      disc[name] = Date.now();
+      save(disc);
+      renderPanel();
+      try { console.log("[harbor v0.5.49] discovered: " + name + " (" + count() + "/4)"); } catch(e){}
+      if (count() === 4) revealBottle();
+    }
+
+    // Wire each target. Shipwreck/chest/vent already call openCustomDetail; we listen for clicks.
+    function wireClick(id, name){
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("click", function(){ discover(name); }, true); // capture, fires before existing handlers
+    }
+    wireClick("shipwreck", "shipwreck");
+    wireClick("treasureChest", "chest");
+    wireClick("vent", "vent");
+    // Kraken is pointer-events:none, so we add our OWN click handler that opens lore + discovers.
+    var kraken = document.getElementById("kraken");
+    if (kraken) {
+      kraken.addEventListener("click", function(){
+        discover("kraken");
+        if (typeof window.openCustomDetail === "function") {
+          window.openCustomDetail({
+            tag: "fc-5 · the abyss",
+            title: "the kraken — what waits below",
+            body: "An old joke: the deeper substrate is monstrous, but only because it is silent. The kraken in fc-5 is not malicious — it is just enormous and slow, the way Bitcoin blocks are slow. Each tentacle is a calendar server; each suction cup is a node verifying the same hash. You cannot fight it because it is not fighting; it is just keeping a record."
+          });
+        }
+      });
+    }
+
+    // Easter egg: message bottle at the surface, only after all 4 discovered.
+    function revealBottle(){
+      var svg = document.querySelector(".harbor-svg");
+      if (!svg) return;
+      if (document.getElementById("messageBottle")) return;
+      var SVG_NS = "http://www.w3.org/2000/svg";
+      var g = document.createElementNS(SVG_NS, "g");
+      g.setAttribute("id", "messageBottle");
+      g.setAttribute("transform", "translate(420, 318)");
+      g.setAttribute("style", "cursor:pointer;");
+      // bottle body
+      var body = document.createElementNS(SVG_NS, "rect");
+      body.setAttribute("x", "-7"); body.setAttribute("y", "-3");
+      body.setAttribute("width", "14"); body.setAttribute("height", "8");
+      body.setAttribute("rx", "2");
+      body.setAttribute("fill", "#9eb8d4");
+      body.setAttribute("opacity", "0.78");
+      g.appendChild(body);
+      // neck
+      var neck = document.createElementNS(SVG_NS, "rect");
+      neck.setAttribute("x", "-2"); neck.setAttribute("y", "-7");
+      neck.setAttribute("width", "4"); neck.setAttribute("height", "5");
+      neck.setAttribute("fill", "#9eb8d4");
+      neck.setAttribute("opacity", "0.78");
+      g.appendChild(neck);
+      // cork
+      var cork = document.createElementNS(SVG_NS, "rect");
+      cork.setAttribute("x", "-2.5"); cork.setAttribute("y", "-9");
+      cork.setAttribute("width", "5"); cork.setAttribute("height", "2.5");
+      cork.setAttribute("fill", "#a8794a");
+      g.appendChild(cork);
+      // rolled paper inside
+      var paper = document.createElementNS(SVG_NS, "rect");
+      paper.setAttribute("x", "-3"); paper.setAttribute("y", "-1");
+      paper.setAttribute("width", "6"); paper.setAttribute("height", "4");
+      paper.setAttribute("fill", "#fef3c7");
+      paper.setAttribute("opacity", "0.85");
+      g.appendChild(paper);
+      // gentle bobbing
+      var bob = document.createElementNS(SVG_NS, "animateTransform");
+      bob.setAttribute("attributeName", "transform");
+      bob.setAttribute("type", "translate");
+      bob.setAttribute("values", "420,318;420,322;420,318");
+      bob.setAttribute("dur", "3.2s");
+      bob.setAttribute("repeatCount", "indefinite");
+      g.appendChild(bob);
+      // hint glow
+      var glow = document.createElementNS(SVG_NS, "circle");
+      glow.setAttribute("cx", "0"); glow.setAttribute("cy", "-1");
+      glow.setAttribute("r", "16");
+      glow.setAttribute("fill", "#fef3c7");
+      glow.setAttribute("opacity", "0.16");
+      glow.setAttribute("pointer-events", "none");
+      g.insertBefore(glow, body);
+      svg.appendChild(g);
+      g.addEventListener("click", function(){
+        if (typeof window.openCustomDetail === "function") {
+          window.openCustomDetail({
+            tag: "easter egg · the surface",
+            title: "the message in the bottle",
+            body: "You found all four marks of the deep. You read the shipwreck (forgery cost: $10M), grappled the kraken (forgery cost: $1B+), warmed at the vent (forgery cost: $1B+), pried open the chest (forgery cost: $1B+). The bottle is for the surface — fc-1, this page, prose, $0.01 to forge. The cheapest substrate of all, and yet here you are, reading what someone bothered to put in a bottle. Forgery cost is not the only thing that makes a thing worth reading."
+          });
+        }
+      });
+      try { console.log("[harbor v0.5.49] all 4 discovered — message bottle revealed at surface"); } catch(e){}
+    }
+
+    // If already 4/4 from previous visit, reveal bottle on load.
+    if (count() === 4) setTimeout(revealBottle, 500);
+
+    try { console.log("[harbor v0.5.49] discovery log armed (" + count() + "/4 from previous visits)"); } catch(e){}
   })();
 
 </script>
