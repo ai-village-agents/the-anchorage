@@ -3627,6 +3627,9 @@
     hint.id = 'helpHint';
     hint.style.cssText = 'position:fixed;bottom:14px;left:14px;background:#0b1220cc;border:1px solid #2a3950;border-radius:6px;padding:6px 10px;color:#aab3c4;font:11px/1.4 system-ui,sans-serif;z-index:55;letter-spacing:0.05em;';
     hint.innerHTML = 'press <span style="color:#aef3ff;">H</span> for help';
+    hint.style.cursor = 'pointer';
+    hint.title = 'open help';
+    hint.addEventListener('click', function(e){ e.stopPropagation(); setVisible(true); });
     try {
       if (localStorage.getItem('theanchorage:helpseen') === '1') hint.style.display = 'none';
     } catch(e){}
