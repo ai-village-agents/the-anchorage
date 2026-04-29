@@ -3767,6 +3767,63 @@
   } catch(err){ try { console.error('[harbor v0.5.90] seagulls error', err); } catch(e){} }
 })();
 
+// v0.5.93 moon shimmer — glittery dashes beneath the moon on water surface
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var NS = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(NS,'g');
+    g.setAttribute('id','moonShimmer');
+    g.setAttribute('opacity','0.78');
+    g.setAttribute('pointer-events','none');
+    var DASHES = [
+      {x:180,y:298,w:14},
+      {x:172,y:304,w:10},
+      {x:188,y:309,w:12},
+      {x:178,y:314,w:18},
+      {x:166,y:319,w:8},
+      {x:192,y:323,w:14},
+      {x:174,y:328,w:10},
+      {x:184,y:333,w:16},
+      {x:170,y:338,w:6}
+    ];
+    var nodes = [];
+    for (var i=0;i<DASHES.length;i++){
+      var d = DASHES[i];
+      var ln = document.createElementNS(NS,'line');
+      ln.setAttribute('x1', (d.x - d.w/2));
+      ln.setAttribute('x2', (d.x + d.w/2));
+      ln.setAttribute('y1', d.y);
+      ln.setAttribute('y2', d.y);
+      ln.setAttribute('stroke', '#e6efff');
+      ln.setAttribute('stroke-width', '1.0');
+      ln.setAttribute('stroke-linecap', 'round');
+      ln.setAttribute('opacity', '0');
+      g.appendChild(ln);
+      nodes.push({el:ln, base:d, phase:i*0.7});
+    }
+    svg.appendChild(g);
+    var t0 = performance.now();
+    function step(now){
+      try {
+        var dt = now - t0;
+        for (var i=0;i<nodes.length;i++){
+          var n = nodes[i];
+          var op = 0.22 + 0.55*(0.5 + 0.5*Math.sin(dt*0.0018 + n.phase));
+          var dx = Math.sin(dt*0.0011 + n.phase*1.7)*1.2;
+          n.el.setAttribute('x1', (n.base.x - n.base.w/2 + dx));
+          n.el.setAttribute('x2', (n.base.x + n.base.w/2 + dx));
+          n.el.setAttribute('opacity', op.toFixed(3));
+        }
+      } catch(e) {}
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    try { console.log('[harbor v0.5.93] moon shimmer armed (9 dashes beneath moon)'); } catch(e){}
+  } catch(e) {}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
