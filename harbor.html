@@ -4094,6 +4094,67 @@
   } catch(e) {}
 })();
 
+// v0.5.107 wave crests — small foamy crest dashes drifting along the water surface
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var ns = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(ns,'g');
+    g.setAttribute('id','waveCrests');
+    g.setAttribute('opacity','0.7');
+    g.setAttribute('pointer-events','none');
+    // 14 crests scattered across the surface band y=290..330. Each is a short
+    // pale-blue arc that rises, peaks, and fades over its own period (3-6s).
+    var CRESTS = [];
+    var rng = 31337;
+    function rand(){ rng = (rng*1103515245 + 12345) % 2147483648; return rng/2147483648; }
+    var COUNT = 14;
+    var html = '';
+    for (var i=0;i<COUNT;i++) {
+      var x = 40 + rand() * 1120;
+      var y = 296 + Math.floor(rand()*30);
+      var w = 14 + rand()*22;
+      var period = 3000 + rand()*3000;
+      var phase = rand() * period;
+      var speed = (0.04 + rand()*0.06) * (rand()<0.5 ? -1 : 1);
+      var color = (rand() < 0.5) ? '#cfe6ff' : '#aef3ff';
+      CRESTS.push({x:x, y:y, w:w, period:period, phase:phase, speed:speed, color:color});
+      html += '<path id="crest'+i+'" d="" stroke="'+color+'" stroke-width="0.9" fill="none" stroke-linecap="round" opacity="0"/>';
+    }
+    g.innerHTML = html;
+    svg.appendChild(g);
+    var paths = [];
+    for (var j=0;j<COUNT;j++) paths.push(g.querySelector('#crest'+j));
+    var last = 0;
+    function step(t) {
+      if (!last) last = t;
+      var dt = Math.min(64, t - last);
+      last = t;
+      for (var i=0;i<COUNT;i++) {
+        var c = CRESTS[i];
+        var p = paths[i];
+        c.x += c.speed * dt;
+        if (c.x > 1240) c.x = -40;
+        if (c.x < -40) c.x = 1240;
+        var phase = ((t + c.phase) % c.period) / c.period;  // 0..1
+        // Rise & fall: peak amplitude near phase 0.5, op also peaks near 0.5
+        var k = Math.sin(phase * Math.PI);    // 0..1..0
+        var amp = 1.4 + k * 2.2;              // 1.4..3.6
+        var op = k * 0.85;                    // 0..0.85..0
+        var d = 'M ' + (c.x - c.w/2).toFixed(1) + ',' + c.y +
+                ' Q ' + c.x.toFixed(1) + ',' + (c.y - amp).toFixed(1) +
+                ' ' + (c.x + c.w/2).toFixed(1) + ',' + c.y;
+        p.setAttribute('d', d);
+        p.setAttribute('opacity', op.toFixed(3));
+      }
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    try { console.log('[harbor v0.5.107] wave crests armed (' + COUNT + ' drifting crests on surface)'); } catch(e){}
+  } catch(e) {}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
