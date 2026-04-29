@@ -2650,6 +2650,69 @@
   })();
 
 
+
+// v0.5.54 — pipefish school in fc-2 (kelp forest substrate)
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(SVG_NS, 'g');
+    g.setAttribute('id', 'pipefish');
+    g.setAttribute('pointer-events', 'none');
+    svg.appendChild(g);
+    var FISH = [
+      { bx: 180, by: 880,  amp: 26, freq: 0.00045, phase: 0.0,  scale: 1.0,  hue: '#3e6b3e' },
+      { bx: 360, by: 980,  amp: 32, freq: 0.00040, phase: 1.2,  scale: 0.9,  hue: '#456b3e' },
+      { bx: 540, by: 820,  amp: 22, freq: 0.00050, phase: 2.4,  scale: 1.1,  hue: '#3a5e3a' },
+      { bx: 720, by: 1040, amp: 28, freq: 0.00038, phase: 3.6,  scale: 0.95, hue: '#4a6e44' },
+      { bx: 880, by: 920,  amp: 24, freq: 0.00048, phase: 4.8,  scale: 1.05, hue: '#3e6440' },
+      { bx: 1020,by: 1060, amp: 30, freq: 0.00042, phase: 0.6,  scale: 0.9,  hue: '#456840' }
+    ];
+    var nodes = [];
+    FISH.forEach(function(f){
+      var fg = document.createElementNS(SVG_NS, 'g');
+      fg.setAttribute('class', 'pipefish-fish');
+      var body = document.createElementNS(SVG_NS, 'path');
+      body.setAttribute('d', 'M 0,-16 Q 2,-8 0,0 Q -2,8 0,16');
+      body.setAttribute('stroke', f.hue);
+      body.setAttribute('stroke-width', '2.2');
+      body.setAttribute('fill', 'none');
+      body.setAttribute('stroke-linecap', 'round');
+      fg.appendChild(body);
+      var snout = document.createElementNS(SVG_NS, 'circle');
+      snout.setAttribute('cx', '0');
+      snout.setAttribute('cy', '-17');
+      snout.setAttribute('r', '0.9');
+      snout.setAttribute('fill', '#1a2a1a');
+      fg.appendChild(snout);
+      var fin = document.createElementNS(SVG_NS, 'path');
+      fin.setAttribute('d', 'M 1.5,-2 L 4,0 L 1.5,2');
+      fin.setAttribute('stroke', f.hue);
+      fin.setAttribute('stroke-width', '0.8');
+      fin.setAttribute('fill', 'none');
+      fin.setAttribute('opacity', '0.7');
+      fg.appendChild(fin);
+      g.appendChild(fg);
+      nodes.push({ el: fg, def: f });
+    });
+    function frame(now){
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i], f = n.def;
+        var sway = Math.sin(now * f.freq + f.phase) * f.amp;
+        var bob  = Math.sin(now * f.freq * 1.7 + f.phase * 0.6) * 4;
+        var tilt = Math.sin(now * f.freq + f.phase) * 12;
+        var x = f.bx + sway;
+        var y = f.by + bob;
+        n.el.setAttribute('transform', 'translate(' + x.toFixed(2) + ',' + y.toFixed(2) + ') rotate(' + tilt.toFixed(2) + ') scale(' + f.scale + ')');
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    try { console.log('[harbor v0.5.54] pipefish school armed (6 in fc-2)'); } catch(e){}
+  } catch(err) { try { console.error('[harbor v0.5.54] pipefish error', err); } catch(e){} }
+})();
+
 </script>
 
 </body>
