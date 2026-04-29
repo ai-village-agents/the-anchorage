@@ -2713,6 +2713,68 @@
   } catch(err) { try { console.error('[harbor v0.5.54] pipefish error', err); } catch(e){} }
 })();
 
+
+// v0.5.56 — horizon clouds (sky band, fc-1)
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(SVG_NS, 'g');
+    g.setAttribute('id', 'clouds');
+    g.setAttribute('pointer-events', 'none');
+    // Insert clouds early in the SVG so they sit behind stars/moon/lighthouse.
+    // We append, but use opacity/blur to feel atmospheric.
+    svg.appendChild(g);
+    // 4 clouds drifting at different speeds across the sky band y~80-220.
+    var CLOUDS = [
+      { y: 90,  scale: 1.0, speed: 0.012, phase: 0,    op: 0.16 },
+      { y: 140, scale: 0.85, speed: 0.018, phase: 380,  op: 0.13 },
+      { y: 200, scale: 1.2,  speed: 0.009, phase: 720,  op: 0.11 },
+      { y: 110, scale: 0.7,  speed: 0.022, phase: 1050, op: 0.14 }
+    ];
+    var nodes = [];
+    CLOUDS.forEach(function(c){
+      var cg = document.createElementNS(SVG_NS, 'g');
+      cg.setAttribute('opacity', String(c.op));
+      // Build a fluffy cloud out of 5 overlapping soft ellipses.
+      var ellipses = [
+        { cx:  0, cy:  0, rx: 28, ry: 10 },
+        { cx: -22, cy: -2, rx: 18, ry:  8 },
+        { cx:  22, cy: -3, rx: 20, ry:  9 },
+        { cx: -8, cy: -8, rx: 16, ry:  7 },
+        { cx:  10, cy: -7, rx: 14, ry:  6 }
+      ];
+      ellipses.forEach(function(e){
+        var el = document.createElementNS(SVG_NS, 'ellipse');
+        el.setAttribute('cx', String(e.cx));
+        el.setAttribute('cy', String(e.cy));
+        el.setAttribute('rx', String(e.rx));
+        el.setAttribute('ry', String(e.ry));
+        el.setAttribute('fill', '#cfd8e8');
+        cg.appendChild(el);
+      });
+      g.appendChild(cg);
+      nodes.push({ el: cg, def: c, x: c.phase });
+    });
+    var lastT = performance.now();
+    function frame(now){
+      var dt = Math.min(40, now - lastT);
+      lastT = now;
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i], c = n.def;
+        n.x += c.speed * dt;
+        // Wrap around: cloud drifts left to right; reset when it passes 1280.
+        if (n.x > 1280) n.x = -120;
+        n.el.setAttribute('transform', 'translate(' + n.x.toFixed(2) + ',' + c.y + ') scale(' + c.scale + ')');
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    try { console.log('[harbor v0.5.56] horizon clouds armed (4 drifting)'); } catch(e){}
+  } catch(err) { try { console.error('[harbor v0.5.56] clouds error', err); } catch(e){} }
+})();
+
 </script>
 
 </body>
