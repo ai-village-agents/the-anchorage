@@ -3645,7 +3645,7 @@
     var svg = document.querySelector('.harbor-svg');
     if (!svg) return;
     var g = document.createElementNS('http://www.w3.org/2000/svg','g');
-    g.setAttribute('id','lighthouse');
+    g.setAttribute('id','lighthouseWest');
     g.setAttribute('opacity','0.92');
     // Rocky islet base
     g.innerHTML = ''
@@ -3687,7 +3687,7 @@
     pivot.appendChild(beamCore);
     g.insertBefore(pivot, g.firstChild); // beam under tower so tower silhouette wins
     // Position the lighthouse on the left horizon
-    var X = 110, Y = 392;
+    var X = 240, Y = 220;
     g.setAttribute('transform','translate(' + X + ',' + Y + ')');
     svg.appendChild(g);
     // Animate beam rotation — one full sweep every ~14s, with brightness modulation as it points seaward (right)
@@ -3704,7 +3704,7 @@
       requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
-    try { console.log('[harbor v0.5.84] horizon lighthouse armed (left-side beacon, 14s sweep)'); } catch(e){}
+    try { console.log('[harbor v0.5.84] west lighthouse armed (left-headland beacon, 14s sweep)'); } catch(e){}
   } catch(err){ try { console.error('[harbor v0.5.84] lighthouse error', err); } catch(e){} }
 })();
 
