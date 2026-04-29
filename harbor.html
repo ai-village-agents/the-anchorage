@@ -3183,6 +3183,155 @@
 
 
 (function(){
+  // v0.5.69 whale fall — skeletal carcass on fc-5 bedrock with hagfish.
+  // A whale fall feeds a deep-sea community for decades. The bones outlast everything.
+  try {
+    var svg = document.querySelector('svg');
+    if (!svg) return;
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+
+    var BASE_X = 280;
+    var BASE_Y = 2360;
+
+    var wfG = document.createElementNS(SVG_NS, 'g');
+    wfG.setAttribute('id', 'whaleFall');
+    wfG.setAttribute('transform', 'translate(' + BASE_X + ',' + BASE_Y + ')');
+    wfG.setAttribute('style', 'cursor:pointer');
+
+    // sediment shadow
+    var shadow = document.createElementNS(SVG_NS, 'ellipse');
+    shadow.setAttribute('cx', '0'); shadow.setAttribute('cy', '6');
+    shadow.setAttribute('rx', '110'); shadow.setAttribute('ry', '6');
+    shadow.setAttribute('fill', '#1a0e08'); shadow.setAttribute('opacity', '0.45');
+    wfG.appendChild(shadow);
+
+    // spine — slight curve from skull (-90) to tail (90)
+    var spine = document.createElementNS(SVG_NS, 'path');
+    spine.setAttribute('d', 'M -88,0 C -40,-3 40,-3 88,2');
+    spine.setAttribute('stroke', '#cfc8b8'); spine.setAttribute('stroke-width', '3.5');
+    spine.setAttribute('fill', 'none'); spine.setAttribute('stroke-linecap', 'round');
+    wfG.appendChild(spine);
+
+    // ribs — pairs curving down from spine
+    var RIB_X = [-72, -55, -38, -20, -2, 16, 34, 50];
+    for (var i = 0; i < RIB_X.length; i++) {
+      var rx = RIB_X[i];
+      // upper rib (above)
+      var ru = document.createElementNS(SVG_NS, 'path');
+      var ay = -2 + (rx*0.04);
+      ru.setAttribute('d', 'M ' + rx + ',' + ay + ' Q ' + (rx-2) + ',' + (ay-12) + ' ' + (rx-7) + ',' + (ay-18));
+      ru.setAttribute('stroke', '#cfc8b8'); ru.setAttribute('stroke-width', '1.6');
+      ru.setAttribute('fill', 'none'); ru.setAttribute('stroke-linecap', 'round');
+      ru.setAttribute('opacity', '0.9');
+      wfG.appendChild(ru);
+      // lower rib (below — falling outward)
+      var rd = document.createElementNS(SVG_NS, 'path');
+      rd.setAttribute('d', 'M ' + rx + ',' + ay + ' Q ' + (rx+1) + ',' + (ay+8) + ' ' + (rx-3) + ',' + (ay+14));
+      rd.setAttribute('stroke', '#cfc8b8'); rd.setAttribute('stroke-width', '1.6');
+      rd.setAttribute('fill', 'none'); rd.setAttribute('stroke-linecap', 'round');
+      rd.setAttribute('opacity', '0.85');
+      wfG.appendChild(rd);
+    }
+
+    // skull — elongated, slightly tilted
+    var skull = document.createElementNS(SVG_NS, 'ellipse');
+    skull.setAttribute('cx', '-100'); skull.setAttribute('cy', '-2');
+    skull.setAttribute('rx', '18'); skull.setAttribute('ry', '9');
+    skull.setAttribute('fill', '#d8d2c5'); skull.setAttribute('stroke', '#5a5248');
+    skull.setAttribute('stroke-width', '0.5');
+    wfG.appendChild(skull);
+
+    // jaw — open
+    var jaw = document.createElementNS(SVG_NS, 'path');
+    jaw.setAttribute('d', 'M -118,4 Q -110,8 -98,5');
+    jaw.setAttribute('stroke', '#bfb8a8'); jaw.setAttribute('stroke-width', '1.4');
+    jaw.setAttribute('fill', 'none'); jaw.setAttribute('stroke-linecap', 'round');
+    wfG.appendChild(jaw);
+
+    // eye socket
+    var eye = document.createElementNS(SVG_NS, 'circle');
+    eye.setAttribute('cx', '-104'); eye.setAttribute('cy', '-3'); eye.setAttribute('r', '1.6');
+    eye.setAttribute('fill', '#1a0e08');
+    wfG.appendChild(eye);
+
+    // tail vertebrae taper
+    for (var t = 0; t < 4; t++) {
+      var tv = document.createElementNS(SVG_NS, 'circle');
+      tv.setAttribute('cx', String(76 + t*4));
+      tv.setAttribute('cy', String(2 + t*0.5));
+      tv.setAttribute('r', String(2 - t*0.3));
+      tv.setAttribute('fill', '#cfc8b8');
+      wfG.appendChild(tv);
+    }
+
+    // hagfish — 4 thin worm shapes that slowly slither near bones
+    var hagfishLayer = document.createElementNS(SVG_NS, 'g');
+    hagfishLayer.setAttribute('id', 'whaleFallHagfish');
+    var HAGFISH = [
+      { cx: -80, cy: 2,  amp: 6, freq: 0.0009, phase: 0.0,  len: 28, color: '#7a6a5a' },
+      { cx: -10, cy: -4, amp: 5, freq: 0.0011, phase: 1.6,  len: 24, color: '#806858' },
+      { cx: 30,  cy: 8,  amp: 7, freq: 0.0008, phase: 3.0,  len: 30, color: '#74624e' },
+      { cx: 60,  cy: -2, amp: 5, freq: 0.0010, phase: 4.4,  len: 22, color: '#7a6852' }
+    ];
+    var hagPaths = [];
+    for (var h = 0; h < HAGFISH.length; h++) {
+      var hf = HAGFISH[h];
+      var p = document.createElementNS(SVG_NS, 'path');
+      p.setAttribute('stroke', hf.color);
+      p.setAttribute('stroke-width', '1.4');
+      p.setAttribute('stroke-linecap', 'round');
+      p.setAttribute('fill', 'none');
+      p.setAttribute('opacity', '0.85');
+      hagfishLayer.appendChild(p);
+      hagPaths.push(p);
+    }
+    wfG.appendChild(hagfishLayer);
+
+    // click handler — lore
+    wfG.addEventListener('click', function(){
+      try {
+        if (typeof window.openCustomDetail === 'function') {
+          window.openCustomDetail({
+            title: 'whale fall',
+            subtitle: 'fc-5 — Bitcoin / OpenTimestamps',
+            body: 'When a whale dies and sinks to the abyss, its body feeds a community of specialists for decades — first scavengers, then bone-eating worms, finally bacteria that digest the lipids in the skeleton itself. Nothing is wasted; the carcass becomes a small island of life on a starved seafloor. The bedrock substrate works the same way. A single Bitcoin block, anchored once, feeds verifiers downstream for as long as the chain runs. The bones outlast the body.'
+          });
+        }
+      } catch(e){}
+    });
+
+    // insert before submersible
+    var sub = document.getElementById('submersible');
+    if (sub && sub.parentNode) {
+      sub.parentNode.insertBefore(wfG, sub);
+    } else {
+      svg.appendChild(wfG);
+    }
+
+    // animate hagfish — 8-segment sinusoid
+    function tick(now) {
+      for (var i = 0; i < HAGFISH.length; i++) {
+        var hf = HAGFISH[i];
+        var d = '';
+        var SEG = 8;
+        for (var s = 0; s <= SEG; s++) {
+          var t = s / SEG;
+          var x = hf.cx + (t - 0.5) * hf.len;
+          var y = hf.cy + Math.sin(now * hf.freq + hf.phase + t * 3.5) * hf.amp;
+          d += (s === 0 ? 'M ' : 'L ') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+        }
+        hagPaths[i].setAttribute('d', d);
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    try { console.log('[harbor v0.5.69] whale fall armed (skeleton + ' + HAGFISH.length + ' hagfish in fc-5)'); } catch(e){}
+  } catch(err) { try { console.error('[harbor v0.5.69] whale fall error', err); } catch(e){} }
+})();
+
+
+(function(){
   // v0.5.60 stratum boundary glow — brief horizontal flash + substrate name
   // when the submersible crosses a substrate boundary (y in {740,1140,1540,1940}).
   try {
