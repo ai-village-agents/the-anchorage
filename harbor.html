@@ -2775,6 +2775,86 @@
   } catch(err) { try { console.error('[harbor v0.5.56] clouds error', err); } catch(e){} }
 })();
 
+
+(function(){
+  try {
+    var svg = document.querySelector('svg');
+    if (!svg) return;
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(SVG_NS, 'g');
+    g.setAttribute('id', 'giantIsopod');
+
+    // Body (ellipse)
+    var body = document.createElementNS(SVG_NS, 'ellipse');
+    body.setAttribute('cx', '0'); body.setAttribute('cy', '0');
+    body.setAttribute('rx', '18'); body.setAttribute('ry', '8');
+    body.setAttribute('fill', '#7a5c3e');
+    body.setAttribute('stroke', '#4a3a2e'); body.setAttribute('stroke-width', '0.5');
+    g.appendChild(body);
+
+    // Dorsal segment lines
+    [-12,-8,-4,0,4,8,12].forEach(function(sx){
+      var ln = document.createElementNS(SVG_NS, 'line');
+      ln.setAttribute('x1', sx); ln.setAttribute('y1', '-7');
+      ln.setAttribute('x2', sx); ln.setAttribute('y2', '7');
+      ln.setAttribute('stroke', '#3a2a1e'); ln.setAttribute('stroke-width', '0.6');
+      g.appendChild(ln);
+    });
+
+    // Antennae
+    [[-18,-2,-26,-6],[-18,2,-26,6]].forEach(function(c){
+      var ln = document.createElementNS(SVG_NS, 'line');
+      ln.setAttribute('x1', c[0]); ln.setAttribute('y1', c[1]);
+      ln.setAttribute('x2', c[2]); ln.setAttribute('y2', c[3]);
+      ln.setAttribute('stroke', '#3a2a1e'); ln.setAttribute('stroke-width', '0.7');
+      g.appendChild(ln);
+    });
+
+    // Eyes
+    [-3,3].forEach(function(cy){
+      var e = document.createElementNS(SVG_NS, 'circle');
+      e.setAttribute('cx', '-15'); e.setAttribute('cy', cy); e.setAttribute('r', '1.2');
+      e.setAttribute('fill', '#0a0a0a');
+      g.appendChild(e);
+    });
+
+    // Legs (7 pairs)
+    [-12,-8,-4,0,4,8,12].forEach(function(sx){
+      [[8,12],[-8,-12]].forEach(function(yp){
+        var ln = document.createElementNS(SVG_NS, 'line');
+        ln.setAttribute('x1', sx); ln.setAttribute('y1', yp[0]);
+        ln.setAttribute('x2', sx-1.5); ln.setAttribute('y2', yp[1]);
+        ln.setAttribute('stroke', '#3a2a1e'); ln.setAttribute('stroke-width', '0.7');
+        g.appendChild(ln);
+      });
+    });
+
+    // Tail fan
+    [['18,-4 24,-2 22,0'], ['18,4 24,2 22,0'], ['18,0 26,0 24,-1']].forEach(function(pp){
+      var pg = document.createElementNS(SVG_NS, 'polygon');
+      pg.setAttribute('points', pp[0]); pg.setAttribute('fill', '#5a4432');
+      g.appendChild(pg);
+    });
+
+    svg.appendChild(g);
+
+    var x = 200, y = 2330, dir = 1, speed = 8;
+    var lastT = performance.now();
+    function frame(now){
+      var dt = Math.min(60, now - lastT); lastT = now;
+      x += dir * speed * (dt/1000);
+      if (x > 980) dir = -1;
+      if (x < 200) dir = 1;
+      var bob = Math.sin(now*0.0008)*1.5;
+      var sy = (1 + Math.sin(now*0.004)*0.04).toFixed(3);
+      g.setAttribute('transform', 'translate(' + x.toFixed(2) + ',' + (y + bob).toFixed(2) + ') scale(' + dir.toFixed(2) + ',' + sy + ')');
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    try { console.log('[harbor v0.5.58] giant isopod armed (fc-5 bedrock)'); } catch(e){}
+  } catch(err) { try { console.error('[harbor v0.5.58] isopod error', err); } catch(e){} }
+})();
+
 </script>
 
 </body>
