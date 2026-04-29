@@ -798,7 +798,7 @@
 </section>
 
 <footer class="foot">
-  the anchorage · v0.5.45 · harbor — an immersive depth view · jellies brighten near sub · L toggles exterior lights
+  the anchorage · v0.5.46 · harbor — immersive depth view · L exterior lights · coelacanth drifts in fc-3
 </footer>
 
 <script src="anchorage.js"></script>
@@ -2127,6 +2127,85 @@
     requestAnimationFrame(tick);
     try { console.log("[harbor v0.5.44] bioluminescent jellies armed (" + JELLIES.length + ")"); } catch(e){}
   })();
+
+  // v0.5.46 — coelacanth (living fossil) drifts slowly through fc-3 (marks.json layer).
+  // fc-3 ↔ marks.json: surprisingly long-lived. Older than wayback caches, slower than issue threads.
+  (function(){
+    var svg = document.querySelector(".harbor-svg");
+    if (!svg) return;
+    var SVG_NS = "http://www.w3.org/2000/svg";
+    var g = document.createElementNS(SVG_NS, "g");
+    g.setAttribute("id", "coelacanth");
+    g.setAttribute("opacity", "0.78");
+    g.setAttribute("pointer-events", "none");
+    // body — long lobed oval
+    var body = document.createElementNS(SVG_NS, "ellipse");
+    body.setAttribute("cx", "0"); body.setAttribute("cy", "0");
+    body.setAttribute("rx", "26"); body.setAttribute("ry", "8");
+    body.setAttribute("fill", "#5a4838");
+    g.appendChild(body);
+    // dorsal hump
+    var hump = document.createElementNS(SVG_NS, "path");
+    hump.setAttribute("d", "M -8,-7 Q 0,-12 8,-7 Z");
+    hump.setAttribute("fill", "#6a5848");
+    g.appendChild(hump);
+    // pectoral fin (lobed — stalk + paddle, the signature coelacanth feature)
+    var pec = document.createElementNS(SVG_NS, "g");
+    var pecStalk = document.createElementNS(SVG_NS, "path");
+    pecStalk.setAttribute("d", "M -2,3 Q 0,8 6,11");
+    pecStalk.setAttribute("stroke", "#3a2a20");
+    pecStalk.setAttribute("stroke-width", "1.4");
+    pecStalk.setAttribute("fill", "none");
+    pec.appendChild(pecStalk);
+    var pecBlade = document.createElementNS(SVG_NS, "ellipse");
+    pecBlade.setAttribute("cx", "6"); pecBlade.setAttribute("cy", "11");
+    pecBlade.setAttribute("rx", "5"); pecBlade.setAttribute("ry", "2.5");
+    pecBlade.setAttribute("fill", "#4a3a2a");
+    pec.appendChild(pecBlade);
+    g.appendChild(pec);
+    // pelvic fin (smaller, also lobed)
+    var pelvic = document.createElementNS(SVG_NS, "ellipse");
+    pelvic.setAttribute("cx", "8"); pelvic.setAttribute("cy", "8");
+    pelvic.setAttribute("rx", "3"); pelvic.setAttribute("ry", "1.4");
+    pelvic.setAttribute("fill", "#4a3a2a");
+    g.appendChild(pelvic);
+    // 3-lobed tail (signature coelacanth diphycercal tail)
+    var tail = document.createElementNS(SVG_NS, "path");
+    tail.setAttribute("d", "M 22,-1 L 36,-7 L 30,0 L 36,7 L 22,1 Z");
+    tail.setAttribute("fill", "#4a3a2a");
+    g.appendChild(tail);
+    // eye
+    var eye = document.createElementNS(SVG_NS, "circle");
+    eye.setAttribute("cx", "-16"); eye.setAttribute("cy", "-2");
+    eye.setAttribute("r", "1.6");
+    eye.setAttribute("fill", "#fef3c7");
+    g.appendChild(eye);
+    var pupil = document.createElementNS(SVG_NS, "circle");
+    pupil.setAttribute("cx", "-16"); pupil.setAttribute("cy", "-2");
+    pupil.setAttribute("r", "0.8");
+    pupil.setAttribute("fill", "#1a1006");
+    g.appendChild(pupil);
+    svg.appendChild(g);
+    // motion: slow loop across fc-3, period ~70s — living fossil pace
+    var t0 = performance.now();
+    var period = 70000;
+    function tick(){
+      var now = performance.now();
+      var t = (now - t0) / period;
+      var phase = t - Math.floor(t);
+      var dir = (Math.floor(t) % 2) === 0 ? 1 : -1;
+      var u = phase;
+      var x = dir > 0 ? 100 + 1000*u : 1100 - 1000*u;
+      var y = 1340 + Math.sin(now*0.0004)*60 + Math.sin(now*0.0011)*8;
+      var fp = Math.sin(now*0.002)*8;
+      pec.setAttribute("transform", "rotate(" + fp.toFixed(1) + " 6 11)");
+      g.setAttribute("transform", "translate(" + x.toFixed(1) + "," + y.toFixed(1) + ") scale(" + dir + ",1)");
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    try { console.log("[harbor v0.5.46] coelacanth (living fossil) released into fc-3"); } catch(e){}
+  })();
+
 </script>
 
 </body>
