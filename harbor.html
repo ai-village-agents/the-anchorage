@@ -2955,6 +2955,123 @@
   } catch(err) { try { console.error('[harbor v0.5.64] octopus error', err); } catch(e){} }
 })();
 
+(function(){
+  'use strict';
+  // v0.5.65 dive trail — submersible leaves a faint persistent trail (localStorage)
+  // Each visitor sees their own past trail when they return; the world remembers.
+  try {
+    var svg = document.querySelector('svg');
+    if (!svg) return;
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    var KEY = 'theanchorage:divetrail';
+    var MAX_POINTS = 80;
+    var SAMPLE_MS = 1500;
+
+    function load(){
+      try {
+        var raw = localStorage.getItem(KEY);
+        if (!raw) return [];
+        var arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+      } catch(e) { return []; }
+    }
+    function save(arr){
+      try { localStorage.setItem(KEY, JSON.stringify(arr)); } catch(e){}
+    }
+
+    var trail = load();
+
+    var g = document.createElementNS(SVG_NS, 'g');
+    g.setAttribute('id', 'diveTrail');
+    g.setAttribute('opacity', '0.55');
+    g.style.pointerEvents = 'none';
+    // Insert behind submersible so trail draws under sub
+    var sub = document.getElementById('submersible');
+    if (sub && sub.parentNode === svg) {
+      svg.insertBefore(g, sub);
+    } else {
+      svg.appendChild(g);
+    }
+
+    var poly = document.createElementNS(SVG_NS, 'polyline');
+    poly.setAttribute('fill', 'none');
+    poly.setAttribute('stroke', '#5ba8c8');
+    poly.setAttribute('stroke-width', '1');
+    poly.setAttribute('stroke-linecap', 'round');
+    poly.setAttribute('stroke-linejoin', 'round');
+    poly.setAttribute('opacity', '0.45');
+    poly.setAttribute('stroke-dasharray', '2 4');
+    g.appendChild(poly);
+
+    var dotsLayer = document.createElementNS(SVG_NS, 'g');
+    g.appendChild(dotsLayer);
+
+    function render(){
+      // Polyline points
+      var pts = trail.map(function(p){ return p.x.toFixed(1) + ',' + p.y.toFixed(1); }).join(' ');
+      poly.setAttribute('points', pts);
+      // Recreate dots (cheap with N=80)
+      while (dotsLayer.firstChild) dotsLayer.removeChild(dotsLayer.firstChild);
+      var n = trail.length;
+      trail.forEach(function(p, i){
+        var c = document.createElementNS(SVG_NS, 'circle');
+        c.setAttribute('cx', p.x.toFixed(1));
+        c.setAttribute('cy', p.y.toFixed(1));
+        c.setAttribute('r', '1.4');
+        c.setAttribute('fill', '#5ba8c8');
+        // Fade older points (head of array = oldest)
+        var ageRatio = n > 1 ? i / (n - 1) : 1; // 0 oldest, 1 newest
+        var op = 0.15 + ageRatio * 0.55;
+        c.setAttribute('opacity', op.toFixed(2));
+        dotsLayer.appendChild(c);
+      });
+    }
+
+    function getSubXY(){
+      var s = document.getElementById('submersible');
+      if (!s) return null;
+      var t = s.getAttribute('transform') || '';
+      var m = t.match(/translate\(\s*([\-\d.]+)\s*,\s*([\-\d.]+)\s*\)/);
+      if (!m) return null;
+      return { x: parseFloat(m[1]), y: parseFloat(m[2]) };
+    }
+
+    var lastSample = 0;
+    function tick(now){
+      if (now - lastSample > SAMPLE_MS) {
+        lastSample = now;
+        var p = getSubXY();
+        if (p && isFinite(p.x) && isFinite(p.y)) {
+          var last = trail[trail.length - 1];
+          // Skip if essentially identical to last point
+          if (!last || Math.abs(last.x - p.x) > 4 || Math.abs(last.y - p.y) > 4) {
+            trail.push({ x: Math.round(p.x), y: Math.round(p.y), t: Date.now() });
+            if (trail.length > MAX_POINTS) trail.shift();
+            save(trail);
+            render();
+          }
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    render();
+    requestAnimationFrame(tick);
+
+    // Press K to clear trail
+    document.addEventListener('keydown', function(e){
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+      if (e.key === 'k' || e.key === 'K') {
+        trail = [];
+        save(trail);
+        render();
+        try { console.log('[harbor v0.5.65] dive trail cleared'); } catch(e2){}
+      }
+    });
+
+    try { console.log('[harbor v0.5.65] dive trail armed (' + trail.length + ' points loaded)'); } catch(e){}
+  } catch(err) { try { console.error('[harbor v0.5.65] dive trail error', err); } catch(e){} }
+})();
+
 
 (function(){
   // v0.5.60 stratum boundary glow — brief horizontal flash + substrate name
