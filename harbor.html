@@ -7197,6 +7197,77 @@
 })();
 
 
+// v0.5.154 shore heron — stilt-legged silhouette on a small rock at the surface, occasional head dip
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('id','shoreHeron');
+  g.setAttribute('pointer-events','none');
+  // anchor on a tiny rock that sits in the surface band
+  const SX = 388, SY = 312;
+  g.setAttribute('transform', 'translate('+SX+','+SY+')');
+  // structure (local coords):
+  //   small rock under feet  (centered y=0)
+  //   legs from y=-1 down to y=-1 (rest on rock); thigh/knee
+  //   body ellipse centered at y=-22
+  //   neck path (S-curve) up to head
+  //   head + beak
+  g.innerHTML = [
+    // rock
+    '<ellipse cx="0" cy="1.2" rx="9" ry="1.6" fill="#0c1622" opacity="0.85"/>',
+    '<ellipse cx="-1" cy="0.2" rx="6.2" ry="1.0" fill="#16202c" opacity="0.85"/>',
+    // legs (two thin lines)
+    '<line id="heronLegL" x1="-2.4" y1="-19" x2="-2.4" y2="0" stroke="#0a1018" stroke-width="0.9" stroke-linecap="round"/>',
+    '<line id="heronLegR" x1="1.6" y1="-19" x2="1.6" y2="0" stroke="#0a1018" stroke-width="0.9" stroke-linecap="round"/>',
+    // body
+    '<ellipse cx="-1" cy="-22" rx="8.5" ry="4.2" fill="#0c1420"/>',
+    // tail tuft
+    '<path d="M 6 -22 q 6 1 8 4" stroke="#0c1420" stroke-width="2" fill="none" stroke-linecap="round"/>',
+    // neck group rotates around shoulder (-3,-22)
+    '<g id="heronNeck" transform="rotate(0 -3 -22)">',
+    '  <path id="heronNeckPath" d="M -3 -22 q -2 -8 0 -14 q 2 -6 6 -7" stroke="#0c1420" stroke-width="1.8" fill="none" stroke-linecap="round"/>',
+    '  <ellipse cx="3" cy="-43" rx="2.6" ry="1.8" fill="#0c1420"/>',
+    '  <line x1="5.2" y1="-43" x2="11" y2="-43.4" stroke="#dabb70" stroke-width="0.9" stroke-linecap="round"/>',
+    '  <circle cx="3.4" cy="-43.4" r="0.32" fill="#fff7c0"/>',
+    '</g>',
+  ].join('');
+  // insert before help overlay
+  svg.appendChild(g);
+  // state machine: idle (3-9s) -> dip (1.4s, neck rotates +60° down then back) -> idle
+  // also occasional 'preen' (rotate ±18° head turn during idle)
+  let state = 'idle';
+  let stateT0 = performance.now();
+  let stateDur = 3500 + Math.random()*5500;
+  const neckEl = g.querySelector('#heronNeck');
+  function frame(now){
+    const elapsed = now - stateT0;
+    // subtle body sway always
+    const bodySway = Math.sin(now*0.0008)*0.4;
+    g.querySelector('ellipse[cx="-1"][cy="-22"]').setAttribute('transform','translate(0,'+bodySway.toFixed(2)+')');
+    if (state === 'idle'){
+      // small head turn
+      const turn = Math.sin(now*0.0012)*6;
+      neckEl.setAttribute('transform','rotate('+turn.toFixed(2)+' -3 -22)');
+      if (elapsed >= stateDur){
+        state = 'dip'; stateT0 = now; stateDur = 1300 + Math.random()*400;
+      }
+    } else if (state === 'dip'){
+      // rotate down to ~+62 then back, ease via sin
+      const k = elapsed / stateDur;
+      const ang = Math.sin(Math.min(1,Math.max(0,k))*Math.PI) * 62;
+      neckEl.setAttribute('transform','rotate('+ang.toFixed(2)+' -3 -22)');
+      if (elapsed >= stateDur){
+        state = 'idle'; stateT0 = now; stateDur = 4500 + Math.random()*6000;
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.154] shore heron armed (silhouette at '+SX+','+SY+' with periodic dip)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
