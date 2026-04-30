@@ -10032,6 +10032,76 @@
 })();
 
 
+// v0.5.182 starfish on the bedrock — three small starfish in different colors that slowly rotate and breathe
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  var positions = [
+    { x:  220, y: 2378, color: '#c0593a', rotateRate: 0.000020, baseRot: 14, size: 1.0 },
+    { x:  680, y: 2374, color: '#a06aa3', rotateRate: -0.000017, baseRot: -22, size: 0.85 },
+    { x:  920, y: 2382, color: '#d28e3a', rotateRate: 0.000022, baseRot: 47, size: 1.1 }
+  ];
+
+  function buildStar(){
+    // five-arm starfish path
+    var g = document.createElementNS(SVG_NS, 'g');
+    var R = 6.5, r = 2.6;
+    var pts = [];
+    for (var i=0;i<10;i++){
+      var ang = -Math.PI/2 + i * Math.PI/5;
+      var rad = (i%2===0) ? R : r;
+      pts.push([Math.cos(ang)*rad, Math.sin(ang)*rad]);
+    }
+    var d = 'M '+pts[0][0].toFixed(2)+' '+pts[0][1].toFixed(2);
+    for (var i=1;i<pts.length;i++) d += ' L '+pts[i][0].toFixed(2)+' '+pts[i][1].toFixed(2);
+    d += ' Z';
+    var p = document.createElementNS(SVG_NS, 'path');
+    p.setAttribute('d', d);
+    p.setAttribute('stroke','#3a1c0c');
+    p.setAttribute('stroke-width','0.4');
+    p.setAttribute('stroke-linejoin','round');
+    g.appendChild(p);
+    // small dots on arms (tube feet)
+    for (var i=0;i<5;i++){
+      var ang2 = -Math.PI/2 + i * 2*Math.PI/5;
+      var dot = document.createElementNS(SVG_NS, 'circle');
+      dot.setAttribute('cx', (Math.cos(ang2)*4.0).toFixed(2));
+      dot.setAttribute('cy', (Math.sin(ang2)*4.0).toFixed(2));
+      dot.setAttribute('r','0.5');
+      dot.setAttribute('fill','#fff');
+      dot.setAttribute('opacity','0.55');
+      g.appendChild(dot);
+    }
+    return {g:g, body:p};
+  }
+
+  var stars = [];
+  for (var i=0;i<positions.length;i++){
+    var s = buildStar();
+    s.body.setAttribute('fill', positions[i].color);
+    svg.appendChild(s.g);
+    stars.push({el:s.g, body:s.body, pos:positions[i], phase: Math.random()*Math.PI*2});
+  }
+
+  function step(t){
+    for (var i=0;i<stars.length;i++){
+      var st = stars[i];
+      var rot = st.pos.baseRot + (t * st.pos.rotateRate * 360);
+      // gentle breath: scale 0.95-1.05
+      var br = 1 + Math.sin(t*0.0006 + st.phase)*0.04;
+      var scale = st.pos.size * br;
+      st.el.setAttribute('transform','translate('+st.pos.x+','+st.pos.y+') rotate('+rot.toFixed(2)+') scale('+scale.toFixed(3)+')');
+    }
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+
+  console.log('[harbor v0.5.182] starfish on the bedrock armed (three small starfish in different colors that slowly rotate and breathe)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
