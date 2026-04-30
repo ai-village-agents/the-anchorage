@@ -8703,6 +8703,107 @@
 })();
 
 
+// v0.5.172 constellation outlines — three faint star patterns occasionally appear, slow fade in/out
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  const g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'constellations');
+  g.setAttribute('pointer-events', 'none');
+
+  // Three fixed small constellations (each a polyline through hand-picked points,
+  // chosen to fall in the upper sky region y < 200, x within (60, 1140)).
+  // Each star is a small bright dot + a connector line; lines are very faint.
+  const patterns = [
+    {
+      name: 'anchor',
+      stars: [[110, 60], [130, 90], [150, 70], [165, 110], [125, 130], [105, 110], [85, 130]],
+      // path: 0-1-2-3-4-5-6
+      path: [0,1,2,3,4,5,6],
+    },
+    {
+      name: 'sail',
+      stars: [[490, 40], [560, 70], [510, 110], [580, 140]],
+      path: [0,1,2,3,1],
+    },
+    {
+      name: 'bridge',
+      stars: [[940, 50], [1010, 30], [1080, 50], [1050, 110], [970, 110]],
+      path: [0,1,2,3,4,0],
+    },
+  ];
+
+  const groups = patterns.map(pat => {
+    const pg = document.createElementNS(SVG_NS, 'g');
+    pg.setAttribute('opacity', '0');
+    // line: build path string from indices
+    const dParts = [];
+    pat.path.forEach((idx, i) => {
+      const [x, y] = pat.stars[idx];
+      dParts.push((i === 0 ? 'M ' : 'L ') + x + ' ' + y);
+    });
+    const line = document.createElementNS(SVG_NS, 'path');
+    line.setAttribute('d', dParts.join(' '));
+    line.setAttribute('stroke', '#a8c8ff');
+    line.setAttribute('stroke-width', '0.5');
+    line.setAttribute('fill', 'none');
+    line.setAttribute('opacity', '0.45');
+    line.setAttribute('stroke-dasharray', '0.8,2.4');
+    pg.appendChild(line);
+    // stars: add brighter dots over base sky stars
+    pat.stars.forEach(([x, y]) => {
+      const c = document.createElementNS(SVG_NS, 'circle');
+      c.setAttribute('cx', x);
+      c.setAttribute('cy', y);
+      c.setAttribute('r', '1.4');
+      c.setAttribute('fill', '#fff8d8');
+      pg.appendChild(c);
+    });
+    g.appendChild(pg);
+    return { pg, base: 0 };
+  });
+
+  svg.appendChild(g);
+
+  // Each constellation has its own slow envelope: idle (long) → fading in → visible → fading out
+  // Stagger them so usually only 1 is showing at a time
+  const envs = groups.map((_, i) => ({
+    state: 'idle',
+    stateT0: performance.now(),
+    stateDur: 12000 + i*22000 + Math.random()*40000, // initial idle gaps
+  }));
+
+  function tick(now){
+    envs.forEach((env, i) => {
+      const e = now - env.stateT0;
+      const grp = groups[i].pg;
+      if (env.state === 'idle' && e >= env.stateDur) {
+        env.state = 'fadingIn'; env.stateT0 = now; env.stateDur = 4000 + Math.random()*2000;
+      } else if (env.state === 'fadingIn' && e >= env.stateDur) {
+        env.state = 'visible'; env.stateT0 = now; env.stateDur = 14000 + Math.random()*16000;
+      } else if (env.state === 'visible' && e >= env.stateDur) {
+        env.state = 'fadingOut'; env.stateT0 = now; env.stateDur = 5000 + Math.random()*3000;
+      } else if (env.state === 'fadingOut' && e >= env.stateDur) {
+        env.state = 'idle'; env.stateT0 = now; env.stateDur = 60000 + Math.random()*120000;
+        grp.setAttribute('opacity', '0');
+      }
+      // compute opacity based on state
+      let op = 0;
+      if (env.state === 'fadingIn') op = (e / env.stateDur) * 0.55;
+      else if (env.state === 'visible') op = 0.55;
+      else if (env.state === 'fadingOut') op = (1 - e / env.stateDur) * 0.55;
+      if (env.state !== 'idle') grp.setAttribute('opacity', op.toFixed(3));
+    });
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  console.log('[harbor v0.5.172] constellation outlines armed (three faint patterns, slow fade in/out)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
