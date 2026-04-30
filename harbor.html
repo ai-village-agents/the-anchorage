@@ -7345,6 +7345,54 @@
 })();
 
 
+// v0.5.156 dock pilings — three weathered posts sticking out of the surface near the eastern shore
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('id','dockPilings');
+  g.setAttribute('pointer-events','none');
+  // three pilings clustered: x=840, 856, 870 — each post extends from y_top up out of water down to y_base in water
+  // local coords for the group origin at (840,322); each piling drawn relative
+  const PILES = [
+    { dx:0,  topY:270, botY:328, w:3.0, lean:-1.4 },
+    { dx:18, topY:264, botY:330, w:3.4, lean: 0.6 },
+    { dx:34, topY:272, botY:328, w:3.0, lean: 1.2 },
+  ];
+  let inner = '';
+  PILES.forEach((p,i)=>{
+    // post: thin rect with leaning skew (x1=top, x2=bottom)
+    const x1 = p.dx + p.lean;
+    const x2 = p.dx;
+    inner += '<path d="M '+(x1-p.w/2).toFixed(1)+' '+p.topY+' L '+(x1+p.w/2).toFixed(1)+' '+p.topY+' L '+(x2+p.w/2).toFixed(1)+' '+p.botY+' L '+(x2-p.w/2).toFixed(1)+' '+p.botY+' Z" fill="#1a1410" opacity="0.92"/>';
+    // weathered top cap
+    inner += '<rect x="'+(x1-p.w/2-0.6).toFixed(1)+'" y="'+(p.topY-1.6)+'" width="'+(p.w+1.2).toFixed(1)+'" height="1.6" fill="#2a2218"/>';
+    // small barnacle/dripping highlight
+    inner += '<circle cx="'+x2.toFixed(1)+'" cy="'+(p.botY-3)+'" r="0.6" fill="#3a3228" opacity="0.7"/>';
+    // wave wash ellipse around base (will be animated)
+    inner += '<ellipse class="piling-wash" data-i="'+i+'" cx="'+x2.toFixed(1)+'" cy="'+(p.botY+1).toFixed(1)+'" rx="6" ry="0.7" fill="#7aa2ff" opacity="0.22"/>';
+  });
+  g.innerHTML = inner;
+  // anchor at x=840 (eastern shore region between trawler path and east lighthouse)
+  g.setAttribute('transform','translate(840,0)');
+  svg.appendChild(g);
+  const washes = g.querySelectorAll('.piling-wash');
+  function frame(now){
+    washes.forEach((w,i)=>{
+      // breathe each wash slightly out of phase
+      const k = Math.sin(now*0.0014 + i*1.7);
+      const op = 0.18 + 0.10*((k+1)/2);
+      const rx = 5.4 + ((k+1)/2)*1.6;
+      w.setAttribute('opacity', op.toFixed(3));
+      w.setAttribute('rx', rx.toFixed(2));
+    });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.156] dock pilings armed (3 posts at eastern shore 840-874)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
