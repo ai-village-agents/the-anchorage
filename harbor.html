@@ -8986,6 +8986,130 @@
 })();
 
 
+// v0.5.175 bell buoy — a new fixture between the green and red channel buoys: a small cage-topped float that bobs and emits faint periodic chime ripples
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  // anchor location — between the green port buoy (380) and the red channel buoy (820)
+  const X = 600;
+  const Y_BASE = 388;
+
+  // group containing the buoy itself (will receive bobbing transform)
+  const g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'bellBuoy');
+  g.innerHTML = [
+    // mooring line (faint vertical to suggest it's anchored)
+    '<line x1="0" y1="6" x2="0" y2="38" stroke="#1a2638" stroke-width="0.6" opacity="0.55"/>',
+    // float — squat oval, weathered white
+    '<ellipse cx="0" cy="2.4" rx="6.2" ry="3.2" fill="#dadfe6" stroke="#3c4858" stroke-width="0.45"/>',
+    // waterline shadow on float
+    '<ellipse cx="0" cy="3.8" rx="5.8" ry="1.2" fill="#222b3a" opacity="0.55"/>',
+    // top deck (where the cage sits)
+    '<rect x="-3.4" y="-0.2" width="6.8" height="1.4" fill="#b8bfca" stroke="#3c4858" stroke-width="0.35"/>',
+    // four cage struts converging up to the bell housing
+    '<line x1="-3.0" y1="-0.2" x2="-1.0" y2="-7.5" stroke="#3c4858" stroke-width="0.5"/>',
+    '<line x1="3.0"  y1="-0.2" x2="1.0"  y2="-7.5" stroke="#3c4858" stroke-width="0.5"/>',
+    '<line x1="-1.6" y1="-0.2" x2="-0.5" y2="-7.5" stroke="#2c3848" stroke-width="0.4" opacity="0.7"/>',
+    '<line x1="1.6"  y1="-0.2" x2="0.5"  y2="-7.5" stroke="#2c3848" stroke-width="0.4" opacity="0.7"/>',
+    // mid horizontal cage band
+    '<line x1="-2.2" y1="-3.6" x2="2.2" y2="-3.6" stroke="#3c4858" stroke-width="0.4" opacity="0.85"/>',
+    // top horizontal cage band
+    '<line x1="-1.0" y1="-7.5" x2="1.0" y2="-7.5" stroke="#3c4858" stroke-width="0.45"/>',
+    // bell housing — small dome
+    '<path d="M -1.0 -7.5 Q 0 -10.0 1.0 -7.5 Z" fill="#5a6270" stroke="#1a2230" stroke-width="0.35"/>',
+    // small clapper hint inside (faint dot)
+    '<circle cx="0" cy="-7.9" r="0.4" fill="#2a3340" opacity="0.85"/>',
+    // small day-mark band of red on the float
+    '<rect x="-6.0" y="0.9" width="12.0" height="0.9" fill="#b53a30" opacity="0.9"/>',
+  ].join('');
+  svg.appendChild(g);
+
+  // separate group for chime ripples so they layer cleanly on top
+  const gRing = document.createElementNS(SVG_NS, 'g');
+  gRing.setAttribute('id', 'bellBuoyRings');
+  gRing.style.mixBlendMode = 'screen';
+  // pre-create a small pool of ring elements
+  const RING_POOL = 4;
+  const rings = [];
+  for (let i = 0; i < RING_POOL; i++) {
+    const c = document.createElementNS(SVG_NS, 'circle');
+    c.setAttribute('cx', X);
+    c.setAttribute('cy', Y_BASE - 9);   // ring origin at the bell
+    c.setAttribute('r', '0');
+    c.setAttribute('fill', 'none');
+    c.setAttribute('stroke', '#cfe2ff');
+    c.setAttribute('stroke-width', '0.7');
+    c.setAttribute('opacity', '0');
+    gRing.appendChild(c);
+    rings.push({ el: c, active: false, t0: 0, dur: 0, maxR: 0 });
+  }
+  svg.appendChild(gRing);
+
+  // chime scheduling — irregular intervals so it doesn't feel mechanical
+  let nextChimeAt = performance.now() + 4000 + Math.random() * 6000;
+
+  function emitRing(now) {
+    // pick first inactive ring
+    for (const r of rings) {
+      if (!r.active) {
+        r.active = true;
+        r.t0 = now;
+        r.dur = 2400 + Math.random() * 1200;
+        r.maxR = 26 + Math.random() * 14;
+        return;
+      }
+    }
+  }
+
+  function step(now) {
+    // gentle bob + tilt
+    const bobY = Math.sin(now * 0.0014) * 1.6;
+    const bobX = Math.sin(now * 0.0009 + 0.7) * 0.6;
+    const tilt = Math.sin(now * 0.0014 + 0.3) * 3.5; // degrees
+    g.setAttribute('transform',
+      'translate(' + (X + bobX).toFixed(2) + ' ' + (Y_BASE + bobY).toFixed(2) + ') ' +
+      'rotate(' + tilt.toFixed(2) + ')');
+
+    // schedule chimes
+    if (now >= nextChimeAt) {
+      // chime: emit one ring, occasionally a quick double
+      emitRing(now);
+      if (Math.random() < 0.35) {
+        setTimeout(() => emitRing(performance.now()), 220 + Math.random() * 180);
+      }
+      nextChimeAt = now + (5500 + Math.random() * 9500);
+    }
+
+    // animate active rings
+    for (const r of rings) {
+      if (!r.active) continue;
+      const k = (now - r.t0) / r.dur;
+      if (k >= 1) {
+        r.active = false;
+        r.el.setAttribute('opacity', '0');
+        r.el.setAttribute('r', '0');
+        continue;
+      }
+      const radius = r.maxR * k;
+      // fade in fast at start, fade out toward end
+      let op;
+      if (k < 0.12) op = (k / 0.12) * 0.5;
+      else op = (1 - k) * 0.5;
+      r.el.setAttribute('r', radius.toFixed(2));
+      r.el.setAttribute('opacity', op.toFixed(3));
+    }
+
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+
+  console.log('[harbor v0.5.175] bell buoy armed (mid-harbor cage buoy with periodic chime ripples)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
