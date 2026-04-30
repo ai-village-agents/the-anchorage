@@ -8514,6 +8514,78 @@
 })();
 
 
+// v0.5.170 distant fishing fleet — small cluster of warm yellow lights bobbing on the far horizon
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  const g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'distantFleet');
+  g.setAttribute('pointer-events', 'none');
+
+  // Cluster center on horizon, far from existing distant ship (which uses Y=296 with motion)
+  // Place this fleet anchored toward the right side of the horizon, slightly inset from the edge
+  const CX = 920, CY = 297;
+  const N = 7;
+  // generate fixed cluster offsets (deterministic so they don't move every reload)
+  const offsets = [];
+  let seed = 51;
+  function rnd(){ seed = (seed*9301 + 49297) % 233280; return seed/233280; }
+  for (let i = 0; i < N; i++) {
+    const dx = (rnd() - 0.5) * 76;       // -38..+38
+    const dy = (rnd() - 0.5) * 4;        // -2..+2
+    const sz = 0.55 + rnd()*0.55;        // size 0.55..1.1
+    const flickPhase = rnd() * Math.PI * 2;
+    const flickSpeed = 0.0007 + rnd()*0.0009;
+    const bobPhase = rnd() * Math.PI * 2;
+    const bobSpeed = 0.0008 + rnd()*0.0006;
+    offsets.push({ dx, dy, sz, flickPhase, flickSpeed, bobPhase, bobSpeed });
+  }
+
+  // For each light: tiny halo + warm bulb
+  const lights = offsets.map((o, i) => {
+    const lg = document.createElementNS(SVG_NS, 'g');
+    lg.setAttribute('class', 'fleet-light');
+    lg.innerHTML = [
+      '<circle class="fleet-halo" cx="0" cy="0" r="' + (2.4*o.sz).toFixed(2) + '" fill="#ffd070" opacity="0.45"/>',
+      '<circle class="fleet-bulb" cx="0" cy="0" r="' + (0.7*o.sz).toFixed(2) + '" fill="#fff0b8" opacity="0.95"/>',
+    ].join('');
+    g.appendChild(lg);
+    return lg;
+  });
+
+  // a faint hull silhouette beneath the cluster (very subtle, dark)
+  const hull = document.createElementNS(SVG_NS, 'path');
+  hull.setAttribute('d', 'M ' + (CX-44) + ' ' + (CY+4) + ' q 44 4 88 0 l -8 4 l -72 0 z');
+  hull.setAttribute('fill', '#0a1018');
+  hull.setAttribute('opacity', '0.55');
+  g.insertBefore(hull, g.firstChild);
+
+  svg.appendChild(g);
+
+  function tick(t) {
+    lights.forEach((lg, i) => {
+      const o = offsets[i];
+      const bob = Math.sin(t * o.bobSpeed + o.bobPhase) * 0.35;
+      const x = CX + o.dx;
+      const y = CY + o.dy + bob;
+      lg.setAttribute('transform', 'translate(' + x.toFixed(2) + ',' + y.toFixed(2) + ')');
+      // flicker: bulb + halo opacity vary
+      const flick = 0.78 + Math.sin(t * o.flickSpeed + o.flickPhase) * 0.18;
+      const halo = lg.querySelector('.fleet-halo');
+      const bulb = lg.querySelector('.fleet-bulb');
+      halo.setAttribute('opacity', (0.32 * flick).toFixed(3));
+      bulb.setAttribute('opacity', (0.9 * flick).toFixed(3));
+    });
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  console.log('[harbor v0.5.170] distant fleet armed (warm cluster of lights bobbing on the far horizon)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
