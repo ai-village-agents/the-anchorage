@@ -10662,6 +10662,86 @@
   console.log('[harbor v0.5.188] deep echo armed (slow faint concentric rings emanate outward from the kraken every few minutes)');
 })();
 
+// v0.5.189 vent sonar pulse — quick energetic ring pulses ride upward from the hydrothermal vent
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('id','ventSonarPulse');
+  g.setAttribute('style','pointer-events:none;mix-blend-mode:screen;');
+  // Vent is at (320, 2340). Ring origin a bit above the chimney top.
+  var CX = 320, CY_ORIGIN = 2332;
+  var POOL = 6;
+  var rings = [];
+  for (var i=0;i<POOL;i++){
+    var r = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    r.setAttribute('cx', CX); r.setAttribute('cy', CY_ORIGIN);
+    r.setAttribute('r', 0); r.setAttribute('fill','none');
+    r.setAttribute('stroke','#ffd9a0');
+    r.setAttribute('stroke-width','0.7');
+    r.setAttribute('opacity','0');
+    g.appendChild(r); rings.push({el:r, active:false, t0:0, dur:0, maxR:0, riseY:0});
+  }
+  svg.appendChild(g);
+
+  // Burst state
+  var nextBurstAt = performance.now() + (45000 + Math.random()*65000); // first 45-110s
+  var burstActive = false;
+  var burstRingsRemaining = 0;
+  var nextRingAt = 0;
+
+  function startRing(now){
+    var ring = null;
+    for (var i=0;i<rings.length;i++){ if (!rings[i].active){ ring = rings[i]; break; } }
+    if (!ring) return;
+    ring.active = true;
+    ring.t0 = now;
+    ring.dur = 2400 + Math.random()*1100;       // 2.4-3.5s ring lifetime
+    ring.maxR = 36 + Math.random()*22;           // 36-58 px max radius
+    ring.riseY = 28 + Math.random()*18;          // ring center rises 28-46px as it expands
+  }
+
+  function tick(now){
+    // Schedule next burst
+    if (!burstActive && now >= nextBurstAt){
+      burstActive = true;
+      burstRingsRemaining = 3 + Math.floor(Math.random()*3); // 3-5 rings per burst
+      nextRingAt = now;
+    }
+    if (burstActive && now >= nextRingAt && burstRingsRemaining > 0){
+      startRing(now);
+      burstRingsRemaining--;
+      nextRingAt = now + 480 + Math.random()*340; // 480-820ms between rings within burst
+      if (burstRingsRemaining === 0){
+        burstActive = false;
+        nextBurstAt = now + 90000 + Math.random()*120000; // 90-210s between bursts
+      }
+    }
+    // Update each ring
+    for (var i=0;i<rings.length;i++){
+      var r = rings[i]; if (!r.active) continue;
+      var k = (now - r.t0) / r.dur;
+      if (k >= 1){ r.active = false; r.el.setAttribute('opacity','0'); r.el.setAttribute('r','0'); continue; }
+      var ease = 1 - Math.pow(1-k, 1.6);
+      var radius = r.maxR * ease;
+      var cy = CY_ORIGIN - r.riseY * ease;
+      // Envelope: fade in 0-12%, hold, fade out 60-100%
+      var op;
+      if (k < 0.12) op = (k/0.12) * 0.55;
+      else if (k < 0.60) op = 0.55;
+      else op = 0.55 * (1 - (k - 0.60)/0.40);
+      r.el.setAttribute('cx', CX);
+      r.el.setAttribute('cy', cy);
+      r.el.setAttribute('r', radius.toFixed(2));
+      r.el.setAttribute('opacity', op.toFixed(3));
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.189] vent sonar pulse armed (energetic ring bursts rising from the hydrothermal vent)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
