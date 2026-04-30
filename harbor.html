@@ -11169,6 +11169,83 @@
   console.log('[harbor v0.5.194] phosphor blooms around kraken armed (small bioluminescent puffs ignite around tentacles)');
 })();
 
+// v0.5.195 synchronized jelly flash burst — rare event where all 6 bloom jellies pulse in unison
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  var SVG_NS='http://www.w3.org/2000/svg';
+  var bloom = document.getElementById('jellyBloom');
+  if(!bloom) { console.log('[harbor v0.5.195] jelly bloom not found, skipping'); return; }
+  // overlay group placed AFTER (above) bloom so flashes paint atop
+  var g = document.createElementNS(SVG_NS,'g');
+  g.setAttribute('id','jellySyncBurst');
+  g.setAttribute('style','mix-blend-mode:screen;pointer-events:none');
+  svg.appendChild(g);
+  // create 6 flash circles, position synced with jelly children's transforms
+  var flashes = [];
+  var children = bloom.children;
+  for(var i=0;i<children.length;i++){
+    var c = document.createElementNS(SVG_NS,'circle');
+    c.setAttribute('r','22');
+    c.setAttribute('fill','#dff0ff');
+    c.setAttribute('opacity','0');
+    g.appendChild(c);
+    flashes.push({el:c, src: children[i]});
+  }
+  function readJellyPos(j){
+    var tr = j.src.getAttribute('transform') || '';
+    var m = /translate\(\s*([\-0-9.]+)\s*,\s*([\-0-9.]+)\s*\)/.exec(tr);
+    if(m) return {x: parseFloat(m[1]), y: parseFloat(m[2])};
+    return null;
+  }
+  var state='idle', tStart=0, idleDur=70000+Math.random()*110000; // 70-180s first
+  var burstDur=2200;
+  function frame(now){
+    if(state==='idle'){
+      if(!tStart) tStart=now;
+      if(now-tStart >= idleDur){
+        state='burst'; tStart=now;
+        burstDur = 1900 + Math.random()*900;
+      }
+      // motion - update positions even when invisible so they're set
+      for(var i=0;i<flashes.length;i++){
+        var p = readJellyPos(flashes[i]); if(p){
+          flashes[i].el.setAttribute('cx', p.x.toFixed(2));
+          flashes[i].el.setAttribute('cy', p.y.toFixed(2));
+        }
+      }
+    } else {
+      var t = now - tStart;
+      var k = t/burstDur;
+      if(k>=1){
+        for(var i=0;i<flashes.length;i++) flashes[i].el.setAttribute('opacity','0');
+        state='idle'; tStart=now;
+        idleDur = 90000 + Math.random()*150000; // 90-240s between
+      } else {
+        // single sync envelope: quick rise, slow decay
+        var env;
+        if(k<0.15) env = k/0.15;
+        else env = Math.pow(1 - (k-0.15)/0.85, 1.6);
+        env = Math.max(0, Math.min(1, env));
+        for(var i=0;i<flashes.length;i++){
+          var p = readJellyPos(flashes[i]);
+          if(p){
+            flashes[i].el.setAttribute('cx', p.x.toFixed(2));
+            flashes[i].el.setAttribute('cy', p.y.toFixed(2));
+          }
+          // slight per-jelly variance so they don't look identical
+          var jit = 0.92 + ((i*7)%5)*0.02;
+          flashes[i].el.setAttribute('r', (16 + 14*env*jit).toFixed(2));
+          flashes[i].el.setAttribute('opacity', (0.62 * env * jit).toFixed(3));
+        }
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.195] synchronized jelly flash burst armed (rare event where all 6 bloom jellies pulse in unison)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
