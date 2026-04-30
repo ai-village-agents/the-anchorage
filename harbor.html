@@ -4155,6 +4155,74 @@
   } catch(e) {}
 })();
 
+// v0.5.109 surface fish school — silvery school of fish darting just below the surface (fc-1)
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('id','surfaceFishSchool');
+    g.setAttribute('opacity','0.78');
+    g.setAttribute('pointer-events','none');
+    // 18 fish — flock home positions (relative to school center)
+    var rng = 12345;
+    function rand(){ rng = (rng * 1103515245 + 12345) % 2147483648; return rng / 2147483648; }
+    var COUNT = 18;
+    var fish = [];
+    for(var i=0;i<COUNT;i++){
+      var rx = (rand()*240) - 120;     // relative x ±120
+      var ry = (rand()*70) - 35;       // relative y ±35
+      var sc = 0.55 + rand()*0.55;     // scale 0.55..1.10
+      var ph = rand()*Math.PI*2;
+      var f = document.createElementNS('http://www.w3.org/2000/svg','g');
+      f.setAttribute('class','sfFish');
+      // body: ellipse + tail triangle
+      f.innerHTML = '<ellipse cx="0" cy="0" rx="3.4" ry="1.1" fill="#cfd8e8"/>'
+                  + '<path d="M 3.0,0 L 5.4,-1.6 L 5.4,1.6 Z" fill="#9eaec0"/>'
+                  + '<circle cx="-1.2" cy="-0.3" r="0.4" fill="#0b1220"/>'
+                  + '<line x1="-2.2" y1="0" x2="2.0" y2="0" stroke="#e8eef7" stroke-width="0.3" opacity="0.6"/>';
+      g.appendChild(f);
+      fish.push({el:f, rx:rx, ry:ry, sc:sc, ph:ph});
+    }
+    svg.appendChild(g);
+    // Flock travels horizontally; reverses periodically.
+    var t0 = performance.now();
+    var schoolY = 540;             // fc-1 mid
+    var SPEED = 0.040;             // px/ms baseline
+    var dir = 1;
+    var x = -180;
+    var lastT = t0;
+    function step(now){
+      var dt = Math.min(64, now - lastT);
+      lastT = now;
+      x += SPEED * dir * dt;
+      // big sweep wraparound + reverse on far edge
+      if(dir>0 && x > 1380){ dir = -1; }
+      else if(dir<0 && x < -180){ dir = 1; }
+      // gentle vertical wander of school center
+      var sy = schoolY + Math.sin(now * 0.00035) * 14;
+      for(var i=0;i<fish.length;i++){
+        var fdef = fish[i];
+        // each fish jitters around its relative home pos
+        var jx = Math.sin(now * 0.0014 + fdef.ph) * 5;
+        var jy = Math.cos(now * 0.0011 + fdef.ph * 1.7) * 3;
+        var fx = x + fdef.rx + jx;
+        var fy = sy + fdef.ry + jy;
+        // tail wiggle: scale x slightly
+        var wig = 1 + Math.sin(now * 0.018 + fdef.ph) * 0.06;
+        var sign = dir > 0 ? 1 : -1;
+        fdef.el.setAttribute('transform','translate('+fx.toFixed(2)+','+fy.toFixed(2)+') scale('+(sign*fdef.sc*wig).toFixed(3)+','+fdef.sc.toFixed(3)+')');
+        // glint: opacity oscillation per fish
+        var op = 0.55 + 0.40 * (0.5 + 0.5 * Math.sin(now*0.0021 + fdef.ph*2.1));
+        fdef.el.setAttribute('opacity', op.toFixed(3));
+      }
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    try { console.log('[harbor v0.5.109] surface fish school armed (' + COUNT + ' silvery fish, fc-1)'); } catch(e){}
+  } catch(e) {}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
