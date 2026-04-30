@@ -6121,6 +6121,76 @@
   console.log('[harbor v0.5.137] drift buoy armed (free-floating, blinking)');
 })();
 
+// v0.5.138 chimney smoke — slow rising smoke from village rooftops
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const defs = svg.querySelector('defs') || svg;
+  // smoke gradient
+  const grad = document.createElementNS('http://www.w3.org/2000/svg','radialGradient');
+  grad.setAttribute('id','chimneySmokeGrad');
+  grad.setAttribute('cx','0.5'); grad.setAttribute('cy','0.5'); grad.setAttribute('r','0.5');
+  grad.innerHTML = [
+    '<stop offset="0%"   stop-color="#dadee5" stop-opacity="0.55"/>',
+    '<stop offset="55%"  stop-color="#9ea4b0" stop-opacity="0.30"/>',
+    '<stop offset="100%" stop-color="#6a6e78" stop-opacity="0"/>'
+  ].join('');
+  defs.appendChild(grad);
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('id','chimneySmoke');
+  g.setAttribute('pointer-events','none');
+  // 3 chimneys at fixed x positions in the hilltop village (440..760)
+  const sources = [
+    {sx: 510, sy: 232},
+    {sx: 600, sy: 226},
+    {sx: 690, sy: 234}
+  ];
+  // each source has 4 puffs cycling
+  const puffs = [];
+  for(let s=0;s<sources.length;s++){
+    for(let i=0;i<4;i++){
+      puffs.push({
+        sx: sources[s].sx,
+        sy: sources[s].sy,
+        phase: (i/4)*1.0, // 0..1 normalized lifespan
+        period: 7000 + s*900, // ms per puff full life
+        seed: s*7+i,
+        sx_jitter: (Math.sin((s*7+i)*1.7)*1.5)
+      });
+    }
+  }
+  g.innerHTML = puffs.map((p,i)=>(
+    '<circle id="chimSmoke-'+i+'" cx="0" cy="0" r="6" fill="url(#chimneySmokeGrad)"/>'
+  )).join('');
+  svg.appendChild(g);
+  let t = 0, last = performance.now();
+  function tick(now){
+    const dt = now-last; last = now; t += dt;
+    for(let i=0;i<puffs.length;i++){
+      const p = puffs[i];
+      const local = ((t/p.period) + p.phase) % 1; // 0..1 lifespan
+      const el = document.getElementById('chimSmoke-'+i);
+      if(!el) continue;
+      // rising
+      const yy = p.sy - local*30; // rise 30px
+      const drift = p.sx_jitter + Math.sin(t*0.0008 + p.seed*0.7)*2.0 + local*4*p.sx_jitter;
+      const xx = p.sx + drift;
+      const r = 4 + local*9; // expand
+      let op = 1;
+      if(local<0.10) op = local/0.10;
+      else if(local>0.65) op = (1-local)/0.35;
+      op = Math.max(0,Math.min(1,op));
+      el.setAttribute('cx', xx.toFixed(2));
+      el.setAttribute('cy', yy.toFixed(2));
+      el.setAttribute('r', r.toFixed(2));
+      el.setAttribute('opacity', (op*0.75).toFixed(3));
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.138] chimney smoke armed (3 rooftop sources)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
