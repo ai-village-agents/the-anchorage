@@ -6774,6 +6774,81 @@
 })();
 
 
+// v0.5.148 distant spotter plane — rare horizon crossing with blinking nav lights
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','spotterPlane');
+  g.setAttribute('pointer-events','none');
+  g.innerHTML =
+    '<g id="spotterPlaneInner" opacity="0">' +
+      // tiny silhouette
+      '<g id="spotterBody">' +
+        '<ellipse cx="0" cy="0" rx="4" ry="0.9" fill="#1a2230"/>' +       // fuselage
+        '<rect x="-1" y="-3.5" width="2" height="7" fill="#1a2230"/>' +    // wings (vertical when seen from behind/front; for side view make horizontal)
+      '</g>' +
+      // strobe + nav lights as small bright dots (will blink)
+      '<circle id="spotterStrobe" cx="0" cy="0.2" r="0.7" fill="#ffffff" opacity="0.0"/>' +
+      '<circle id="spotterPort" cx="-3.4" cy="0" r="0.6" fill="#ff5050" opacity="0.7"/>' +
+      '<circle id="spotterStbd" cx="3.4" cy="0" r="0.6" fill="#50ff70" opacity="0.7"/>' +
+    '</g>';
+  const help = svg.querySelector('#helpOverlay');
+  if (help) svg.insertBefore(g, help); else svg.appendChild(g);
+
+  // State: idle (long wait) -> crossing (slow drift across horizon) -> idle
+  // Plane crosses well above horizon line at y around 60-100.
+  let state='idle', t0=performance.now(), nextWait=22000+Math.random()*44000;
+  let dir=1, startY=70, span=24000+Math.random()*8000;
+  function pickRun(){
+    dir = Math.random()<0.5 ? 1 : -1;
+    startY = 50 + Math.random()*70;
+    span = 22000 + Math.random()*10000;
+  }
+
+  function frame(now){
+    const inner = document.getElementById('spotterPlaneInner');
+    const body  = document.getElementById('spotterBody');
+    const ms = now - t0;
+    if (state==='idle'){
+      if (inner) inner.setAttribute('opacity','0');
+      if (ms > nextWait){ pickRun(); state='cross'; t0=now; }
+    } else if (state==='cross'){
+      const k = ms/span;
+      if (k>=1){
+        state='idle'; t0=now; nextWait = 30000 + Math.random()*60000;
+        if (inner) inner.setAttribute('opacity','0');
+      } else {
+        const x = dir===1 ? -40 + k*1280 : 1240 - k*1280;
+        // gentle altitude drift
+        const y = startY + Math.sin(k*Math.PI)*4;
+        // fade in first 8% / out last 8%
+        let op = 0.85;
+        if (k<0.08) op = 0.85*(k/0.08);
+        if (k>0.92) op = 0.85*((1-k)/0.08);
+        if (inner) inner.setAttribute('transform','translate('+x.toFixed(1)+','+y.toFixed(1)+')'+(dir===-1?' scale(-1,1)':''));
+        if (inner) inner.setAttribute('opacity', op.toFixed(3));
+        // strobe — short bright flashes every ~1.6s
+        const phase = (now % 1600);
+        const strobe = phase<90 ? 1 : 0;
+        const sn = document.getElementById('spotterStrobe');
+        if (sn) sn.setAttribute('opacity', (strobe*0.95).toFixed(2));
+        // nav lights breathe
+        const nb = 0.55 + Math.sin(now*0.0011)*0.20;
+        const port = document.getElementById('spotterPort');
+        const stbd = document.getElementById('spotterStbd');
+        if (port) port.setAttribute('opacity', nb.toFixed(2));
+        if (stbd) stbd.setAttribute('opacity', nb.toFixed(2));
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.148] spotter plane armed (rare horizon crossing, blinking strobe + nav lights)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
