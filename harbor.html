@@ -5804,6 +5804,106 @@
   console.log('[harbor v0.5.133] sardines armed (12 surface leapers)');
 })();
 
+// v0.5.134 dolphin pod — 3 dolphins arcing in sequence as a unit
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('id','dolphinPod');
+  g.setAttribute('pointer-events','none');
+  function dolphinSVG(idx){
+    return [
+      '<g id="podDolphin-'+idx+'" opacity="0">',
+        '<g class="dbody">',
+          '<ellipse cx="0" cy="0" rx="16" ry="4" fill="#3a4a6a" stroke="#1a2030" stroke-width="0.5"/>',
+          '<polygon points="-16,0 -22,-3 -22,3" fill="#2a3a52"/>',
+          '<polygon points="0,-3 -3,-9 3,-7" fill="#2a3a52"/>',
+          '<polygon points="14,0 20,-1 20,1.5" fill="#2a3a52"/>',
+          '<circle cx="10" cy="-1" r="0.7" fill="#0a0a14"/>',
+        '</g>',
+        '<g class="splash" opacity="0">',
+          '<ellipse cx="0" cy="0" rx="14" ry="1.5" fill="#cfe6ff"/>',
+          '<circle cx="-8" cy="-3" r="1.2" fill="#dff0ff"/>',
+          '<circle cx="-3" cy="-5" r="1.0" fill="#dff0ff"/>',
+          '<circle cx="3" cy="-4" r="1.2" fill="#dff0ff"/>',
+          '<circle cx="9" cy="-3" r="1.1" fill="#dff0ff"/>',
+        '</g>',
+      '</g>'
+    ].join('');
+  }
+  g.innerHTML = [dolphinSVG(0),dolphinSVG(1),dolphinSVG(2)].join('');
+  svg.appendChild(g);
+  // event scheduling: idle -> sequence (3 dolphins, 700ms stagger)
+  let state = 'idle';
+  let nextEventIn = 8000 + Math.random()*8000; // 8-16s first
+  let seqStart = 0;
+  let dirX = 1, baseX = 200, baseY = 340;
+  const dolphins = [];
+  for(let i=0;i<3;i++) dolphins.push({offsetMs: i*700, xOff: i*40, yJitter: (Math.random()-0.5)*8});
+  let t = 0, last = performance.now();
+  function tick(now){
+    const dt = now-last; last = now; t += dt;
+    if(state==='idle'){
+      nextEventIn -= dt;
+      if(nextEventIn<=0){
+        state = 'seq';
+        seqStart = t;
+        dirX = Math.random()<0.5 ? -1 : 1;
+        baseX = 200 + Math.random()*800;
+        baseY = 340;
+        for(let i=0;i<3;i++){ dolphins[i].yJitter = (Math.random()-0.5)*10; dolphins[i].offsetMs = i*(620+Math.random()*120); }
+      }
+    } else if(state==='seq'){
+      const elapsed = t - seqStart;
+      const DUR = 1300; // each dolphin's arc
+      let allDone = true;
+      for(let i=0;i<3;i++){
+        const el = document.getElementById('podDolphin-'+i);
+        if(!el) continue;
+        const splash = el.querySelector('.splash');
+        const local = elapsed - dolphins[i].offsetMs;
+        if(local<0){
+          el.setAttribute('opacity','0');
+          allDone = false;
+          continue;
+        }
+        if(local>=DUR){
+          el.setAttribute('opacity','0');
+          if(splash) splash.setAttribute('opacity','0');
+          continue;
+        }
+        allDone = false;
+        const k = local/DUR;
+        const apex = 90 + dolphins[i].yJitter;
+        const yy = baseY - apex*Math.sin(k*Math.PI) + dolphins[i].yJitter;
+        const xx = baseX + dirX*(220 + dolphins[i].xOff)*k + dolphins[i].xOff*8;
+        const dy = -apex*Math.PI*Math.cos(k*Math.PI);
+        const dx = dirX*(220+dolphins[i].xOff);
+        const rot = Math.atan2(dy,dx)*180/Math.PI;
+        el.setAttribute('transform','translate('+xx.toFixed(2)+','+yy.toFixed(2)+') rotate('+rot.toFixed(2)+') scale('+dirX+',1)');
+        el.setAttribute('opacity', (k>0.04 && k<0.96) ? '0.92' : '0');
+        if(splash){
+          const onEntry = k<0.10;
+          const onExit  = k>0.90;
+          if(onEntry || onExit){
+            splash.setAttribute('transform','translate(0,'+(340-yy).toFixed(2)+')');
+            splash.setAttribute('opacity','0.85');
+          } else {
+            splash.setAttribute('opacity','0');
+          }
+        }
+      }
+      if(allDone){
+        state = 'idle';
+        nextEventIn = 22000 + Math.random()*30000; // 22-52s between pod events
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.134] dolphin pod armed (3 dolphins in sequence)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
