@@ -7075,6 +7075,46 @@
 })();
 
 
+// v0.5.152 anchor chain on trawler — short chain dangling from bow into water (child of #trawler)
+(function(){
+  const trawler = document.getElementById('trawler');
+  if (!trawler) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','trawlerAnchorChain');
+  g.setAttribute('pointer-events','none');
+  // chain hangs from bow at local (-22, -2). 8 link circles down to y=14
+  // Each link is a small dark ring; they sway slightly with the boat
+  let html = '';
+  // anchor at bottom
+  html +=
+    '<g id="anchorBottom">' +
+      '<line id="achainShaft" x1="0" y1="14" x2="0" y2="20" stroke="#222a32" stroke-width="0.9"/>' +
+      '<line x1="-3" y1="20" x2="3" y2="20" stroke="#222a32" stroke-width="0.9"/>' +
+      '<path d="M -4 19 q 0 4 4 4 q 4 0 4 -4" fill="none" stroke="#222a32" stroke-width="0.9"/>' +
+    '</g>';
+  for (let i=0;i<8;i++){
+    const y = 0 + i*1.7;
+    const isOdd = i%2;
+    html += '<ellipse id="achain'+i+'" cx="0" cy="'+y+'" rx="0.7" ry="0.45" fill="none" stroke="#1a2228" stroke-width="0.4" transform="rotate('+(isOdd?90:0)+' 0 '+y+')"/>';
+  }
+  g.innerHTML = html;
+  // Position relative to trawler local: bow port at (-22, -2), chain extends downward
+  g.setAttribute('transform','translate(-22,-2)');
+  trawler.appendChild(g);
+
+  // Slight chain sway with boat motion
+  function frame(now){
+    const sway = Math.sin(now*0.0014)*1.4;
+    // Whole chain rotates slightly around top
+    g.setAttribute('transform','translate(-22,-2) rotate('+sway.toFixed(2)+' 0 0)');
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.152] trawler anchor chain armed (8 links + small anchor)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
