@@ -4829,6 +4829,107 @@
   }
 })();
 
+// v0.5.122 ribbon eel — long sinuous eel ripples across fc-2 with phase-shifted body wave
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    var g = document.createElementNS(SVGNS,'g');
+    g.setAttribute('id','ribbonEel');
+    g.setAttribute('opacity','0.86');
+    g.setAttribute('pointer-events','none');
+
+    // 14 segments along the body, drawn as a polyline
+    var SEG = 14;
+    var path = document.createElementNS(SVGNS,'path');
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke','#3a8a90');
+    path.setAttribute('stroke-width','3.2');
+    path.setAttribute('stroke-linecap','round');
+    g.appendChild(path);
+
+    // dorsal ridge: parallel thinner accent line slightly offset
+    var ridge = document.createElementNS(SVGNS,'path');
+    ridge.setAttribute('fill','none');
+    ridge.setAttribute('stroke','#aef3ff');
+    ridge.setAttribute('stroke-width','0.8');
+    ridge.setAttribute('stroke-linecap','round');
+    ridge.setAttribute('opacity','0.55');
+    g.appendChild(ridge);
+
+    // head dot
+    var head = document.createElementNS(SVGNS,'circle');
+    head.setAttribute('r','2.4');
+    head.setAttribute('fill','#3a8a90');
+    head.setAttribute('stroke','#aef3ff');
+    head.setAttribute('stroke-width','0.5');
+    g.appendChild(head);
+    var eye = document.createElementNS(SVGNS,'circle');
+    eye.setAttribute('r','0.6');
+    eye.setAttribute('fill','#1a0608');
+    g.appendChild(eye);
+
+    svg.appendChild(g);
+
+    // motion: head drifts in big horizontal arc through fc-2 (y=900)
+    var headX = 1240, dir = -1;
+    var SPEED = 0.018; // px/ms
+    var lastT = null;
+    function frame(t){
+      if (lastT === null) lastT = t;
+      var dt = Math.min(80, t - lastT); lastT = t;
+      headX += dir * SPEED * dt;
+      // gentle vertical bob for the head
+      var headY = 900 + Math.sin(t*0.0006) * 28;
+      // build body: trail behind head with phase-shifted sine wave
+      var d = '';
+      var rd = '';
+      // segment dx step
+      var DX = 12;
+      var pts = [];
+      for (var i=0; i<=SEG; i++){
+        var x = headX - dir * i * DX;
+        // body wave: amplitude grows toward tail
+        var amp = 4 + i * 2.2;
+        var wavePhase = (t * 0.005) - i * 0.7;
+        var y = headY + Math.sin(wavePhase) * amp;
+        pts.push([x, y]);
+      }
+      // build path
+      d = 'M ' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+      for (var i=1; i<pts.length; i++){
+        d += ' L ' + pts[i][0].toFixed(1) + ',' + pts[i][1].toFixed(1);
+      }
+      path.setAttribute('d', d);
+      // ridge: slightly offset above the body (perpendicular to direction)
+      var rd2 = '';
+      for (var i=0; i<pts.length; i++){
+        var p = pts[i];
+        // offset by 1.5 in y
+        if (i === 0) rd2 = 'M ' + p[0].toFixed(1) + ',' + (p[1]-1.6).toFixed(1);
+        else rd2 += ' L ' + p[0].toFixed(1) + ',' + (p[1]-1.6).toFixed(1);
+      }
+      ridge.setAttribute('d', rd2);
+      // head
+      head.setAttribute('cx', pts[0][0].toFixed(1));
+      head.setAttribute('cy', pts[0][1].toFixed(1));
+      eye.setAttribute('cx', (pts[0][0] - dir*0.8).toFixed(1));
+      eye.setAttribute('cy', (pts[0][1] - 0.4).toFixed(1));
+      // turn at edges
+      if (dir < 0 && headX < -SEG*DX - 40) { dir = 1; }
+      if (dir > 0 && headX > 1240 + SEG*DX + 40) { dir = -1; }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+    try { console.log('[harbor v0.5.122] ribbon eel armed (sinuous body, fc-2)'); } catch(e){}
+  } catch (err) {
+    try { console.error('[harbor v0.5.122] ribbon eel init failed', err); } catch(e){}
+  }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
