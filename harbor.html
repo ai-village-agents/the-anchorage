@@ -5708,6 +5708,102 @@
   }
 })();
 
+// v0.5.133 sardines — small surface fish that leap in flickering bursts
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('id','sardines');
+  g.setAttribute('pointer-events','none');
+  // pool of 12 sardines
+  const N = 12;
+  const sardines = [];
+  for(let i=0;i<N;i++){
+    sardines.push({
+      state:'idle',
+      next: 1500 + Math.random()*9000, // initial idle ms
+      t0: 0,
+      x:0, y:0, dirX:1,
+      dur: 0
+    });
+  }
+  // pre-build N elements
+  const parts = [];
+  for(let i=0;i<N;i++){
+    parts.push(
+      '<g id="sardine-'+i+'" opacity="0">',
+        '<ellipse cx="0" cy="0" rx="3.4" ry="1.0" fill="#cfe6ff" stroke="#6a8aa8" stroke-width="0.3"/>',
+        '<polygon points="-3.4,0 -5.0,-1.4 -5.0,1.4" fill="#9ec0d8"/>',
+        '<circle cx="1.6" cy="-0.2" r="0.35" fill="#1a2030"/>',
+        // tiny splash kit
+        '<g class="splash" opacity="0">',
+          '<ellipse cx="0" cy="0" rx="3.6" ry="0.7" fill="#dff0ff" opacity="0.7"/>',
+          '<circle cx="-2.0" cy="-1.6" r="0.5" fill="#dff0ff"/>',
+          '<circle cx="2.0" cy="-1.6" r="0.5" fill="#dff0ff"/>',
+          '<circle cx="0" cy="-2.4" r="0.4" fill="#dff0ff"/>',
+        '</g>',
+      '</g>'
+    );
+  }
+  g.innerHTML = parts.join('');
+  const help = document.querySelector('.harbor-svg').querySelector('g'); // dummy guard
+  svg.appendChild(g);
+  let t = 0, last = performance.now();
+  function tick(now){
+    const dt = now - last; last = now; t += dt;
+    for(let i=0;i<N;i++){
+      const s = sardines[i];
+      const el = document.getElementById('sardine-'+i);
+      if(!el) continue;
+      const splash = el.querySelector('.splash');
+      if(s.state==='idle'){
+        s.next -= dt;
+        if(s.next<=0){
+          s.state='leap';
+          s.t0 = t;
+          s.dur = 700 + Math.random()*400;
+          s.x = 80 + Math.random()*1040;
+          s.y = 340; // surface line
+          s.dirX = Math.random()<0.5 ? -1 : 1;
+        }
+      } else if(s.state==='leap'){
+        const k = Math.min(1,(t-s.t0)/s.dur);
+        // small parabola apex ~ -22 px
+        const apex = 22;
+        const yy = s.y - apex*Math.sin(k*Math.PI);
+        const xx = s.x + s.dirX*60*k;
+        // tangent for rotation
+        const dy = -apex*Math.PI*Math.cos(k*Math.PI);
+        const dx = s.dirX*60;
+        const rot = Math.atan2(dy,dx)*180/Math.PI;
+        el.setAttribute('transform','translate('+xx.toFixed(2)+','+yy.toFixed(2)+') rotate('+rot.toFixed(2)+') scale('+s.dirX+',1)');
+        // visibility: in arc opaque, splash on entry/exit
+        el.setAttribute('opacity', (k>0.05 && k<0.95) ? '0.95' : '0.0');
+        if(splash){
+          const onEntry = k<0.10;
+          const onExit  = k>0.90;
+          if(onEntry || onExit){
+            // pin splash near surface at the current x
+            splash.setAttribute('transform','translate(0,'+(340-yy).toFixed(2)+')');
+            splash.setAttribute('opacity', '0.85');
+          } else {
+            splash.setAttribute('opacity','0');
+          }
+        }
+        if(k>=1){
+          s.state='idle';
+          s.next = 4000 + Math.random()*12000;
+          el.setAttribute('opacity','0');
+          if(splash) splash.setAttribute('opacity','0');
+        }
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.133] sardines armed (12 surface leapers)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
