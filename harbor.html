@@ -11532,6 +11532,127 @@
 })();
 
 
+// v0.5.199 trawler search light — yellow beam from trawler masthead sweeps the water periodically as the boat drifts
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) { console.warn('[harbor v0.5.199] svg not found, skipping'); return; }
+  const NS = 'http://www.w3.org/2000/svg';
+
+  const trawler = document.getElementById('trawler');
+  if(!trawler) { console.log('[harbor v0.5.199] trawler not found, skipping'); return; }
+
+  // beam container, positioned each frame to follow the trawler masthead
+  // masthead in trawler local coords is at (0, -22). Beam pivots from there.
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('id', 'trawlerSearchLight');
+  g.setAttribute('style', 'mix-blend-mode: screen; pointer-events: none;');
+  g.setAttribute('opacity', '0');
+
+  // outer cone (wider, dim)
+  const outer = document.createElementNS(NS, 'polygon');
+  outer.setAttribute('points', '0,0 90,80 -90,80');
+  outer.setAttribute('fill', '#ffe9a8');
+  outer.setAttribute('opacity', '0.10');
+  // inner cone (brighter)
+  const inner = document.createElementNS(NS, 'polygon');
+  inner.setAttribute('points', '0,0 32,80 -32,80');
+  inner.setAttribute('fill', '#fff0c0');
+  inner.setAttribute('opacity', '0.22');
+
+  // pivot group rotates around (0,0)
+  const pivot = document.createElementNS(NS, 'g');
+  pivot.setAttribute('id', 'trawlerSearchPivot');
+  pivot.appendChild(outer);
+  pivot.appendChild(inner);
+
+  g.appendChild(pivot);
+  svg.appendChild(g);
+
+  // surface glow rectangle that brightens where beam hits the water
+  const glow = document.createElementNS(NS, 'ellipse');
+  glow.setAttribute('rx', 14);
+  glow.setAttribute('ry', 3);
+  glow.setAttribute('fill', '#fff0c0');
+  glow.setAttribute('opacity', '0');
+  glow.setAttribute('style', 'mix-blend-mode: screen;');
+  svg.appendChild(glow);
+
+  // State machine: idle → sweep → idle
+  let state = 'idle';
+  let stateStart = performance.now();
+  let nextSweepAt = performance.now() + 8000 + Math.random() * 9000;
+  let sweepDur = 0;
+  let dirSign = 1;
+
+  function getTrawlerXY(){
+    const tr = trawler.getAttribute('transform') || '';
+    const m = tr.match(/translate\(\s*(-?[\d.]+)[,\s]+(-?[\d.]+)/);
+    if(!m) return null;
+    return { x: parseFloat(m[1]), y: parseFloat(m[2]) };
+  }
+
+  function frame(now){
+    const pos = getTrawlerXY();
+    if(!pos) { requestAnimationFrame(frame); return; }
+    // Masthead in svg coords:
+    const mx = pos.x;
+    const my = pos.y - 22;
+
+    if(state === 'idle' && now >= nextSweepAt){
+      // start sweep only if trawler is on-screen-ish and to the left so beam can hit water meaningfully
+      if(mx > 60 && mx < 1140){
+        state = 'sweep';
+        stateStart = now;
+        sweepDur = 5500 + Math.random() * 2500;
+        dirSign = Math.random() < 0.5 ? -1 : 1;
+      } else {
+        nextSweepAt = now + 4000;
+      }
+    }
+
+    if(state === 'sweep'){
+      const u = (now - stateStart) / sweepDur;
+      if(u >= 1){
+        state = 'idle';
+        g.setAttribute('opacity', '0');
+        glow.setAttribute('opacity', '0');
+        nextSweepAt = now + 9000 + Math.random() * 11000;
+      } else {
+        // envelope: rise 12% / hold / decay 12%
+        const env = u < 0.12 ? (u / 0.12) : (u > 0.88 ? (1 - (u - 0.88) / 0.12) : 1);
+        // sweep angle: -25° to +25° relative to straight-down, with dirSign for direction
+        // but include an additional forward-bias since trawler points right when SPEED>0
+        const sweep = Math.sin(u * Math.PI * 2.0) * 26 * dirSign;
+        const baseAngle = 14;  // degrees, slight forward lean
+        const angle = baseAngle + sweep;
+        g.setAttribute('opacity', env.toFixed(3));
+        g.setAttribute('transform', `translate(${mx.toFixed(2)},${my.toFixed(2)})`);
+        pivot.setAttribute('transform', `rotate(${angle.toFixed(2)})`);
+        // surface glow at the beam's intersection with surface y~318 (approx)
+        // The beam length is ~80; tip at angle reaches (mx + 80 sin(angle), my + 80 cos(angle))
+        // But we want the actual water-line intersection. surface y_s.
+        const Y_S = 318;
+        const dy = Y_S - my;
+        if(dy > 0 && Math.cos(angle * Math.PI / 180) > 0.1){
+          const dist = dy / Math.cos(angle * Math.PI / 180);
+          const gx = mx + dist * Math.sin(angle * Math.PI / 180);
+          glow.setAttribute('cx', gx.toFixed(2));
+          glow.setAttribute('cy', Y_S);
+          glow.setAttribute('opacity', (0.45 * env).toFixed(3));
+        } else {
+          glow.setAttribute('opacity', '0');
+        }
+      }
+    }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  console.log('[harbor v0.5.199] trawler search light armed (yellow beam sweeps water surface every 8-20s)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
