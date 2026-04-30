@@ -6413,6 +6413,63 @@
   console.log('[harbor v0.5.141] whale song armed (concentric ripples from deep midwater)');
 })();
 
+// v0.5.142 message bottle adrift — single sealed glass bottle drifting slowly across the surface, with a tiny rolled paper inside, gentle wobble
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(SVGNS, 'g');
+  g.setAttribute('id','messageBottleAdrift');
+  g.setAttribute('pointer-events','none');
+  g.innerHTML = [
+    '<g id="messageBottleAdriftInner">',
+      // bottle body — pale green glass, tilted to lie roughly horizontal on water
+      '<g id="messageBottleAdriftWobble">',
+        '<g transform="rotate(0)">',
+          // Body
+          '<rect x="-9" y="-3" width="14" height="6" rx="1.2" ry="1.2" fill="#7fb398" opacity="0.55" stroke="#3a6a4e" stroke-width="0.4"/>',
+          // Neck
+          '<rect x="5" y="-1.6" width="3.6" height="3.2" fill="#7fb398" opacity="0.55" stroke="#3a6a4e" stroke-width="0.4"/>',
+          // Cork
+          '<rect x="8.4" y="-1.4" width="1.6" height="2.8" fill="#a07a4a" stroke="#5a3a1c" stroke-width="0.3"/>',
+          // Highlight
+          '<line x1="-7" y1="-2.2" x2="3" y2="-2.2" stroke="#d8f4e6" stroke-width="0.5" opacity="0.7"/>',
+          // Rolled paper inside
+          '<rect x="-6" y="-1.4" width="8" height="2.6" fill="#e8e0c8" opacity="0.85" stroke="#a89878" stroke-width="0.3"/>',
+          // tiny inscription marks on the paper
+          '<line x1="-5" y1="-0.6" x2="1" y2="-0.6" stroke="#7a6850" stroke-width="0.25" opacity="0.7"/>',
+          '<line x1="-5" y1="0.2" x2="1" y2="0.2" stroke="#7a6850" stroke-width="0.25" opacity="0.7"/>',
+          '<line x1="-5" y1="1.0" x2="0" y2="1.0" stroke="#7a6850" stroke-width="0.25" opacity="0.7"/>',
+        '</g>',
+      '</g>',
+      // Tiny wake ellipse beneath
+      '<ellipse cx="0" cy="3.6" rx="11" ry="0.7" fill="#7aa2ff" opacity="0.18"/>',
+    '</g>',
+  ].join('');
+  svg.appendChild(g);
+  const inner = g.querySelector('#messageBottleAdriftInner');
+  const wobble = g.querySelector('#messageBottleAdriftWobble');
+  // Drift parameters
+  let x = -30 + Math.random()*100;
+  const Y_BASE = 326;
+  const SPEED = 0.0050; // slow — slower than drift buoy
+  let dir = 1;
+  let lastTime = performance.now();
+  function tick(now){
+    const dt = now - lastTime; lastTime = now;
+    x += SPEED * dt * dir;
+    if(x > 1240){ dir = -1; }
+    if(x < -40){ dir = 1; }
+    const bob = Math.sin(now*0.0011) * 1.4;
+    const tilt = Math.sin(now*0.0009 + 1.2) * 6 + (dir===-1 ? 180 : 0);
+    inner.setAttribute('transform','translate('+x.toFixed(2)+','+(Y_BASE+bob).toFixed(2)+')');
+    wobble.setAttribute('transform','rotate('+tilt.toFixed(2)+')');
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.142] message bottle adrift armed (slow surface drift, gentle wobble)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
