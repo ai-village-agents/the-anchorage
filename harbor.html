@@ -7878,6 +7878,74 @@
 })();
 
 
+
+// v0.5.163 pelican low flight — silhouetted pelican glides low over the surface periodically
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('id', 'pelican');
+  g.setAttribute('pointer-events', 'none');
+  g.setAttribute('opacity', '0');
+  // Pelican silhouette: long-billed, low-soaring profile. Local coords; transform sets position+facing.
+  g.innerHTML = [
+    '<g id="pelicanBody">',
+      // body
+      '<path d="M -8 0 Q -3 -2 4 -1.4 Q 9 -1 12 -0.2 L 22 0 L 12 1.4 Q 6 2 0 1.6 Q -5 1.4 -8 0 Z" fill="#0a0e14"/>',
+      // bill (long downward)
+      '<path d="M 12 -0.2 L 22 0 L 22 1.0 L 12 0.6 Z" fill="#0a0e14"/>',
+      // head bump
+      '<path d="M 9 -1.6 Q 11 -2.6 13 -1.4 Z" fill="#0a0e14"/>',
+      // wing — animates rotation around shoulder (-2,0)
+      '<path id="pelicanWing" d="M -2 -0.4 Q -8 -8 -16 -10 Q -22 -10 -24 -7 Q -16 -3 -8 -1 Z" fill="#0a0e14" transform="rotate(0 -2 0)"/>',
+      // tiny eye
+      '<circle cx="11" cy="-1.4" r="0.4" fill="#ffd060" opacity="0.85"/>',
+    '</g>',
+  ].join('');
+  svg.appendChild(g);
+  const wing = g.querySelector('#pelicanWing');
+  let state = 'idle';
+  let stateUntil = performance.now() + 25000 + Math.random() * 35000;
+  let crossT0 = 0, crossDur = 0, dir = 1, yBase = 280, ampY = 0;
+  function startCross(t) {
+    state = 'crossing';
+    crossT0 = t;
+    crossDur = 18000 + Math.random() * 12000; // 18–30s, slow glide
+    dir = Math.random() < 0.5 ? -1 : 1;
+    yBase = 270 + Math.random() * 22; // y ~ 270–292, just above surface band
+    ampY = 4 + Math.random() * 6;
+    g.setAttribute('opacity', '0.85');
+  }
+  function step(t) {
+    if (state === 'idle') {
+      if (t > stateUntil) startCross(t);
+    } else {
+      const k = (t - crossT0) / crossDur;
+      if (k >= 1) {
+        state = 'idle';
+        stateUntil = t + 30000 + Math.random() * 60000; // 30s..90s offstage
+        g.setAttribute('opacity', '0');
+      } else {
+        // x = -60..1260 over crossing
+        const x = dir > 0 ? (-60 + 1320 * k) : (1260 - 1320 * k);
+        const y = yBase + Math.sin(k * Math.PI * 1.4) * ampY;
+        g.setAttribute('transform', 'translate(' + x.toFixed(2) + ',' + y.toFixed(2) + ') scale(' + dir + ',1)');
+        // wing flap: gentle, ~2.0 Hz with small amplitude (gliding bird)
+        const flap = Math.sin(t * 0.012) * 14;
+        wing.setAttribute('transform', 'rotate(' + flap.toFixed(2) + ' -2 0)');
+        // fade in/out at edges of pass
+        const fade = (k < 0.05 ? k / 0.05 : (k > 0.95 ? (1 - k) / 0.05 : 1)) * 0.85;
+        g.setAttribute('opacity', fade.toFixed(3));
+      }
+    }
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+  console.log('[harbor v0.5.163] pelican low flight armed (rare slow silhouette glides over the surface)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
