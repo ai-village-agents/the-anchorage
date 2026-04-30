@@ -3619,7 +3619,20 @@
       + '<path d="M 0,-22 L 6,-20 L 0,-18 Z" fill="#7a3050"/>'
       + '<line x1="-24" y1="4" x2="-44" y2="14" stroke="#5a6a82" stroke-width="0.6" opacity="0.7"/>'
       + '<circle cx="-44" cy="14" r="1.4" fill="#cfd8e8" opacity="0.7"/>'
-      + '<path d="M 28,7 Q 36,7 42,9" fill="none" stroke="#9ec5fd" stroke-width="0.6" opacity="0.55"/>';
+      + '<path d="M 28,7 Q 36,7 42,9" fill="none" stroke="#9ec5fd" stroke-width="0.6" opacity="0.55"/>'
+      // v0.5.110 fishermen silhouettes on the trawler deck
+      + '<g id="trawlerCrew" opacity="0.92">'
+      +   '<g transform="translate(-16,-2)">' // stern fisherman bent over net cable
+      +     '<circle cx="0" cy="-3" r="1.2" fill="#0b1220"/>'
+      +     '<path d="M 0,-2 L 0,1 L -2,2" stroke="#0b1220" stroke-width="1.0" stroke-linecap="round" fill="none"/>'
+      +   '</g>'
+      +   '<g transform="translate(12,-2)">' // bow fisherman standing
+      +     '<circle cx="0" cy="-3" r="1.2" fill="#0b1220"/>'
+      +     '<line x1="0" y1="-2" x2="0" y2="1" stroke="#0b1220" stroke-width="1.0" stroke-linecap="round"/>'
+      +     '<line x1="0" y1="-1" x2="3" y2="-3" stroke="#0b1220" stroke-width="0.8" stroke-linecap="round"/>' // arm
+      +     '<line x1="3" y1="-3" x2="7" y2="-9" stroke="#3a4960" stroke-width="0.5"/>' // fishing rod
+      +   '</g>'
+      + '</g>';
     svg.appendChild(g);
     var x = -60;
     var Y = 392;
@@ -3636,6 +3649,7 @@
     }
     requestAnimationFrame(tick);
     try { console.log('[harbor v0.5.79] horizon trawler armed (drift left-to-right, ~100s loop)'); } catch(e){}
+    try { console.log('[harbor v0.5.110] trawler crew armed (2 fishermen silhouettes)'); } catch(e){}
   } catch(err){ try { console.error('[harbor v0.5.79] trawler error', err); } catch(e){} }
 })();
 
