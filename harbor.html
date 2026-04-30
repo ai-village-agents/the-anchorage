@@ -6913,6 +6913,90 @@
 })();
 
 
+// v0.5.150 lobster on the seafloor — slow scuttle with claw waves at fc-5 bedrock
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','lobster');
+  g.setAttribute('pointer-events','none');
+  // body color: deep red-brown, lit by faint vent glow
+  g.innerHTML =
+    '<g id="lobsterInner">' +
+      // shadow
+      '<ellipse cx="0" cy="6" rx="18" ry="2.4" fill="#000" opacity="0.35"/>' +
+      // tail (segmented)
+      '<g id="lobsterTail">' +
+        '<ellipse cx="-12" cy="0" rx="5"   ry="3.8" fill="#5a1a14"/>' +
+        '<ellipse cx="-7"  cy="-0.6" rx="4.4" ry="3.2" fill="#6e2218"/>' +
+        '<polygon points="-19,-1 -23,-3 -23,3 -19,1" fill="#4a140f"/>' +
+      '</g>' +
+      // carapace
+      '<ellipse cx="-2" cy="-0.4" rx="7.5" ry="4.4" fill="#7a2a1c"/>' +
+      '<ellipse cx="-2" cy="-1.6" rx="5"   ry="2.0" fill="#8c3a26"/>' +
+      // antennae
+      '<path id="lobsterAntL" d="M 4 -2 q 8 -3 14 -1" fill="none" stroke="#3a1009" stroke-width="0.8" stroke-linecap="round"/>' +
+      '<path id="lobsterAntR" d="M 4 -1 q 9 1 16 3" fill="none" stroke="#3a1009" stroke-width="0.8" stroke-linecap="round"/>' +
+      // legs (4 short)
+      '<line x1="-6" y1="3" x2="-9"  y2="6" stroke="#4a140f" stroke-width="1.2"/>' +
+      '<line x1="-3" y1="3" x2="-4"  y2="6" stroke="#4a140f" stroke-width="1.2"/>' +
+      '<line x1="0"  y1="3" x2="1"   y2="6" stroke="#4a140f" stroke-width="1.2"/>' +
+      '<line x1="3"  y1="3" x2="5"   y2="6" stroke="#4a140f" stroke-width="1.2"/>' +
+      // claws
+      '<g id="lobsterClawL"><path d="M 5 -3 q 7 -3 11 -2 q 2 1 1 3 q -2 1 -4 0 q -1 -2 -3 -1 z" fill="#7a2a1c"/></g>' +
+      '<g id="lobsterClawR"><path d="M 5 1 q 7 3 12 4 q 2 0 1 2 q -2 1 -4 -1 q -1 -2 -4 -2 z" fill="#7a2a1c"/></g>' +
+      // tiny eyes
+      '<circle cx="3" cy="-1.6" r="0.7" fill="#000"/>' +
+      '<circle cx="3" cy="0.4"  r="0.7" fill="#000"/>' +
+    '</g>';
+  const help = svg.querySelector('#helpOverlay');
+  if (help) svg.insertBefore(g, help); else svg.appendChild(g);
+
+  // Position at fc-5 bedrock; near vent but not too close
+  const HOME_X = 540, HOME_Y = 2362;
+  let x = HOME_X, dir = 1, vx = 0;
+  // State: rest -> scuttle -> rest
+  let state='rest', t0=performance.now(), restDur=2400+Math.random()*4200, runDur=0;
+  function pickRun(){
+    runDur = 1800+Math.random()*1800;
+    dir = (Math.random()<0.5) ? -1 : 1;
+    vx = dir * (0.04 + Math.random()*0.05);
+  }
+  function frame(now){
+    const ms = now - t0;
+    // scuttle leg motion (slight body bob)
+    const legBob = (state==='scuttle') ? Math.sin(now*0.018)*0.6 : 0;
+    if (state==='rest'){
+      if (ms > restDur){ pickRun(); state='scuttle'; t0=now; }
+    } else if (state==='scuttle'){
+      x += vx;
+      if (x < 360) { x = 360; vx = -vx; dir = -dir; }
+      if (x > 760) { x = 760; vx = -vx; dir = -dir; }
+      if (ms > runDur){ state='rest'; t0=now; restDur=3000+Math.random()*4500; }
+    }
+    // claw waves
+    const cwL = Math.sin(now*0.0015)*8;
+    const cwR = Math.sin(now*0.0015 + 1.7)*9;
+    const clL = document.getElementById('lobsterClawL');
+    const clR = document.getElementById('lobsterClawR');
+    if (clL) clL.setAttribute('transform','rotate('+cwL.toFixed(2)+' 5 -1)');
+    if (clR) clR.setAttribute('transform','rotate('+cwR.toFixed(2)+' 5 1)');
+    // antennae sway
+    const sw = Math.sin(now*0.0018)*2;
+    const aL = document.getElementById('lobsterAntL');
+    const aR = document.getElementById('lobsterAntR');
+    if (aL) aL.setAttribute('d','M 4 -2 q 8 '+(-3+sw).toFixed(2)+' 14 '+(-1+sw*0.7).toFixed(2));
+    if (aR) aR.setAttribute('d','M 4 -1 q 9 '+(1-sw).toFixed(2)+' 16 '+(3-sw*0.7).toFixed(2));
+    const inner = document.getElementById('lobsterInner');
+    if (inner) inner.setAttribute('transform','translate('+x.toFixed(2)+','+(HOME_Y+legBob).toFixed(2)+')'+(dir===-1?' scale(-1,1)':''));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.150] lobster armed (fc-5 seafloor scuttler with claw waves)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
