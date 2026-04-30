@@ -7230,6 +7230,12 @@
     '  <ellipse cx="3" cy="-43" rx="2.6" ry="1.8" fill="#0c1420"/>',
     '  <line x1="5.2" y1="-43" x2="11" y2="-43.4" stroke="#dabb70" stroke-width="0.9" stroke-linecap="round"/>',
     '  <circle cx="3.4" cy="-43.4" r="0.32" fill="#fff7c0"/>',
+    // v0.5.169 small fish struck (initially hidden; appears in beak after some dips)
+    '  <g id="heronFishCatch" opacity="0" transform="translate(8.5,-43.2)">',
+    '    <ellipse cx="0" cy="0" rx="2.6" ry="0.9" fill="#9bb1c8"/>',
+    '    <path d="M -2.6 0 l -1.6 -1 l 0 2 z" fill="#9bb1c8"/>',
+    '    <circle cx="1.4" cy="-0.2" r="0.22" fill="#0a1018"/>',
+    '  </g>',
     '</g>',
   ].join('');
   // insert before help overlay
@@ -7258,13 +7264,34 @@
       const ang = Math.sin(Math.min(1,Math.max(0,k))*Math.PI) * 62;
       neckEl.setAttribute('transform','rotate('+ang.toFixed(2)+' -3 -22)');
       if (elapsed >= stateDur){
-        state = 'idle'; stateT0 = now; stateDur = 4500 + Math.random()*6000;
+        // v0.5.169 — 45% of dips catch a fish; show it for a few seconds
+        if (Math.random() < 0.45){
+          state = 'showing'; stateT0 = now; stateDur = 2400 + Math.random()*2200;
+        } else {
+          state = 'idle'; stateT0 = now; stateDur = 4500 + Math.random()*6000;
+        }
+      }
+    } else if (state === 'showing'){
+      // head held still, fish opacity envelope: rises 0->1 in 250ms, holds, fades 0 in last 500ms
+      const fishEl = g.querySelector('#heronFishCatch');
+      let op;
+      if (elapsed < 250) op = elapsed / 250;
+      else if (elapsed < stateDur - 500) op = 1;
+      else op = Math.max(0, (stateDur - elapsed) / 500);
+      // tiny fish wiggle
+      const wiggle = Math.sin(elapsed * 0.022) * 4;
+      fishEl.setAttribute('opacity', op.toFixed(3));
+      fishEl.setAttribute('transform','translate(8.5,-43.2) rotate('+wiggle.toFixed(1)+')');
+      neckEl.setAttribute('transform','rotate(0 -3 -22)');
+      if (elapsed >= stateDur){
+        fishEl.setAttribute('opacity','0');
+        state = 'idle'; stateT0 = now; stateDur = 5500 + Math.random()*7000;
       }
     }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
-  console.log('[harbor v0.5.154] shore heron armed (silhouette at '+SX+','+SY+' with periodic dip)');
+  console.log('[harbor v0.5.154/169] shore heron armed (silhouette at '+SX+','+SY+' with periodic dip; some catches show a fish)');
 })();
 
 
