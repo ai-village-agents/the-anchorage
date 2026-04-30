@@ -10570,6 +10570,98 @@
   console.log('[harbor v0.5.187] flying fish armed (small school leaps from the surface, glides on extended pectoral wings, then splashes back in)');
 })();
 
+// v0.5.188 deep echo — every few minutes, slow faint concentric rings emanate outward from the kraken's position, like a deep pulse
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if(!svg){ return; }
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var g = document.createElementNS(SVGNS,'g');
+  g.setAttribute('id','deepEcho');
+  g.style.pointerEvents = 'none';
+  g.setAttribute('style','mix-blend-mode:screen');
+  svg.appendChild(g);
+
+  // ring pool of 6
+  var POOL = 6;
+  var rings = [];
+  for(var i=0;i<POOL;i++){
+    var c = document.createElementNS(SVGNS,'circle');
+    c.setAttribute('cx','540'); c.setAttribute('cy','2120');
+    c.setAttribute('r','0'); c.setAttribute('fill','none');
+    c.setAttribute('stroke','#7ec1ff'); c.setAttribute('stroke-width','1.0');
+    c.setAttribute('opacity','0');
+    g.appendChild(c);
+    rings.push({el:c, t:0, dur:0});
+  }
+
+  var CX = 540, CY = 2120;          // kraken position
+  var idle = 90000 + Math.random()*60000;  // first 90-150s
+  var stateT = 0;
+  var pulsesLeft = 0;
+  var nextPulseIn = 0;
+  var t0 = performance.now();
+
+  function spawnRing(){
+    for(var i=0;i<rings.length;i++){
+      if(rings[i].dur === 0){
+        rings[i].t = 0;
+        rings[i].dur = 7500 + Math.random()*1500;  // 7.5-9s slow expansion
+        rings[i].el.setAttribute('cx', CX);
+        rings[i].el.setAttribute('cy', CY);
+        rings[i].maxR = 320 + Math.random()*120;     // 320-440px reach
+        return;
+      }
+    }
+  }
+
+  function tick(ts){
+    var dt = ts - t0; t0 = ts;
+    stateT += dt;
+
+    // launch behavior
+    if(pulsesLeft <= 0){
+      if(stateT >= idle){
+        pulsesLeft = 3 + Math.floor(Math.random()*2);  // 3-4 rings per pulse
+        nextPulseIn = 0;
+        stateT = 0;
+        idle = 150000 + Math.random()*180000;          // 2.5-5.5min between pulses
+      }
+    } else {
+      nextPulseIn -= dt;
+      if(nextPulseIn <= 0){
+        spawnRing();
+        pulsesLeft -= 1;
+        nextPulseIn = 1400 + Math.random()*700;        // ~1.4-2.1s between rings within pulse
+      }
+    }
+
+    // animate rings
+    for(var j=0;j<rings.length;j++){
+      var r = rings[j];
+      if(r.dur > 0){
+        r.t += dt;
+        var k = r.t / r.dur;
+        if(k >= 1){
+          r.dur = 0;
+          r.el.setAttribute('opacity','0');
+          continue;
+        }
+        var rad = r.maxR * (k * (2 - k)); // ease-out
+        r.el.setAttribute('r', rad.toFixed(2));
+        // opacity ramp: 12% rise to 0.45, then fade
+        var op;
+        if(k < 0.12) op = (k/0.12) * 0.45;
+        else op = 0.45 * (1 - (k - 0.12)/0.88);
+        r.el.setAttribute('opacity', op.toFixed(3));
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  console.log('[harbor v0.5.188] deep echo armed (slow faint concentric rings emanate outward from the kraken every few minutes)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
