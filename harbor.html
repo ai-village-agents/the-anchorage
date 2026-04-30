@@ -10430,6 +10430,146 @@
   console.log('[harbor v0.5.186] reef shark armed (slow dark silhouette cruising fc-1, the this-page layer, every minute or two)');
 })();
 
+// v0.5.187 flying fish — small school leaps out of the surface, briefly glides above the water with extended fins, then splashes back in
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if(!svg){ return; }
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var g = document.createElementNS(SVGNS,'g');
+  g.setAttribute('id','flyingFish');
+  g.style.pointerEvents = 'none';
+  svg.appendChild(g);
+
+  // shared ripple pool
+  var RIPPLE_POOL = 8;
+  var ripples = [];
+  for(var i=0;i<RIPPLE_POOL;i++){
+    var r = document.createElementNS(SVGNS,'ellipse');
+    r.setAttribute('rx','0'); r.setAttribute('ry','0');
+    r.setAttribute('fill','none'); r.setAttribute('stroke','#cfe2ff');
+    r.setAttribute('stroke-width','0.6'); r.setAttribute('opacity','0');
+    r.setAttribute('style','mix-blend-mode:screen');
+    g.appendChild(r);
+    ripples.push({el:r, t:0, dur:0, x:0, y:0, maxR:0});
+  }
+  function spawnRipple(x, y){
+    for(var i=0;i<ripples.length;i++){
+      if(ripples[i].dur === 0){
+        ripples[i].t = 0;
+        ripples[i].dur = 1100 + Math.random()*500;
+        ripples[i].x = x;
+        ripples[i].y = y;
+        ripples[i].maxR = 7 + Math.random()*5;
+        return;
+      }
+    }
+  }
+
+  // 4 fish in school, slightly staggered
+  var FISH_COUNT = 4;
+  var fish = [];
+  for(var f=0; f<FISH_COUNT; f++){
+    var fg = document.createElementNS(SVGNS,'g');
+    fg.setAttribute('opacity','0');
+    fg.innerHTML = [
+      // body
+      '<ellipse cx="0" cy="0" rx="4.6" ry="1.2" fill="#9fbcd0" stroke="#3a4d62" stroke-width="0.35"/>',
+      '<path d="M -3 0 Q 0 -0.6 3 0" fill="none" stroke="#dfeaf4" stroke-width="0.4" opacity="0.7"/>',
+      // pectoral wings — long extended (the trick of flying fish)
+      '<path class="wingTop" d="M -1 0 q 3 -3.5 8 -3.6 q -3 1.6 -7 2.4 z" fill="#bcd3e6" stroke="#3a4d62" stroke-width="0.3" opacity="0.85"/>',
+      '<path class="wingBot" d="M -1 0 q 3 3.5 8 3.6 q -3 -1.6 -7 -2.4 z" fill="#bcd3e6" stroke="#3a4d62" stroke-width="0.3" opacity="0.85"/>',
+      // tail
+      '<path d="M 4.6 0 L 7 -1.6 L 6 0 L 7 1.6 Z" fill="#7a99b0" stroke="#3a4d62" stroke-width="0.3"/>',
+      // eye
+      '<circle cx="-3" cy="-0.2" r="0.4" fill="#0a0606"/>'
+    ].join('');
+    g.appendChild(fg);
+    fish.push({el: fg, ox: f*8 - 12, oy: (f%2===0?-2:2), op: 0});
+  }
+
+  // jump cycle parameters
+  var Y_SURFACE = 318;
+  var STATE_IDLE = 0, STATE_FLYING = 1;
+  var state = STATE_IDLE;
+  var stateT = 0;
+  var idle = 50000 + Math.random()*70000;  // first 50-120s
+  var startX = 0, endX = 0, dir = 1, peakH = 0, dur = 0;
+  var t0 = performance.now();
+
+  function startJump(){
+    state = STATE_FLYING;
+    stateT = 0;
+    dir = Math.random() < 0.5 ? 1 : -1;
+    var startNudge = 200 + Math.random()*700;
+    startX = dir > 0 ? startNudge : (1200 - startNudge);
+    var glideLen = 180 + Math.random()*180;  // 180-360px glide
+    endX = startX + dir * glideLen;
+    peakH = 22 + Math.random()*16;            // 22-38px peak above surface
+    dur = 1500 + Math.random()*900;            // 1.5-2.4s glide
+    // splash-up ripple at start
+    spawnRipple(startX, Y_SURFACE + 4);
+  }
+
+  function tick(ts){
+    var dt = ts - t0; t0 = ts;
+    stateT += dt;
+    if(state === STATE_IDLE){
+      // hide all
+      for(var i=0;i<fish.length;i++){ fish[i].el.setAttribute('opacity','0'); }
+      if(stateT >= idle){ startJump(); }
+    } else if(state === STATE_FLYING){
+      var k = Math.min(1, stateT / dur);
+      // parabolic arc
+      var arc = 4 * peakH * k * (1 - k);   // peak at k=0.5
+      var cx = startX + (endX - startX) * k;
+      var cy = Y_SURFACE - arc;
+      // tilt with arc velocity
+      var vx = (endX - startX) / dur;
+      var vy = -peakH * 4 * (1 - 2*k) / dur;
+      var ang = Math.atan2(vy, dir > 0 ? vx : -vx) * 180 / Math.PI;
+      // place each fish
+      for(var i=0;i<fish.length;i++){
+        var f = fish[i];
+        var fx = cx + dir * f.ox;
+        var fy = cy + f.oy + Math.sin(stateT*0.012 + i)*0.6;
+        f.el.setAttribute('transform','translate(' + fx.toFixed(2) + ',' + fy.toFixed(2) + ') scale(' + dir + ',1) rotate(' + ang.toFixed(2) + ')');
+        var fade = Math.min(k*8, (1-k)*8, 1);
+        f.el.setAttribute('opacity', (0.9 * Math.max(0, fade)).toFixed(3));
+      }
+      if(k >= 1){
+        // splash-down ripple at end
+        spawnRipple(endX, Y_SURFACE + 4);
+        spawnRipple(endX + dir*5, Y_SURFACE + 4);
+        state = STATE_IDLE;
+        stateT = 0;
+        idle = 70000 + Math.random()*100000;  // 70-170s between
+      }
+    }
+
+    // tick ripples
+    for(var j=0;j<ripples.length;j++){
+      var rp = ripples[j];
+      if(rp.dur > 0){
+        rp.t += dt;
+        var kk = rp.t / rp.dur;
+        if(kk >= 1){
+          rp.dur = 0; rp.el.setAttribute('opacity','0'); continue;
+        }
+        var rr = rp.maxR * kk;
+        rp.el.setAttribute('cx', rp.x.toFixed(2));
+        rp.el.setAttribute('cy', rp.y.toFixed(2));
+        rp.el.setAttribute('rx', rr.toFixed(2));
+        rp.el.setAttribute('ry', (rr*0.45).toFixed(2));
+        rp.el.setAttribute('opacity', (0.7 * (1 - kk)).toFixed(3));
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  console.log('[harbor v0.5.187] flying fish armed (small school leaps from the surface, glides on extended pectoral wings, then splashes back in)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
