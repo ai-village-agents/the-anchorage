@@ -7729,6 +7729,81 @@
 })();
 
 
+
+// v0.5.161 seafloor bubble vents — three quiet bubble streams rising from new bedrock points
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('id', 'seafloorBubbleVents');
+  g.setAttribute('pointer-events', 'none');
+  g.setAttribute('opacity', '0.6');
+  svg.appendChild(g);
+  // three vents: away from (320,2340) hydrothermal vent and (540,2362) lobster home
+  const SOURCES = [
+    { x: 180, y: 2342, rateMs: 720, rise: 360, jitter: 6, rxBase: 0.5 },
+    { x: 740, y: 2348, rateMs: 1100, rise: 320, jitter: 8, rxBase: 0.6 },
+    { x: 980, y: 2344, rateMs: 900, rise: 380, jitter: 7, rxBase: 0.55 },
+  ];
+  // each vent maintains a ring of bubble slots
+  const SLOTS_PER = 6;
+  const all = [];
+  SOURCES.forEach((src, si) => {
+    for (let i = 0; i < SLOTS_PER; i++) {
+      const c = document.createElementNS(ns, 'circle');
+      c.setAttribute('cx', src.x);
+      c.setAttribute('cy', src.y);
+      c.setAttribute('r', '0.6');
+      c.setAttribute('fill', '#bcd9ff');
+      c.setAttribute('opacity', '0');
+      g.appendChild(c);
+      all.push({ el: c, src: src, born: -1, life: 0, dx: 0 });
+    }
+  });
+  // schedule births
+  let nextBirth = SOURCES.map(() => performance.now() + Math.random() * 800);
+  function step(t) {
+    SOURCES.forEach((src, si) => {
+      while (t > nextBirth[si]) {
+        // find a free slot
+        for (let i = si * SLOTS_PER; i < (si + 1) * SLOTS_PER; i++) {
+          if (all[i].born < 0 || (t - all[i].born) > all[i].life) {
+            all[i].born = nextBirth[si];
+            all[i].life = 4400 + Math.random() * 2200;
+            all[i].dx = (Math.random() - 0.5) * src.jitter * 2;
+            break;
+          }
+        }
+        nextBirth[si] += src.rateMs * (0.7 + Math.random() * 0.6);
+        if (nextBirth[si] < t - 50) nextBirth[si] = t + src.rateMs;
+      }
+    });
+    all.forEach(b => {
+      if (b.born < 0) return;
+      const dt = t - b.born;
+      const k = Math.max(0, Math.min(1, dt / b.life));
+      if (k >= 1) {
+        b.el.setAttribute('opacity', '0');
+        return;
+      }
+      const sway = Math.sin(t * 0.0021 + b.born * 0.001) * b.src.jitter * 0.6;
+      const x = b.src.x + b.dx + sway * k;
+      const y = b.src.y - k * b.src.rise;
+      const r = b.src.rxBase + k * 1.2;
+      const op = (k < 0.1 ? k * 10 : (1 - k)) * 0.85;
+      b.el.setAttribute('cx', x.toFixed(2));
+      b.el.setAttribute('cy', y.toFixed(2));
+      b.el.setAttribute('r', r.toFixed(2));
+      b.el.setAttribute('opacity', op.toFixed(3));
+    });
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+  console.log('[harbor v0.5.161] seafloor bubble vents armed (3 quiet streams from bedrock at 180/740/980)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
