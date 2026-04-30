@@ -7570,6 +7570,81 @@
 })();
 
 
+// v0.5.159 bottom ray — silhouette stingray gliding low across the bedrock at fc-5
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('id','bottomRay');
+  g.setAttribute('pointer-events','none');
+  // local: ray centered (0,0). Wide flat diamond-ish silhouette with long whip tail
+  g.innerHTML = [
+    '<path d="M -22 0 Q -10 -5 0 -3.6 Q 10 -5 22 0 Q 10 3.4 0 2.8 Q -10 3.4 -22 0 Z" fill="#1a1d22" opacity="0.9"/>',
+    // pectoral flap accents
+    '<path id="rayWingL" d="M -22 0 Q -16 -3 -8 -1.4 Q -16 1.6 -22 0 Z" fill="#0d1014" opacity="0.6"/>',
+    '<path id="rayWingR" d="M 22 0 Q 16 -3 8 -1.4 Q 16 1.6 22 0 Z" fill="#0d1014" opacity="0.6"/>',
+    // small head bulge + eyes
+    '<ellipse cx="0" cy="-2" rx="3.4" ry="1.4" fill="#22262c"/>',
+    '<circle cx="-1.6" cy="-2.2" r="0.4" fill="#0a0a0a"/>',
+    '<circle cx="1.6" cy="-2.2" r="0.4" fill="#0a0a0a"/>',
+    // long whip tail
+    '<path id="rayTail" d="M 18 0.8 q 18 0.8 36 -1.2" stroke="#1a1d22" stroke-width="1.2" fill="none" stroke-linecap="round"/>',
+    // small sediment puff (optional, fades behind)
+    '<ellipse class="ray-puff" cx="-26" cy="2" rx="0" ry="0" fill="#3a3128" opacity="0"/>',
+  ].join('');
+  svg.appendChild(g);
+  // motion: glide low along bedrock (y_base ~ 2350-2360), drifting across full width
+  const SPEED = 0.012; // px/ms (slightly faster than trawler)
+  let X = -40, dir = 1;
+  let Y_BASE = 2358;
+  let t0 = performance.now();
+  // wing flap
+  const wingL = g.querySelector('#rayWingL');
+  const wingR = g.querySelector('#rayWingR');
+  const tail = g.querySelector('#rayTail');
+  const puff = g.querySelector('.ray-puff');
+  // periodic puff: sediment lifts when ray passes
+  let nextPuffAt = performance.now() + 4000 + Math.random()*5000;
+  let puffStart = -1;
+  function frame(now){
+    const dt = now - t0; t0 = now;
+    X += SPEED * dt * dir;
+    // reverse on edges with new Y_BASE
+    if (dir === 1 && X > 1240) { dir = -1; Y_BASE = 2354 + Math.random()*8; }
+    if (dir === -1 && X < -40) { dir = 1; Y_BASE = 2354 + Math.random()*8; }
+    // wing flap (slow undulation)
+    const wf = Math.sin(now*0.0028);
+    wingL.setAttribute('transform','scale(1,'+(1+wf*0.4).toFixed(3)+')');
+    wingR.setAttribute('transform','scale(1,'+(1+wf*0.4).toFixed(3)+')');
+    // tail wave
+    const tw = Math.sin(now*0.0019)*4;
+    tail.setAttribute('transform','rotate('+tw.toFixed(2)+' 18 0.8)');
+    // body bob
+    const bob = Math.sin(now*0.0011)*0.6;
+    const sx = (dir === 1 ? 1 : -1);
+    g.setAttribute('transform','translate('+X.toFixed(2)+','+(Y_BASE+bob).toFixed(2)+') scale('+sx+',1)');
+    // sediment puff
+    if (puffStart < 0 && now >= nextPuffAt){
+      puffStart = now;
+      nextPuffAt = now + 6000 + Math.random()*8000;
+    }
+    if (puffStart >= 0){
+      const k = (now - puffStart) / 1500;
+      if (k >= 1){ puffStart = -1; puff.setAttribute('opacity','0'); puff.setAttribute('rx','0'); puff.setAttribute('ry','0'); }
+      else {
+        const r = k * 8;
+        puff.setAttribute('rx', r.toFixed(2));
+        puff.setAttribute('ry', (r*0.45).toFixed(2));
+        puff.setAttribute('opacity', (Math.sin(k*Math.PI)*0.35).toFixed(3));
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.159] bottom ray armed (gliding low across bedrock with sediment puffs)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
