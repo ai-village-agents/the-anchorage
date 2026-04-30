@@ -11429,6 +11429,109 @@
 })();
 
 
+// v0.5.198 lighthouse beam glints on wave crests — bright pinpricks flash on the surface as the west beam sweeps the water
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) { console.warn('[harbor v0.5.198] svg not found, skipping'); return; }
+  const NS = 'http://www.w3.org/2000/svg';
+
+  const beamPivot = document.getElementById('lighthouseBeamPivot');
+  if(!beamPivot) { console.log('[harbor v0.5.198] west lighthouse beam not found, skipping'); return; }
+
+  // Lighthouse at (240,220), beam pivot at translate(0,-28), so origin = (240, 192)
+  const ORIG_X = 240;
+  const ORIG_Y = 192;
+  const Y_SURFACE = 308; // wave crest band
+
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('id', 'beamGlints');
+  g.setAttribute('style', 'mix-blend-mode: screen; pointer-events: none;');
+  svg.appendChild(g);
+
+  const POOL = 12;
+  const motes = [];
+  for(let i=0; i<POOL; i++){
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('r', 1.6);
+    c.setAttribute('fill', '#fff5cf');
+    c.setAttribute('opacity', '0');
+    g.appendChild(c);
+    motes.push({ el: c, active: false, t0: 0, dur: 0, peak: 0 });
+  }
+
+  function spawnGlint(){
+    const slot = motes.find(m => !m.active);
+    if(!slot) return;
+    // Read beam rotation transform of #lighthouseBeamPivot
+    const tr = beamPivot.getAttribute('transform') || '';
+    const m = tr.match(/rotate\(\s*(-?[\d.]+)/);
+    if(!m) return;
+    const deg = parseFloat(m[1]);
+    // Compute angle from beam direction. beam points right at deg=0; sweeps clockwise so deg increases.
+    // The beam line is from pivot in direction (cos(rad), sin(rad)).
+    // For beam to hit surface, sin(rad) > 0 and reach y=308, so dy=116.
+    const rad = deg * Math.PI / 180;
+    const sin = Math.sin(rad);
+    const cos = Math.cos(rad);
+    if(sin < 0.40) return; // beam not pointing low enough
+    const dist = (Y_SURFACE - ORIG_Y) / sin;
+    if(dist > 230 || dist < 30) return; // outside beam length
+    const baseX = ORIG_X + cos * dist;
+    if(baseX < 240 || baseX > 1100) return;
+    // Add small jitter
+    const x = baseX + (Math.random() - 0.5) * 30;
+    const y = Y_SURFACE + (Math.random() - 0.5) * 8;
+    slot.el.setAttribute('cx', x.toFixed(2));
+    slot.el.setAttribute('cy', y.toFixed(2));
+    slot.el.setAttribute('r', (1.2 + Math.random() * 1.0).toFixed(2));
+    slot.peak = 0.55 + Math.random() * 0.35;
+    slot.dur = 320 + Math.random() * 380;
+    slot.t0 = performance.now();
+    slot.active = true;
+  }
+
+  function scheduleGlints(){
+    function tick(){
+      // rate depends on whether beam is currently pointing seaward
+      const tr = beamPivot.getAttribute('transform') || '';
+      const m = tr.match(/rotate\(\s*(-?[\d.]+)/);
+      let rate = 1500;
+      if(m){
+        const deg = parseFloat(m[1]);
+        const rad = deg * Math.PI / 180;
+        const sin = Math.sin(rad);
+        if(sin > 0.4){
+          rate = 90 + Math.random() * 220;  // fast spawn while sweeping water
+          spawnGlint();
+        }
+      }
+      setTimeout(tick, rate);
+    }
+    setTimeout(tick, 1200);
+  }
+  scheduleGlints();
+
+  function frame(now){
+    motes.forEach(m => {
+      if(!m.active) return;
+      const u = (now - m.t0) / m.dur;
+      if(u >= 1){
+        m.active = false;
+        m.el.setAttribute('opacity', '0');
+        return;
+      }
+      // quick rise then decay
+      const env = u < 0.25 ? (u / 0.25) : (1 - (u - 0.25) / 0.75);
+      m.el.setAttribute('opacity', (m.peak * env).toFixed(3));
+    });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  console.log('[harbor v0.5.198] lighthouse beam glints armed (bright pinpricks flash on the surface as the west beam sweeps the water)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
