@@ -6191,6 +6191,116 @@
   console.log('[harbor v0.5.138] chimney smoke armed (3 rooftop sources)');
 })();
 
+// v0.5.139 perched bird — small silhouette atop east lighthouse, occasional head turn / wing flap / brief takeoff
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(SVGNS, 'g');
+  g.setAttribute('id', 'perchedBird');
+  g.setAttribute('pointer-events', 'none');
+  // East lighthouse is at translate(1080,180); top railing is around y=168 (-12 from origin).
+  // Place bird at absolute (1064, 165) — perched on the left corner of the railing.
+  const PX = 1064, PY = 165;
+  g.innerHTML = [
+    '<g id="perchedBirdInner" transform="translate('+PX+','+PY+')">',
+      // body (silhouette)
+      '<ellipse cx="0" cy="0" rx="3.6" ry="2.2" fill="#0a1220"/>',
+      // tail
+      '<path d="M3,0 L7,-1 L7,1 Z" fill="#0a1220"/>',
+      // head + beak
+      '<g id="perchedBirdHead">',
+        '<circle cx="-3.6" cy="-1.4" r="1.6" fill="#0a1220"/>',
+        '<path d="M-5.2,-1.4 L-6.4,-1.0 L-5.2,-0.6 Z" fill="#0a1220"/>',
+        // tiny eye glint
+        '<circle cx="-4.0" cy="-1.7" r="0.25" fill="#fff5c8" opacity="0.7"/>',
+      '</g>',
+      // wing (animatable)
+      '<g id="perchedBirdWing">',
+        '<path d="M-1.2,-1.0 Q1.0,-2.2 2.6,-0.6 Q1.0,-0.2 -1.2,-1.0 Z" fill="#0a1220"/>',
+      '</g>',
+      // legs (very thin)
+      '<line x1="-0.6" y1="2.2" x2="-0.6" y2="3.6" stroke="#0a1220" stroke-width="0.4"/>',
+      '<line x1="0.8" y1="2.2" x2="0.8" y2="3.6" stroke="#0a1220" stroke-width="0.4"/>',
+    '</g>',
+  ].join('');
+  // Insert before help overlay; SVG order doesn't strictly matter as long as it's after lighthouse.
+  svg.appendChild(g);
+  const head = g.querySelector('#perchedBirdHead');
+  const wing = g.querySelector('#perchedBirdWing');
+  const inner = g.querySelector('#perchedBirdInner');
+  // State: idle, headTurn, flap, takeoff
+  let state = 'idle';
+  let stateUntil = performance.now() + 3000 + Math.random()*5000;
+  let stateStart = performance.now();
+  function setIdle(now){ state='idle'; stateStart=now; stateUntil=now + 4000 + Math.random()*7000; }
+  function setHeadTurn(now){ state='headTurn'; stateStart=now; stateUntil=now + 1200 + Math.random()*900; }
+  function setFlap(now){ state='flap'; stateStart=now; stateUntil=now + 700 + Math.random()*400; }
+  function setTakeoff(now){ state='takeoff'; stateStart=now; stateUntil=now + 2400; }
+  function setReturning(now){ state='returning'; stateStart=now; stateUntil=now + 1400; }
+  function tick(now){
+    const elapsed = now - stateStart;
+    if(state==='idle'){
+      head.setAttribute('transform','rotate(0)');
+      wing.setAttribute('transform','rotate(0)');
+      inner.setAttribute('transform','translate('+PX+','+PY+')');
+      if(now>=stateUntil){
+        const r = Math.random();
+        if(r<0.50) setHeadTurn(now);
+        else if(r<0.85) setFlap(now);
+        else setTakeoff(now);
+      }
+    } else if(state==='headTurn'){
+      // smooth turn left then back
+      const k = elapsed / (stateUntil-stateStart);
+      const ang = Math.sin(k*Math.PI) * 35; // up to 35deg
+      head.setAttribute('transform','rotate('+ang.toFixed(2)+' -3.6 -1.4)');
+      if(now>=stateUntil){ head.setAttribute('transform','rotate(0)'); setIdle(now); }
+    } else if(state==='flap'){
+      const k = elapsed / (stateUntil-stateStart);
+      // flap up and down quickly a few times
+      const ang = Math.sin(k*Math.PI*4) * 28;
+      wing.setAttribute('transform','rotate('+ang.toFixed(2)+' 0 -1)');
+      if(now>=stateUntil){ wing.setAttribute('transform','rotate(0)'); setIdle(now); }
+    } else if(state==='takeoff'){
+      const k = elapsed / (stateUntil-stateStart);
+      // arc up and away
+      const dx = -k * 80;
+      const dy = -Math.sin(k*Math.PI) * 42 - k*8;
+      const flap = Math.sin(now*0.04) * 35;
+      wing.setAttribute('transform','rotate('+flap.toFixed(2)+' 0 -1)');
+      inner.setAttribute('transform','translate('+(PX+dx).toFixed(2)+','+(PY+dy).toFixed(2)+')');
+      // fade out near end
+      g.setAttribute('opacity', (1 - Math.max(0, k-0.7)/0.3).toFixed(3));
+      if(now>=stateUntil){
+        // become invisible, schedule return
+        g.setAttribute('opacity','0');
+        wing.setAttribute('transform','rotate(0)');
+        state='away'; stateStart=now; stateUntil=now + 8000 + Math.random()*16000;
+      }
+    } else if(state==='away'){
+      if(now>=stateUntil){ setReturning(now); }
+    } else if(state==='returning'){
+      const k = elapsed / (stateUntil-stateStart);
+      const dx = -(1-k) * 80;
+      const dy = -Math.sin((1-k)*Math.PI) * 42 - (1-k)*8;
+      const flap = Math.sin(now*0.04) * 35;
+      wing.setAttribute('transform','rotate('+flap.toFixed(2)+' 0 -1)');
+      inner.setAttribute('transform','translate('+(PX+dx).toFixed(2)+','+(PY+dy).toFixed(2)+')');
+      g.setAttribute('opacity', Math.min(1, k*1.4).toFixed(3));
+      if(now>=stateUntil){
+        wing.setAttribute('transform','rotate(0)');
+        inner.setAttribute('transform','translate('+PX+','+PY+')');
+        g.setAttribute('opacity','1');
+        setIdle(now);
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.139] perched bird armed (atop east lighthouse)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
