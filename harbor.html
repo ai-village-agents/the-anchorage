@@ -4619,6 +4619,97 @@
   }
 })();
 
+// v0.5.119 bioluminescent plankton — drifting glowing motes in fc-3
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    // defs gradient for soft glow halos
+    var defs = svg.querySelector('defs');
+    if (!defs) { defs = document.createElementNS(SVGNS,'defs'); svg.insertBefore(defs, svg.firstChild); }
+    if (!document.getElementById('planktonHalo')) {
+      var rg = document.createElementNS(SVGNS,'radialGradient');
+      rg.setAttribute('id','planktonHalo');
+      rg.setAttribute('cx','0.5'); rg.setAttribute('cy','0.5'); rg.setAttribute('r','0.5');
+      rg.innerHTML = '<stop offset="0%" stop-color="#9be3ff" stop-opacity="0.55"/>' +
+                     '<stop offset="40%" stop-color="#9be3ff" stop-opacity="0.20"/>' +
+                     '<stop offset="100%" stop-color="#9be3ff" stop-opacity="0"/>';
+      defs.appendChild(rg);
+    }
+
+    var g = document.createElementNS(SVGNS,'g');
+    g.setAttribute('id','plankton');
+    g.setAttribute('opacity','0.9');
+    g.setAttribute('pointer-events','none');
+    svg.appendChild(g);
+
+    // create N motes spread across fc-3 (y=1140-1540)
+    var COUNT = 36;
+    // simple seeded RNG
+    var seed = 11117;
+    function rng(){ seed = (seed * 9301 + 49297) % 233280; return seed/233280; }
+
+    var motes = [];
+    for (var i=0; i<COUNT; i++){
+      var bx = 60 + rng()*1080;
+      var by = 1160 + rng()*360;
+      var amp = 8 + rng()*22;
+      var freq = 0.0005 + rng()*0.0012;
+      var phase = rng() * Math.PI * 2;
+      var period = 2200 + rng()*3600; // pulse period ms
+      var size = 0.6 + rng()*1.4;
+      var dot = document.createElementNS(SVGNS,'circle');
+      dot.setAttribute('cx', bx.toFixed(1));
+      dot.setAttribute('cy', by.toFixed(1));
+      dot.setAttribute('r', size.toFixed(2));
+      dot.setAttribute('fill', '#cfeeff');
+      dot.setAttribute('opacity','0.6');
+      g.appendChild(dot);
+      var halo = document.createElementNS(SVGNS,'circle');
+      halo.setAttribute('cx', bx.toFixed(1));
+      halo.setAttribute('cy', by.toFixed(1));
+      halo.setAttribute('r', (size*4.5).toFixed(2));
+      halo.setAttribute('fill','url(#planktonHalo)');
+      halo.setAttribute('opacity','0.5');
+      g.appendChild(halo);
+      motes.push({bx:bx,by:by,amp:amp,freq:freq,phase:phase,period:period,size:size,dot:dot,halo:halo});
+    }
+
+    var lastT = null;
+    function frame(t){
+      if (lastT === null) lastT = t;
+      var dt = Math.min(60, t - lastT); lastT = t;
+      for (var i=0; i<motes.length; i++){
+        var m = motes[i];
+        // drift in slow circle
+        var dx = Math.sin(t * m.freq + m.phase) * m.amp;
+        var dy = Math.cos(t * m.freq * 1.3 + m.phase) * (m.amp * 0.5);
+        var x = m.bx + dx;
+        var y = m.by + dy;
+        m.dot.setAttribute('cx', x.toFixed(1));
+        m.dot.setAttribute('cy', y.toFixed(1));
+        m.halo.setAttribute('cx', x.toFixed(1));
+        m.halo.setAttribute('cy', y.toFixed(1));
+        // pulse opacity
+        var phase = ((t + m.phase*1000) % m.period) / m.period;
+        var k = Math.sin(phase * Math.PI); // 0..1..0
+        var dotOp = 0.25 + k * 0.70;
+        var haloOp = 0.10 + k * 0.55;
+        m.dot.setAttribute('opacity', dotOp.toFixed(3));
+        m.halo.setAttribute('opacity', haloOp.toFixed(3));
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+    try { console.log('[harbor v0.5.119] bioluminescent plankton armed (' + COUNT + ' motes, fc-3)'); } catch(e){}
+  } catch (err) {
+    try { console.error('[harbor v0.5.119] plankton init failed', err); } catch(e){}
+  }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
