@@ -5553,6 +5553,94 @@
   }
 })();
 
+// v0.5.131 leaping dolphin — periodic surface breach
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var ns = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(ns,'g');
+    g.setAttribute('id','leapingDolphin');
+    g.setAttribute('opacity','0');
+    g.setAttribute('pointer-events','none');
+    // dolphin silhouette (compact, similar style to v0.5.20 dolphins but bigger arc)
+    g.innerHTML = [
+      '<g id="leapingDolphinBody">',
+        '<path d="M -16 0 Q -10 -4 0 -4 Q 12 -4 16 0 Q 12 4 0 4 Q -10 4 -16 0 Z" fill="#3a4a6a"/>',
+        '<path d="M 12 -3 L 18 -7 L 14 0 Z" fill="#2a3950"/>',  // tail
+        '<path d="M -2 -4 L -3 -8 L 1 -5 Z" fill="#2a3950"/>',  // dorsal fin
+        '<path d="M -14 -1 L -18 -3 L -12 1 Z" fill="#3a4a6a"/>', // beak
+        '<circle cx="-12" cy="-1" r="0.5" fill="#0a1828"/>',
+      '</g>',
+      // splash group (drawn at water entry/exit)
+      '<g id="leapingDolphinSplash" opacity="0">',
+        '<ellipse cx="0" cy="0" rx="14" ry="1.5" fill="#cfe6ff" opacity="0.7"/>',
+        '<circle cx="-9" cy="-3" r="0.9" fill="#dff0ff"/>',
+        '<circle cx="-4" cy="-5" r="1.0" fill="#dff0ff"/>',
+        '<circle cx="2" cy="-6" r="1.1" fill="#dff0ff"/>',
+        '<circle cx="7" cy="-5" r="0.9" fill="#dff0ff"/>',
+        '<circle cx="11" cy="-3" r="0.7" fill="#dff0ff"/>',
+      '</g>'
+    ].join('');
+    svg.appendChild(g);
+
+    var body = g.querySelector('#leapingDolphinBody');
+    var splash = g.querySelector('#leapingDolphinSplash');
+
+    // arc: x from startX to startX + 220 (or -220), y goes 340 -> 240 -> 340 in a parabola
+    var state = 'idle';
+    var stateStart = performance.now();
+    var nextDelay = 6000 + Math.random() * 8000;
+    var startX = 400, dirX = 1, splashX = 0;
+
+    function tick(t){
+      var dt = t - stateStart;
+      if (state === 'idle'){
+        g.setAttribute('opacity','0');
+        if (dt > nextDelay){
+          state = 'breach';
+          stateStart = t;
+          dirX = Math.random() < 0.5 ? 1 : -1;
+          startX = 200 + Math.random() * 800;
+        }
+      } else if (state === 'breach'){
+        // duration 1400ms total — arc from y=340 up to 240 and back
+        var dur = 1400;
+        var k = Math.min(1, dt / dur);
+        var x = startX + dirX * 220 * k;
+        var y = 340 - 100 * Math.sin(k * Math.PI);
+        // body rotation along arc tangent (derivative of -100*sin(πk) gives -100π·cos(πk)/220 horizontal)
+        var dy = -100 * Math.PI * Math.cos(k * Math.PI);
+        var dx = dirX * 220;
+        var rot = Math.atan2(dy, dx) * 180 / Math.PI;
+        body.setAttribute('transform','translate(' + x.toFixed(1) + ',' + y.toFixed(1) + ') rotate(' + rot.toFixed(1) + ') scale(' + (dirX>0 ? 1 : -1) + ',1)');
+        g.setAttribute('opacity','1');
+        // splash on entry (k near 0) and exit (k near 1)
+        var splashOp = 0;
+        if (k < 0.10) {
+          splashOp = (1 - k/0.10) * 0.85;
+          splash.setAttribute('transform','translate(' + startX.toFixed(1) + ',340)');
+        } else if (k > 0.90) {
+          splashOp = ((k - 0.90)/0.10) * 0.85;
+          splash.setAttribute('transform','translate(' + (startX + dirX * 220).toFixed(1) + ',340)');
+        }
+        splash.setAttribute('opacity', String(splashOp));
+        if (dt > dur){
+          state = 'idle';
+          stateStart = t;
+          nextDelay = 12000 + Math.random() * 16000;
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    console.log('[harbor v0.5.131] leaping dolphin armed (periodic surface breach)');
+  } catch(err){
+    try { console.error('[harbor v0.5.131] leaping dolphin init failed', err); } catch(e){}
+  }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
