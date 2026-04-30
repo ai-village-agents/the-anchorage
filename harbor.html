@@ -10742,6 +10742,73 @@
 })();
 
 
+// v0.5.190 whale fall phosphor strands — slow bioluminescent wisps lifting from the carcass
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('id','whaleFallStrands');
+  g.setAttribute('style','pointer-events:none;mix-blend-mode:screen;');
+  // Whale fall is at BASE_X=280, ribs span -88..+88. So strands launch from x in [200, 360].
+  var POOL = 5;
+  var strands = [];
+  for (var i=0;i<POOL;i++){
+    var s = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    s.setAttribute('r', 1.6); s.setAttribute('fill','#9be8ff');
+    s.setAttribute('opacity','0');
+    g.appendChild(s);
+    strands.push({el:s, active:false, t0:0, dur:0, x0:0, y0:0, rise:0, drift:0, hue:'#9be8ff'});
+  }
+  svg.appendChild(g);
+
+  var nextSpawnAt = performance.now() + 8000 + Math.random()*14000; // first 8-22s
+
+  function spawnStrand(now){
+    var s = null;
+    for (var i=0;i<strands.length;i++){ if (!strands[i].active){ s = strands[i]; break; } }
+    if (!s) return;
+    s.active = true;
+    s.t0 = now;
+    s.dur = 8000 + Math.random()*5000; // 8-13s rise
+    s.x0 = 200 + Math.random()*160;     // launch x in [200,360]
+    s.y0 = 2356 + Math.random()*8;      // launch y near bones
+    s.rise = 50 + Math.random()*40;     // rises 50-90 px upward
+    s.drift = (Math.random()-0.5) * 30; // gentle horizontal drift ±15px
+    var pal = ['#9be8ff','#a3f0d4','#cfd6ff'];
+    s.hue = pal[Math.floor(Math.random()*pal.length)];
+    s.el.setAttribute('fill', s.hue);
+  }
+
+  function tick(now){
+    if (now >= nextSpawnAt){
+      spawnStrand(now);
+      nextSpawnAt = now + 4000 + Math.random()*9000; // 4-13s between spawns (overlapping)
+    }
+    for (var i=0;i<strands.length;i++){
+      var s = strands[i]; if (!s.active) continue;
+      var k = (now - s.t0) / s.dur;
+      if (k >= 1){ s.active = false; s.el.setAttribute('opacity','0'); continue; }
+      var ease = k; // linear rise
+      var x = s.x0 + s.drift * ease + Math.sin((now - s.t0)*0.0011 + i)*2.0; // tiny sway
+      var y = s.y0 - s.rise * ease;
+      // Envelope: fade in 0-15%, hold to 70%, fade out
+      var op;
+      if (k < 0.15) op = (k/0.15) * 0.55;
+      else if (k < 0.70) op = 0.55;
+      else op = 0.55 * (1 - (k - 0.70)/0.30);
+      var r = 1.4 + Math.sin((now - s.t0)*0.004)*0.35;
+      s.el.setAttribute('cx', x.toFixed(2));
+      s.el.setAttribute('cy', y.toFixed(2));
+      s.el.setAttribute('r', r.toFixed(2));
+      s.el.setAttribute('opacity', op.toFixed(3));
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.190] whale fall phosphor strands armed (slow bioluminescent wisps lifting from the carcass)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
