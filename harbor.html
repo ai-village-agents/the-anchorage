@@ -4360,6 +4360,78 @@
   } catch(e){}
 })();
 
+// v0.5.115 mist wisps — long thin horizontal mist streaks drifting slowly above the water surface
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    // Add a soft white-blur radial gradient for the mist if not present
+    var defs = svg.querySelector('defs');
+    if(defs && !defs.querySelector('#mistWispGrad')){
+      var grad = document.createElementNS('http://www.w3.org/2000/svg','radialGradient');
+      grad.setAttribute('id','mistWispGrad');
+      grad.setAttribute('cx','0.5'); grad.setAttribute('cy','0.5'); grad.setAttribute('r','0.5');
+      grad.innerHTML = ''
+        + '<stop offset="0%" stop-color="#dde6f5" stop-opacity="0.35"/>'
+        + '<stop offset="60%" stop-color="#dde6f5" stop-opacity="0.12"/>'
+        + '<stop offset="100%" stop-color="#dde6f5" stop-opacity="0"/>';
+      defs.appendChild(grad);
+    }
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(SVG_NS,'g');
+    g.setAttribute('id','mistWisps');
+    g.setAttribute('opacity','0.55');
+    g.setAttribute('pointer-events','none');
+    // Six wisps of varying widths and y positions in y=270..330
+    var wisps = [];
+    var seed = 4242;
+    function rand(){ seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
+    var COUNT = 6;
+    for(var i=0;i<COUNT;i++){
+      var w = 240 + rand()*320;       // width
+      var h = 14 + rand()*10;          // height
+      var y = 274 + rand()*54;         // y center
+      var sp = 0.012 + rand()*0.020;   // px/ms
+      var dir = rand() < 0.5 ? -1 : 1;
+      var x = rand()*1200;
+      var ph = rand()*Math.PI*2;
+      var period = 14000 + rand()*10000;
+      var ell = document.createElementNS(SVG_NS,'ellipse');
+      ell.setAttribute('cx','0');
+      ell.setAttribute('cy','0');
+      ell.setAttribute('rx', (w/2).toFixed(1));
+      ell.setAttribute('ry', (h/2).toFixed(1));
+      ell.setAttribute('fill','url(#mistWispGrad)');
+      g.appendChild(ell);
+      wisps.push({el:ell, x:x, y:y, sp:sp, dir:dir, w:w, h:h, ph:ph, period:period});
+    }
+    svg.appendChild(g);
+    var lastT = performance.now();
+    function step(now){
+      var dt = Math.min(64, now - lastT);
+      lastT = now;
+      for(var i=0;i<wisps.length;i++){
+        var ws = wisps[i];
+        ws.x += ws.sp * ws.dir * dt;
+        // wrap; use wider buffer to ensure smooth re-entry
+        if(ws.dir>0 && ws.x > 1200 + ws.w/2) ws.x = -ws.w/2;
+        if(ws.dir<0 && ws.x < -ws.w/2) ws.x = 1200 + ws.w/2;
+        // Slow vertical drift
+        var jy = Math.sin(now*0.00045 + ws.ph) * 4;
+        // Fade in/out over period
+        var phase = ((now + ws.ph*1000) % ws.period) / ws.period;
+        var op = 0.25 + 0.45 * Math.sin(phase * Math.PI); // peaks mid-period
+        if(op < 0) op = 0;
+        ws.el.setAttribute('opacity', op.toFixed(3));
+        ws.el.setAttribute('transform','translate('+ws.x.toFixed(2)+','+(ws.y+jy).toFixed(2)+')');
+      }
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    try { console.log('[harbor v0.5.115] mist wisps armed (' + COUNT + ' drifting wisps over water)'); } catch(e){}
+  } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
