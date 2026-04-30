@@ -4279,6 +4279,73 @@
   } catch(e){}
 })();
 
+// v0.5.113 middle headland + hilltop village silhouette — fills the gap between the two distant headlands
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(SVG_NS,'g');
+    g.setAttribute('id','middleHeadland');
+    g.setAttribute('opacity','0.92');
+    g.setAttribute('pointer-events','none');
+    // Low hill silhouette spanning x=440..760, with peak around 600,235 — slightly lower than flanking headlands
+    // Plus tiny rooftops on top, and a few lit windows
+    var html = ''
+      + '<path d="M 440,280 L 440,256 Q 480,250 520,246 Q 560,240 600,238 Q 640,242 680,250 Q 720,254 760,256 L 760,280 Z" fill="#0a1018" opacity="0.92"/>'
+      // Houses on the hill — tiny dark rectangles + pitched roofs
+      + '<g fill="#0a1018" stroke="#1a2030" stroke-width="0.3">'
+      +   '<rect x="496" y="244" width="6" height="4"/>'
+      +   '<path d="M 495,244 L 499,241 L 503,244 Z"/>'
+      +   '<rect x="510" y="241" width="7" height="5"/>'
+      +   '<path d="M 509,241 L 513.5,237 L 518,241 Z"/>'
+      +   '<rect x="528" y="240" width="5" height="4"/>'
+      +   '<path d="M 527,240 L 530.5,237 L 534,240 Z"/>'
+      +   '<rect x="556" y="237" width="6" height="5"/>'
+      +   '<path d="M 555,237 L 559,233 L 563,237 Z"/>'
+      +   '<rect x="572" y="236" width="8" height="6"/>'
+      +   '<path d="M 571,236 L 576,231 L 581,236 Z"/>'
+      // Church/steeple
+      +   '<rect x="592" y="232" width="8" height="8"/>'
+      +   '<path d="M 591,232 L 596,225 L 601,232 Z"/>'
+      +   '<rect x="595" y="222" width="2" height="4"/>'
+      +   '<rect x="608" y="237" width="6" height="5"/>'
+      +   '<path d="M 607,237 L 611,233 L 615,237 Z"/>'
+      +   '<rect x="622" y="240" width="7" height="4"/>'
+      +   '<path d="M 621,240 L 625.5,236 L 630,240 Z"/>'
+      +   '<rect x="638" y="242" width="5" height="4"/>'
+      +   '<path d="M 637,242 L 640.5,239 L 644,242 Z"/>'
+      +   '<rect x="660" y="247" width="6" height="4"/>'
+      +   '<path d="M 659,247 L 663,244 L 667,247 Z"/>'
+      +   '<rect x="676" y="250" width="5" height="3"/>'
+      +   '<path d="M 675,250 L 678.5,247 L 682,250 Z"/>'
+      + '</g>'
+      // A few lit windows (tiny yellow dots inside houses) — these will twinkle slightly
+      + '<g id="hilltopWindows">'
+      +   '<rect x="498" y="245" width="1.2" height="1.2" fill="#ffe9a8"/>'
+      +   '<rect x="513" y="243" width="1.2" height="1.2" fill="#ffd97a"/>'
+      +   '<rect x="558" y="239" width="1.2" height="1.2" fill="#ffe9a8"/>'
+      +   '<rect x="595" y="235" width="1.0" height="1.2" fill="#ffd97a"/>'
+      +   '<rect x="624" y="241" width="1.2" height="1.2" fill="#ffe9a8"/>'
+      +   '<rect x="640" y="243" width="1.0" height="1.2" fill="#ffd97a"/>'
+      +   '<rect x="662" y="248" width="1.2" height="1.2" fill="#ffe9a8"/>'
+      + '</g>';
+    g.innerHTML = html;
+    svg.appendChild(g);
+    // Slight twinkle on windows
+    var wins = g.querySelectorAll('#hilltopWindows rect');
+    function step(now){
+      for(var i=0;i<wins.length;i++){
+        var op = 0.65 + 0.35 * (0.5 + 0.5 * Math.sin(now * 0.0017 + i * 1.3));
+        wins[i].setAttribute('opacity', op.toFixed(3));
+      }
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    try { console.log('[harbor v0.5.113] middle headland + hilltop village armed'); } catch(e){}
+  } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
