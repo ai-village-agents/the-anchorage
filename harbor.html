@@ -7946,6 +7946,75 @@
 })();
 
 
+
+// v0.5.164 distant ship — tiny far-off ship with running lights creeping along the horizon
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('id', 'distantShip');
+  g.setAttribute('pointer-events', 'none');
+  g.setAttribute('opacity', '0.85');
+  // sit just above horizon line at y=298 (this is far horizon strip), tiny silhouette
+  // ship is small; nav lights are red/green/white
+  g.innerHTML = [
+    '<g id="distantShipBody">',
+      // hull
+      '<path d="M -8 0 L 8 0 L 7 1.6 L -7 1.6 Z" fill="#0a0e14" opacity="0.85"/>',
+      // bridge
+      '<rect x="-2.4" y="-1.6" width="4" height="1.6" fill="#0a0e14" opacity="0.85"/>',
+      '<rect x="-1.0" y="-2.6" width="1.6" height="1.0" fill="#0a0e14" opacity="0.7"/>',
+      // masts
+      '<line x1="3.5" y1="0" x2="3.5" y2="-2.8" stroke="#0a0e14" stroke-width="0.3" opacity="0.7"/>',
+      '<line x1="-3.5" y1="0" x2="-3.5" y2="-2.4" stroke="#0a0e14" stroke-width="0.3" opacity="0.7"/>',
+      // running lights (small bulbs with halos)
+      '<g id="distantShipLights">',
+        // port red on left side
+        '<circle id="distShipPort" cx="-7" cy="-0.4" r="0.55" fill="#ff5060" opacity="0.85"/>',
+        '<circle cx="-7" cy="-0.4" r="0.25" fill="#fff5e0" opacity="0.85"/>',
+        // starboard green on right
+        '<circle id="distShipStbd" cx="7" cy="-0.4" r="0.55" fill="#50ff80" opacity="0.85"/>',
+        '<circle cx="7" cy="-0.4" r="0.25" fill="#fff5e0" opacity="0.85"/>',
+        // masthead white
+        '<circle id="distShipMast" cx="3.5" cy="-2.8" r="0.55" fill="#fff5e0" opacity="0.0"/>',
+        '<circle cx="3.5" cy="-2.8" r="0.25" fill="#ffffff" opacity="0.0"/>',
+      '</g>',
+    '</g>',
+  ].join('');
+  svg.appendChild(g);
+  const port = g.querySelector('#distShipPort');
+  const stbd = g.querySelector('#distShipStbd');
+  const mast = g.querySelector('#distShipMast');
+  const mastInner = g.querySelector('#distantShipLights circle:nth-child(6)');
+  // very slow drift across the far horizon; much slower than the foreground trawler
+  const SPEED = 0.0017; // px per ms
+  let x = -40 + Math.random() * 1280;
+  let dir = Math.random() < 0.5 ? -1 : 1;
+  const Y = 296;
+  let last = performance.now();
+  function step(t) {
+    const dt = Math.min(64, t - last); last = t;
+    x += dir * SPEED * dt;
+    if (x < -40) { x = -40; dir = 1; }
+    else if (x > 1240) { x = 1240; dir = -1; }
+    g.setAttribute('transform', 'translate(' + x.toFixed(2) + ',' + Y + ') scale(' + (0.7 * dir) + ',0.7)');
+    // port/stbd breathe
+    const breathe = 0.78 + Math.sin(t * 0.0018) * 0.18;
+    port.setAttribute('opacity', breathe.toFixed(3));
+    stbd.setAttribute('opacity', breathe.toFixed(3));
+    // masthead white strobe — every 4 s flash 100ms
+    const phase = t % 4000;
+    const on = phase < 110 ? 0.95 : 0.0;
+    mast.setAttribute('opacity', on.toFixed(2));
+    if (mastInner) mastInner.setAttribute('opacity', on.toFixed(2));
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+  console.log('[harbor v0.5.164] distant ship armed (tiny silhouette creeps along horizon with red/green/white running lights)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
