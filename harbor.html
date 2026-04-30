@@ -4432,6 +4432,101 @@
   } catch(e){}
 })();
 
+// v0.5.117 aurora borealis — a soft greenish arc curtain above the far horizon
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    // defs: gradient for the curtain
+    var defs = svg.querySelector('defs');
+    if (!defs) { defs = document.createElementNS(SVGNS,'defs'); svg.insertBefore(defs, svg.firstChild); }
+    if (!document.getElementById('auroraGrad')) {
+      var grad = document.createElementNS(SVGNS,'linearGradient');
+      grad.setAttribute('id','auroraGrad');
+      grad.setAttribute('x1','0'); grad.setAttribute('y1','0');
+      grad.setAttribute('x2','0'); grad.setAttribute('y2','1');
+      grad.innerHTML = '<stop offset="0%" stop-color="#5effc8" stop-opacity="0"/>' +
+                       '<stop offset="20%" stop-color="#5effc8" stop-opacity="0.55"/>' +
+                       '<stop offset="55%" stop-color="#7effa0" stop-opacity="0.40"/>' +
+                       '<stop offset="85%" stop-color="#a0c0ff" stop-opacity="0.18"/>' +
+                       '<stop offset="100%" stop-color="#a0c0ff" stop-opacity="0"/>';
+      defs.appendChild(grad);
+    }
+
+    var g = document.createElementNS(SVGNS,'g');
+    g.setAttribute('id','auroraBorealis');
+    g.setAttribute('opacity','0.75');
+    g.setAttribute('pointer-events','none');
+
+    // 4 ribbon bands of varying width drifting independently
+    var BANDS = [
+      { yTop: 60,  height: 90, ax: 30, ay: 12, freq: 0.00025, phase: 0.0,  op: 0.55 },
+      { yTop: 80,  height: 70, ax: 22, ay: 10, freq: 0.00031, phase: 1.7,  op: 0.45 },
+      { yTop: 100, height: 60, ax: 18, ay: 8,  freq: 0.00040, phase: 3.1,  op: 0.40 },
+      { yTop: 130, height: 50, ax: 14, ay: 6,  freq: 0.00052, phase: 4.4,  op: 0.30 }
+    ];
+
+    var paths = [];
+    BANDS.forEach(function(b, i){
+      var p = document.createElementNS(SVGNS,'path');
+      p.setAttribute('fill','url(#auroraGrad)');
+      p.setAttribute('opacity', String(b.op));
+      g.appendChild(p);
+      paths.push(p);
+    });
+
+    // insert after defs (so it sits behind clouds and above sky bg)
+    // place at start of svg children so it's deepest
+    var firstSky = svg.querySelector('.harbor-svg__sky') || svg.firstElementChild;
+    if (firstSky && firstSky.nextSibling) {
+      svg.insertBefore(g, firstSky.nextSibling);
+    } else {
+      svg.appendChild(g);
+    }
+
+    function buildPath(b, t){
+      var SAMPLES = 24;
+      var W = 1200;
+      var step = W / SAMPLES;
+      var top = [];
+      var bot = [];
+      for (var i=0; i<=SAMPLES; i++){
+        var x = i * step;
+        // gentle horizontal sine + slow temporal drift
+        var s1 = Math.sin((x * 0.0085) + t * b.freq + b.phase);
+        var s2 = Math.sin((x * 0.014) + t * b.freq * 1.7 + b.phase * 0.6);
+        var yOff = s1 * b.ay + s2 * (b.ay * 0.4);
+        top.push([x.toFixed(1), (b.yTop + yOff).toFixed(1)]);
+        // bottom: same wave but stretched more so curtain undulates
+        var s3 = Math.sin((x * 0.0085) + t * b.freq + b.phase + 0.4);
+        bot.push([x.toFixed(1), (b.yTop + b.height + s3 * b.ay * 0.6).toFixed(1)]);
+      }
+      var d = 'M ' + top[0][0] + ',' + top[0][1];
+      for (var i=1; i<top.length; i++){ d += ' L ' + top[i][0] + ',' + top[i][1]; }
+      for (var j=bot.length-1; j>=0; j--){ d += ' L ' + bot[j][0] + ',' + bot[j][1]; }
+      d += ' Z';
+      return d;
+    }
+
+    function frame(t){
+      for (var i=0; i<BANDS.length; i++){
+        paths[i].setAttribute('d', buildPath(BANDS[i], t));
+      }
+      // overall opacity breathes very slowly (waxes & wanes)
+      var breathe = 0.55 + 0.30 * Math.sin(t * 0.00018);
+      g.setAttribute('opacity', String(breathe.toFixed(3)));
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+    try { console.log('[harbor v0.5.117] aurora borealis armed (4 ribbon bands, far-horizon curtain)'); } catch(e){}
+  } catch (err) {
+    try { console.error('[harbor v0.5.117] aurora init failed', err); } catch(e){}
+  }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
