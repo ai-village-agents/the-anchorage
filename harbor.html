@@ -11246,6 +11246,109 @@
   console.log('[harbor v0.5.195] synchronized jelly flash burst armed (rare event where all 6 bloom jellies pulse in unison)');
 })();
 
+// v0.5.196 surface foam at dock pilings — gentle white foam rings around piling bases, with occasional outward ripples
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) { console.warn('[harbor v0.5.196] svg not found, skipping'); return; }
+  const NS = 'http://www.w3.org/2000/svg';
+  const PILINGS = [840, 858, 874];
+  const PHASE = [0, 1.7, 3.4];
+  const Y_BASE = 320;
+
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('id', 'pilingFoam');
+  g.setAttribute('style', 'mix-blend-mode: screen; pointer-events: none;');
+  svg.appendChild(g);
+
+  // Static foam rings at each piling base
+  const rings = PILINGS.map((px) => {
+    const e = document.createElementNS(NS, 'ellipse');
+    e.setAttribute('cx', px);
+    e.setAttribute('cy', Y_BASE);
+    e.setAttribute('rx', 6);
+    e.setAttribute('ry', 1.6);
+    e.setAttribute('fill', '#f5fbff');
+    e.setAttribute('opacity', '0.35');
+    g.appendChild(e);
+    return e;
+  });
+
+  // Ripple pool
+  const POOL_SIZE = 6;
+  const ripples = [];
+  for(let i=0; i<POOL_SIZE; i++){
+    const r = document.createElementNS(NS, 'ellipse');
+    r.setAttribute('cy', Y_BASE);
+    r.setAttribute('rx', 0);
+    r.setAttribute('ry', 1.2);
+    r.setAttribute('fill', 'none');
+    r.setAttribute('stroke', '#f5fbff');
+    r.setAttribute('stroke-width', '1');
+    r.setAttribute('opacity', '0');
+    g.appendChild(r);
+    ripples.push({ el: r, active: false, t0: 0, dur: 0, x0: 0, x1: 0 });
+  }
+
+  function emitRipple(){
+    const slot = ripples.find(r => !r.active);
+    if(!slot) return;
+    const idx = Math.floor(Math.random() * PILINGS.length);
+    const px = PILINGS[idx];
+    const side = Math.random() < 0.5 ? -1 : 1;
+    slot.x0 = px + side * 5;
+    slot.x1 = px + side * 14;
+    slot.dur = 1100 + Math.random() * 600;
+    slot.t0 = performance.now();
+    slot.active = true;
+    slot.el.setAttribute('cx', slot.x0);
+    slot.el.setAttribute('rx', 0);
+    slot.el.setAttribute('opacity', '0.5');
+  }
+
+  function scheduleRipples(){
+    PILINGS.forEach(() => {
+      const wait = (6 + Math.random() * 8) * 1000;
+      setTimeout(function tick(){
+        emitRipple();
+        const next = (6 + Math.random() * 8) * 1000;
+        setTimeout(tick, next);
+      }, wait);
+    });
+  }
+  scheduleRipples();
+
+  function frame(now){
+    const t = now / 1000;
+    rings.forEach((el, i) => {
+      const v = 0.40 + 0.15 * Math.sin(t * 1.6 + PHASE[i]);
+      el.setAttribute('opacity', v.toFixed(3));
+      const rx = 6 + 0.6 * Math.sin(t * 2.1 + PHASE[i]);
+      el.setAttribute('rx', rx.toFixed(2));
+    });
+    ripples.forEach(r => {
+      if(!r.active) return;
+      const u = (now - r.t0) / r.dur;
+      if(u >= 1){
+        r.active = false;
+        r.el.setAttribute('opacity', '0');
+        r.el.setAttribute('rx', 0);
+        return;
+      }
+      const x = r.x0 + (r.x1 - r.x0) * u;
+      const rx = 4 + 7 * u;
+      const op = 0.5 * (1 - u);
+      r.el.setAttribute('cx', x.toFixed(2));
+      r.el.setAttribute('rx', rx.toFixed(2));
+      r.el.setAttribute('opacity', op.toFixed(3));
+    });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  console.log('[harbor v0.5.196] surface foam at dock pilings armed (3 pilings shimmer with foam rings + occasional outward ripples)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
