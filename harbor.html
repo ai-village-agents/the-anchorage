@@ -7268,6 +7268,83 @@
 })();
 
 
+// v0.5.155 sea otter on back — drifting at the surface, paws on chest, occasional groom
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('id','seaOtter');
+  g.setAttribute('pointer-events','none');
+  // local: belly-up otter centered (0,0)
+  // body: long ellipse
+  // head bulges to the right (east), tail tapers left
+  // paws crossed on chest in middle
+  g.innerHTML = [
+    // small wake under otter
+    '<ellipse class="otter-wake" cx="0" cy="3.6" rx="20" ry="0.9" fill="#7aa2ff" opacity="0.18"/>',
+    // body ellipse (back-down profile)
+    '<ellipse cx="0" cy="0" rx="14" ry="3.6" fill="#3a2918"/>',
+    '<ellipse cx="0" cy="-1.0" rx="12" ry="2.4" fill="#5a4028" opacity="0.7"/>',
+    // belly fur lighter
+    '<ellipse cx="-2" cy="0.4" rx="9" ry="1.6" fill="#7a5e3e" opacity="0.6"/>',
+    // tail tapering left
+    '<path d="M -14 0 q -7 0.6 -10 1.6 q -2.4 0.8 -4.6 0.4 q 2 -0.4 3.4 -1.4 q 6 -1.2 11.2 -1.2 z" fill="#3a2918"/>',
+    // head right (round + nose)
+    '<ellipse cx="14" cy="-1.2" rx="4.2" ry="3.2" fill="#3a2918"/>',
+    '<ellipse cx="14" cy="-1.2" rx="2.6" ry="1.8" fill="#5a4028" opacity="0.8"/>',
+    '<circle cx="16.6" cy="-1.5" r="0.5" fill="#0a0a0a"/>',
+    '<circle cx="13.2" cy="-2.6" r="0.3" fill="#0a0a0a"/>',
+    '<circle cx="14.8" cy="-2.4" r="0.3" fill="#0a0a0a"/>',
+    // whiskers
+    '<line x1="16.4" y1="-1.0" x2="19" y2="-0.6" stroke="#d8c8a8" stroke-width="0.18"/>',
+    '<line x1="16.4" y1="-0.4" x2="19" y2="0.2" stroke="#d8c8a8" stroke-width="0.18"/>',
+    // paws crossed on chest (slightly above body line)
+    '<g id="otterPaws" transform="rotate(0 0 -2)">',
+    '  <ellipse cx="-2" cy="-3.6" rx="3.2" ry="1.6" fill="#2a1c0c"/>',
+    '  <ellipse cx="2.4" cy="-3.6" rx="3.2" ry="1.6" fill="#2a1c0c"/>',
+    '  <circle cx="0" cy="-4.4" r="1.2" fill="#1a1208"/>',
+    '</g>',
+    // hind feet (small flippers near tail base)
+    '<ellipse cx="-10" cy="-2.6" rx="1.8" ry="1.0" fill="#2a1c0c"/>',
+    '<ellipse cx="-12" cy="1.6" rx="1.8" ry="1.0" fill="#2a1c0c"/>',
+  ].join('');
+  svg.appendChild(g);
+  // motion: slow east-west drift, gentle bob/sway
+  let X = 880, dir = 1, BASE_Y = 322;
+  const SPEED = 0.0017;
+  let t0 = performance.now();
+  // groom state machine: idle (5-12s) -> groom (1.4-2.4s, paws rotate ±18° rapidly)
+  let state = 'idle', stateT0 = performance.now(), stateDur = 6000+Math.random()*6000;
+  const paws = g.querySelector('#otterPaws');
+  function frame(now){
+    const dt = now - t0; t0 = now;
+    X += SPEED * dt * dir;
+    if (X > 1080) dir = -1;
+    if (X < 760) dir = 1;
+    const bob = Math.sin(now*0.0009)*1.0;
+    const sway = Math.sin(now*0.0006 + 0.4)*1.4;
+    const y = BASE_Y + bob;
+    // when going west, mirror horizontally
+    const sx = (dir === 1 ? 1 : -1);
+    g.setAttribute('transform', 'translate('+(X+sway).toFixed(2)+','+y.toFixed(2)+') scale('+sx+',1)');
+    if (state === 'idle'){
+      // small paw idle motion
+      const pa = Math.sin(now*0.0011)*4;
+      paws.setAttribute('transform','rotate('+pa.toFixed(2)+' 0 -2)');
+      if (now - stateT0 >= stateDur){ state='groom'; stateT0=now; stateDur=1400+Math.random()*1000; }
+    } else if (state === 'groom'){
+      const k = (now-stateT0)/stateDur;
+      const pa = Math.sin(k*Math.PI*4) * 22; // rapid waggle
+      paws.setAttribute('transform','rotate('+pa.toFixed(2)+' 0 -2)');
+      if (now - stateT0 >= stateDur){ state='idle'; stateT0=now; stateDur=5500+Math.random()*7000; }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.155] sea otter armed (drifting at surface, paws on chest, periodic groom)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
