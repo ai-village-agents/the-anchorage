@@ -7393,6 +7393,118 @@
 })();
 
 
+// v0.5.157 beach campfire — warm flickering hearth on the headland slope, with smoke and sparks
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  let defs = svg.querySelector('defs');
+  if (!defs) { defs = document.createElementNS('http://www.w3.org/2000/svg','defs'); svg.insertBefore(defs, svg.firstChild); }
+  if (!svg.querySelector('#campfireGlow')) {
+    const rg = document.createElementNS('http://www.w3.org/2000/svg','radialGradient');
+    rg.setAttribute('id','campfireGlow');
+    rg.innerHTML = [
+      '<stop offset="0%" stop-color="#ffe0a0" stop-opacity="0.95"/>',
+      '<stop offset="40%" stop-color="#ff9050" stop-opacity="0.55"/>',
+      '<stop offset="100%" stop-color="#ff6020" stop-opacity="0"/>',
+    ].join('');
+    defs.appendChild(rg);
+  }
+  const FX = 470, FY = 258;
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('id','beachCampfire');
+  g.setAttribute('pointer-events','none');
+  g.setAttribute('transform','translate('+FX+','+FY+')');
+  g.innerHTML = [
+    // ground glow halo (mix-blend screen)
+    '<g style="mix-blend-mode:screen">',
+    '  <circle id="campfireHalo" cx="0" cy="1" r="14" fill="url(#campfireGlow)" opacity="0.85"/>',
+    '</g>',
+    // small ring of stones (silhouettes)
+    '<ellipse cx="-5" cy="2.6" rx="2.4" ry="1.2" fill="#0a0a08"/>',
+    '<ellipse cx="0" cy="3.0" rx="2.6" ry="1.2" fill="#0a0a08"/>',
+    '<ellipse cx="5" cy="2.6" rx="2.4" ry="1.2" fill="#0a0a08"/>',
+    // logs (crossed sticks, dark silhouette)
+    '<line x1="-4.5" y1="0.8" x2="4.5" y2="2.2" stroke="#1a1208" stroke-width="1.2" stroke-linecap="round"/>',
+    '<line x1="-4" y1="2.2" x2="5" y2="0.6" stroke="#1a1208" stroke-width="1.2" stroke-linecap="round"/>',
+    // flame core (will flicker)
+    '<g id="campfireFlame" style="mix-blend-mode:screen">',
+    '  <path id="flame1" d="M -1.6 1 q -1.4 -3 0 -5 q 1.6 2 1.6 5 z" fill="#ffaa50" opacity="0.92"/>',
+    '  <path id="flame2" d="M -2.2 1.4 q -2.4 -4.6 0 -7.6 q 3 3 2.2 7.6 z" fill="#ff7030" opacity="0.7"/>',
+    '  <path id="flame3" d="M -1 0.8 q -0.8 -2 0 -3.4 q 1 1.4 1 3.4 z" fill="#ffe0a0" opacity="0.95"/>',
+    '</g>',
+    // smoke wisp group (rises from -2,-7 upward)
+    '<g id="campfireSmoke" pointer-events="none"></g>',
+    // spark slots
+    '<g id="campfireSparks" pointer-events="none" style="mix-blend-mode:screen"></g>',
+  ].join('');
+  svg.appendChild(g);
+  const flame1 = g.querySelector('#flame1');
+  const flame2 = g.querySelector('#flame2');
+  const flame3 = g.querySelector('#flame3');
+  const halo = g.querySelector('#campfireHalo');
+  // smoke: 3 wisp slots
+  const smokeG = g.querySelector('#campfireSmoke');
+  const smokes = [];
+  for (let i=0;i<3;i++){
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx','0'); c.setAttribute('cy','-2'); c.setAttribute('r','2.2'); c.setAttribute('fill','#7a8898'); c.setAttribute('opacity','0');
+    smokeG.appendChild(c);
+    smokes.push({ el:c, t0: performance.now()+i*900+Math.random()*400, life: 3200+Math.random()*1400, drift:(Math.random()-0.5)*0.6 });
+  }
+  // sparks: 4 slots
+  const sparkG = g.querySelector('#campfireSparks');
+  const sparks = [];
+  for (let i=0;i<4;i++){
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx','0'); c.setAttribute('cy','-1'); c.setAttribute('r','0.5'); c.setAttribute('fill','#ffd070'); c.setAttribute('opacity','0');
+    sparkG.appendChild(c);
+    sparks.push({ el:c, t0: performance.now()+1200+i*400+Math.random()*600, life: 600+Math.random()*500, vx:(Math.random()-0.5)*1.4, vy:-(0.6+Math.random()*0.5) });
+  }
+  function frame(now){
+    // flicker: scale flames vertically with random + sin
+    const f = 0.85 + Math.sin(now*0.018)*0.10 + (Math.random()-0.5)*0.08;
+    flame1.setAttribute('transform','scale(1,'+f.toFixed(3)+')');
+    const f2 = 0.85 + Math.sin(now*0.013+1.1)*0.12 + (Math.random()-0.5)*0.06;
+    flame2.setAttribute('transform','scale(1,'+f2.toFixed(3)+')');
+    const f3 = 0.9 + Math.sin(now*0.024+0.6)*0.08;
+    flame3.setAttribute('transform','scale(1,'+f3.toFixed(3)+')');
+    // halo breathe
+    const ho = 0.78 + Math.sin(now*0.011)*0.10 + (Math.random()-0.5)*0.04;
+    halo.setAttribute('opacity', ho.toFixed(3));
+    halo.setAttribute('r', (13 + Math.sin(now*0.013)*1.2).toFixed(2));
+    // smoke rise
+    smokes.forEach(s=>{
+      const k = (now - s.t0) / s.life;
+      if (k >= 1){ s.t0 = now + 200+Math.random()*900; s.life = 3000+Math.random()*1600; s.drift=(Math.random()-0.5)*0.6; s.el.setAttribute('opacity','0'); return; }
+      if (k < 0){ s.el.setAttribute('opacity','0'); return; }
+      const y = -2 - k*16;
+      const x = s.drift*k*8;
+      const r = 2.0 + k*2.6;
+      const op = Math.sin(Math.min(1,k)*Math.PI) * 0.28;
+      s.el.setAttribute('cx',x.toFixed(2));
+      s.el.setAttribute('cy',y.toFixed(2));
+      s.el.setAttribute('r',r.toFixed(2));
+      s.el.setAttribute('opacity',op.toFixed(3));
+    });
+    // sparks
+    sparks.forEach(s=>{
+      const k = (now - s.t0) / s.life;
+      if (k >= 1){ s.t0 = now + 600+Math.random()*1200; s.life = 500+Math.random()*600; s.vx = (Math.random()-0.5)*1.4; s.vy = -(0.6+Math.random()*0.5); s.el.setAttribute('opacity','0'); return; }
+      if (k < 0){ s.el.setAttribute('opacity','0'); return; }
+      const x = s.vx*k*8;
+      const y = -1 + s.vy*k*7;
+      s.el.setAttribute('cx',x.toFixed(2));
+      s.el.setAttribute('cy',y.toFixed(2));
+      const op = Math.sin(Math.min(1,k)*Math.PI) * 0.85;
+      s.el.setAttribute('opacity',op.toFixed(3));
+    });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.157] beach campfire armed (flickering hearth at '+FX+','+FY+' with smoke + sparks)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
