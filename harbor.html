@@ -9740,6 +9740,195 @@
 })();
 
 
+// v0.5.180 octopus den — small rocky crevice with a tentacle that periodically extends and retracts
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  // base location at the bedrock, off to the right
+  var DEN_X = 1000, DEN_Y = 2318;
+
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id','octopusDen');
+  g.setAttribute('transform','translate('+DEN_X+','+DEN_Y+')');
+  svg.appendChild(g);
+
+  // two dome rocks framing the den
+  var rockL = document.createElementNS(SVG_NS, 'ellipse');
+  rockL.setAttribute('cx','-9');
+  rockL.setAttribute('cy','4');
+  rockL.setAttribute('rx','11');
+  rockL.setAttribute('ry','7');
+  rockL.setAttribute('fill','#1a2230');
+  rockL.setAttribute('stroke','#0c121c');
+  rockL.setAttribute('stroke-width','0.6');
+  g.appendChild(rockL);
+  var rockR = document.createElementNS(SVG_NS, 'ellipse');
+  rockR.setAttribute('cx','9');
+  rockR.setAttribute('cy','4');
+  rockR.setAttribute('rx','10');
+  rockR.setAttribute('ry','6.5');
+  rockR.setAttribute('fill','#1a2230');
+  rockR.setAttribute('stroke','#0c121c');
+  rockR.setAttribute('stroke-width','0.6');
+  g.appendChild(rockR);
+  // dark crevice between rocks
+  var crev = document.createElementNS(SVG_NS, 'ellipse');
+  crev.setAttribute('cx','0');
+  crev.setAttribute('cy','3');
+  crev.setAttribute('rx','5');
+  crev.setAttribute('ry','3.2');
+  crev.setAttribute('fill','#050810');
+  g.appendChild(crev);
+  // tiny eye-glint inside crevice (faint reddish dot)
+  var eye = document.createElementNS(SVG_NS, 'circle');
+  eye.setAttribute('cx','0');
+  eye.setAttribute('cy','3');
+  eye.setAttribute('r','0.5');
+  eye.setAttribute('fill','#a04030');
+  eye.setAttribute('opacity','0.55');
+  g.appendChild(eye);
+
+  // tentacle group — multiple tentacles can emerge
+  var TENT_N = 3;
+  var tents = [];
+  for (var i=0;i<TENT_N;i++){
+    var tg = document.createElementNS(SVG_NS, 'g');
+    tg.setAttribute('opacity','0');
+    var path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d','M 0 0 L 0 0');
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke','#5a3a48');
+    path.setAttribute('stroke-width','2.2');
+    path.setAttribute('stroke-linecap','round');
+    tg.appendChild(path);
+    // sucker dots — small circles along underside
+    var suckers = [];
+    for (var s=0;s<6;s++){
+      var sd = document.createElementNS(SVG_NS, 'circle');
+      sd.setAttribute('r','0.5');
+      sd.setAttribute('fill','#7a5060');
+      sd.setAttribute('opacity','0');
+      tg.appendChild(sd);
+      suckers.push(sd);
+    }
+    g.appendChild(tg);
+    tents.push({el:tg, path:path, suckers:suckers, baseAngle: -Math.PI/2 + (i-1)*0.45});
+  }
+
+  // tentacle path generator — makes a sinuous curve from origin to a max length
+  function makeTentPath(extension, baseAngle, phase){
+    // 7 control points along the tentacle with sine wobble
+    var L = extension; // extension length
+    var pts = [];
+    var STEPS = 8;
+    for (var k=0;k<=STEPS;k++){
+      var t = k/STEPS;
+      var distance = t * L;
+      // base direction
+      var dirX = Math.cos(baseAngle);
+      var dirY = Math.sin(baseAngle);
+      // wobble perpendicular
+      var px = -dirY, py = dirX;
+      var wob = Math.sin(t*Math.PI*1.6 + phase) * (3 + 2*t);
+      var x = dirX*distance + px*wob;
+      var y = dirY*distance + py*wob;
+      pts.push([x, y]);
+    }
+    var d = 'M '+pts[0][0].toFixed(2)+' '+pts[0][1].toFixed(2);
+    for (var k=1;k<pts.length;k++){
+      d += ' L '+pts[k][0].toFixed(2)+' '+pts[k][1].toFixed(2);
+    }
+    return {d:d, pts:pts};
+  }
+
+  // state machine
+  var state = 'idle';
+  var stateUntil = performance.now() + (12000 + Math.random()*15000);
+  var activeTents = []; // which tentacles are extended this round
+  var roundT0 = 0, roundDur = 6000;
+  var roundExt = 28; // max extension
+
+  function startRound(){
+    state = 'extend';
+    roundT0 = performance.now();
+    roundDur = 4500 + Math.random()*3500;
+    roundExt = 22 + Math.random()*16;
+    // pick how many tentacles to use this round (1-3)
+    var nUsed = 1 + Math.floor(Math.random()*3);
+    activeTents = [];
+    var idx = [0,1,2];
+    // shuffle
+    for (var i=idx.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp = idx[i]; idx[i]=idx[j]; idx[j]=tmp;
+    }
+    for (var i=0;i<nUsed;i++){
+      var t = tents[idx[i]];
+      t.phase = Math.random()*Math.PI*2;
+      t.startDelay = i*180;
+      t.maxExt = roundExt * (0.6 + Math.random()*0.4);
+      activeTents.push(t);
+    }
+  }
+
+  function step(t){
+    if (state === 'idle'){
+      for (var i=0;i<tents.length;i++) tents[i].el.setAttribute('opacity','0');
+      eye.setAttribute('opacity','0.55');
+      if (t >= stateUntil) startRound();
+    } else if (state === 'extend'){
+      var k = (t - roundT0) / roundDur;
+      if (k>=1){
+        state = 'idle';
+        stateUntil = t + (25000 + Math.random()*30000);
+        return requestAnimationFrame(step);
+      }
+      // eye flickers a bit during activity
+      eye.setAttribute('opacity', (0.5 + Math.sin(t*0.008)*0.3).toFixed(3));
+
+      // each tentacle extends and retracts during the round
+      for (var ti=0;ti<activeTents.length;ti++){
+        var tent = activeTents[ti];
+        var localT = (t - roundT0 - tent.startDelay) / (roundDur - tent.startDelay);
+        if (localT < 0) { tent.el.setAttribute('opacity','0'); continue; }
+        if (localT > 1) localT = 1;
+        // ext profile: 0->1 in first 30%, hold 30-60%, 1->0 in 60-100%
+        var ext;
+        if (localT < 0.30){
+          var k1 = localT/0.30;
+          ext = k1*k1*(3-2*k1); // smoothstep
+        } else if (localT < 0.60){
+          ext = 1.0;
+        } else {
+          var k2 = (localT-0.60)/0.40;
+          ext = 1 - k2*k2*(3-2*k2);
+        }
+        var extension = ext * tent.maxExt;
+        // wobble phase shifts with time so tentacle is animated
+        var phaseShift = tent.phase + t*0.003;
+        var path = makeTentPath(extension, tent.baseAngle, phaseShift);
+        tent.path.setAttribute('d', path.d);
+        // place suckers along path at every other point
+        for (var s=0;s<tent.suckers.length;s++){
+          var idx = Math.min(path.pts.length-1, 2 + s);
+          var p = path.pts[idx];
+          tent.suckers[s].setAttribute('cx', p[0]);
+          tent.suckers[s].setAttribute('cy', p[1]);
+          tent.suckers[s].setAttribute('opacity', (ext > 0.2 ? 0.55*ext : 0).toFixed(3));
+        }
+        tent.el.setAttribute('opacity', Math.min(1, ext*1.4).toFixed(3));
+      }
+    }
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+
+  console.log('[harbor v0.5.180] octopus den armed (tentacle that periodically extends from between two rocks at the bedrock)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
