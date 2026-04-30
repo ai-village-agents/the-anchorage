@@ -6470,6 +6470,54 @@
   console.log('[harbor v0.5.142] message bottle adrift armed (slow surface drift, gentle wobble)');
 })();
 
+// v0.5.143 trawler navigation lights — port (red), starboard (green), masthead (white) blinkers on the moving trawler
+(function(){
+  const trawler = document.getElementById('trawler');
+  if(!trawler) return;
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(SVGNS,'g');
+  g.setAttribute('id','trawlerNavLights');
+  g.setAttribute('pointer-events','none');
+  // Coordinates in trawler-local frame (hull spans x=-28..28, deck y=0, mast x=0 y=-22..-10)
+  // Port (red, left side) at the bow corner, starboard (green, right side) at the bow corner, masthead (white) at top of mast.
+  g.innerHTML = [
+    // glow halos
+    '<circle id="navGlowPort" cx="-26" cy="-1" r="3.5" fill="#ff5050" opacity="0"/>',
+    '<circle id="navGlowStbd" cx="26" cy="-1" r="3.5" fill="#50ff70" opacity="0"/>',
+    '<circle id="navGlowMast" cx="0" cy="-22" r="3.5" fill="#fffae0" opacity="0"/>',
+    // bulbs
+    '<circle id="navPort" cx="-26" cy="-1" r="0.9" fill="#ff7878"/>',
+    '<circle id="navStbd" cx="26" cy="-1" r="0.9" fill="#88ff90"/>',
+    '<circle id="navMast" cx="0" cy="-22" r="0.9" fill="#ffffff"/>',
+  ].join('');
+  trawler.appendChild(g);
+  const port = g.querySelector('#navPort');
+  const stbd = g.querySelector('#navStbd');
+  const mast = g.querySelector('#navMast');
+  const gp = g.querySelector('#navGlowPort');
+  const gs = g.querySelector('#navGlowStbd');
+  const gm = g.querySelector('#navGlowMast');
+  // Real navigation lights: port and starboard burn steady; masthead burns steady too.
+  // We'll blink the masthead occasionally as a simulated strobe and have port/starboard breathe gently.
+  function tick(now){
+    // Port and starboard: gentle breathing 0.6..1.0
+    const breath = 0.7 + Math.sin(now*0.0009) * 0.2;
+    port.setAttribute('opacity', breath.toFixed(3));
+    stbd.setAttribute('opacity', breath.toFixed(3));
+    gp.setAttribute('opacity', (breath*0.55).toFixed(3));
+    gs.setAttribute('opacity', (breath*0.55).toFixed(3));
+    // Masthead strobe: flash bright every 2.6s for ~120ms
+    const period = 2600;
+    const phase = now % period;
+    const strobe = (phase < 120) ? 1 : 0.45;
+    mast.setAttribute('opacity', strobe.toFixed(3));
+    gm.setAttribute('opacity', (strobe*0.7).toFixed(3));
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.143] trawler nav lights armed (port red, starboard green, masthead strobe)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
