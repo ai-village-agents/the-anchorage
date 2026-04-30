@@ -8372,6 +8372,121 @@
 })();
 
 
+// v0.5.168 sea fog rolling in from horizon — translucent fog bank crosses the horizon line periodically
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  // Defs gradient for fog patch — soft, mostly grey-blue, transparent at edges
+  const defs = svg.querySelector('defs') || (() => {
+    const d = document.createElementNS(SVG_NS, 'defs');
+    svg.insertBefore(d, svg.firstChild);
+    return d;
+  })();
+  if (!defs.querySelector('#seaFogGrad')) {
+    const grad = document.createElementNS(SVG_NS, 'radialGradient');
+    grad.setAttribute('id', 'seaFogGrad');
+    grad.setAttribute('cx', '0.5');
+    grad.setAttribute('cy', '0.5');
+    grad.setAttribute('r', '0.5');
+    grad.innerHTML = [
+      '<stop offset="0%" stop-color="#c8d4dc" stop-opacity="0.55"/>',
+      '<stop offset="55%" stop-color="#a8b6c4" stop-opacity="0.32"/>',
+      '<stop offset="100%" stop-color="#8896a8" stop-opacity="0"/>',
+    ].join('');
+    defs.appendChild(grad);
+  }
+
+  const g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'seaFog');
+  g.setAttribute('pointer-events', 'none');
+  g.style.mixBlendMode = 'screen';
+
+  // 5 fog patches at varying y around horizon (y=280)
+  const N = 5;
+  const patches = [];
+  for (let i = 0; i < N; i++) {
+    const e = document.createElementNS(SVG_NS, 'ellipse');
+    e.setAttribute('fill', 'url(#seaFogGrad)');
+    e.setAttribute('opacity', '0');
+    g.appendChild(e);
+    patches.push({
+      el: e,
+      // initial properties get assigned at state entry
+      yOffset: -22 + i * 11,         // -22..+22 around y=288
+      rx: 130 + (i * 17) % 70,       // 130..199
+      ry: 18 + (i * 7) % 12,         // 18..29
+      phase: i * 0.6,
+      speedJitter: 0.85 + ((i * 13) % 10) / 30, // 0.85..1.16
+    });
+  }
+
+  svg.appendChild(g);
+
+  // State machine
+  // idle (random 150-300s) → rolling (random 60-110s, traverses horizon)
+  let state = 'idle';
+  let stateUntil = performance.now() + (8000 + Math.random() * 9000); // first one comes earlier
+  let rollDir = 1;          // 1 = left to right, -1 = right to left
+  let rollDur = 0;
+  let rollStart = 0;
+  const Y_BASE = 288;       // horizon center
+  const SPEED = 0.00018;    // slow
+
+  function startRoll() {
+    rollDir = Math.random() < 0.5 ? -1 : 1;
+    rollDur = 60000 + Math.random() * 50000;
+    rollStart = performance.now();
+    state = 'rolling';
+    stateUntil = rollStart + rollDur;
+  }
+  function endRoll() {
+    state = 'idle';
+    stateUntil = performance.now() + (180000 + Math.random() * 180000);
+    for (const p of patches) p.el.setAttribute('opacity', '0');
+  }
+
+  function tick(t) {
+    if (state === 'idle' && t > stateUntil) {
+      startRoll();
+    } else if (state === 'rolling' && t > stateUntil) {
+      endRoll();
+    }
+
+    if (state === 'rolling') {
+      const k = (t - rollStart) / rollDur; // 0..1
+      // overall envelope: rises 0->1 by 25%, full 25%-75%, falls 75%->0
+      let env;
+      if (k < 0.25) env = k / 0.25;
+      else if (k < 0.75) env = 1;
+      else env = (1 - k) / 0.25;
+      env = Math.max(0, Math.min(1, env));
+
+      patches.forEach((p, i) => {
+        // phase offset: each patch enters at a slightly different time
+        const localK = Math.max(0, Math.min(1, k - i * 0.04));
+        // x progression across screen: -200 to 1400, depending on direction
+        const xRaw = -200 + 1600 * localK * p.speedJitter;
+        const x = rollDir === 1 ? xRaw : 1200 - xRaw;
+        const y = Y_BASE + p.yOffset + Math.sin(t * 0.0003 + p.phase) * 4;
+        // gentle vertical breath
+        const ryNow = p.ry * (1 + Math.sin(t * 0.0005 + p.phase * 1.3) * 0.08);
+        p.el.setAttribute('cx', x.toFixed(1));
+        p.el.setAttribute('cy', y.toFixed(1));
+        p.el.setAttribute('rx', p.rx.toFixed(1));
+        p.el.setAttribute('ry', ryNow.toFixed(1));
+        p.el.setAttribute('opacity', (env * 0.78).toFixed(3));
+      });
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  console.log('[harbor v0.5.168] sea fog armed (rare fog bank rolls across the horizon)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
