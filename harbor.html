@@ -8586,6 +8586,123 @@
 })();
 
 
+// v0.5.171 shooting star burst — meteor occasionally streaks down and sparkle-bursts at trail end
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  const g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'starBurst');
+  g.setAttribute('pointer-events', 'none');
+
+  // streak (line) and sparkle slots
+  const streak = document.createElementNS(SVG_NS, 'line');
+  streak.setAttribute('stroke', '#ffffff');
+  streak.setAttribute('stroke-width', '1.2');
+  streak.setAttribute('stroke-linecap', 'round');
+  streak.setAttribute('opacity', '0');
+  g.appendChild(streak);
+
+  const SPARKS = 7;
+  const sparks = [];
+  for (let i = 0; i < SPARKS; i++) {
+    const s = document.createElementNS(SVG_NS, 'circle');
+    s.setAttribute('r', '0.6');
+    s.setAttribute('fill', '#fff5d0');
+    s.setAttribute('opacity', '0');
+    g.appendChild(s);
+    sparks.push(s);
+  }
+
+  svg.appendChild(g);
+
+  let state = 'idle';
+  let stateT0 = performance.now();
+  let stateDur = 16000 + Math.random()*38000; // first burst 16-54s
+  let traj = null;
+
+  function startTrack(now){
+    // pick start point in upper sky and direction
+    const x0 = 80 + Math.random()*1040;
+    const y0 = 30 + Math.random()*120;
+    const angle = (Math.PI/4) + (Math.random()-0.5)*0.6; // mostly down-right
+    const length = 110 + Math.random()*140;
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const x1 = x0 + dir*length*Math.cos(angle);
+    const y1 = y0 + length*Math.sin(angle);
+    traj = { x0, y0, x1, y1, dur: 700 + Math.random()*500 };
+    state = 'streaking';
+    stateT0 = now;
+    stateDur = traj.dur;
+  }
+
+  function startBurst(now){
+    state = 'bursting';
+    stateT0 = now;
+    stateDur = 1200 + Math.random()*400;
+    // distribute sparks around trail end
+    const ex = traj.x1, ey = traj.y1;
+    sparks.forEach((s, i) => {
+      const a = (i / SPARKS) * Math.PI*2 + Math.random()*0.4;
+      const speed = 0.05 + Math.random()*0.06;
+      s._vx = Math.cos(a) * speed;
+      s._vy = Math.sin(a) * speed - 0.02; // slight upward bias dampened
+      s._x0 = ex; s._y0 = ey;
+    });
+  }
+
+  function endBurst(now){
+    state = 'idle';
+    stateT0 = now;
+    stateDur = 24000 + Math.random()*60000;
+    streak.setAttribute('opacity', '0');
+    sparks.forEach(s => s.setAttribute('opacity','0'));
+  }
+
+  function tick(now){
+    const e = now - stateT0;
+    if (state === 'idle' && e >= stateDur) {
+      startTrack(now);
+    } else if (state === 'streaking') {
+      const k = Math.min(1, e / stateDur);
+      // partial-line that grows: from x0,y0 at k=0 to x1,y1 at k=1, with a tail length
+      const headX = traj.x0 + (traj.x1 - traj.x0) * k;
+      const headY = traj.y0 + (traj.y1 - traj.y0) * k;
+      const tailK = Math.max(0, k - 0.35);
+      const tailX = traj.x0 + (traj.x1 - traj.x0) * tailK;
+      const tailY = traj.y0 + (traj.y1 - traj.y0) * tailK;
+      streak.setAttribute('x1', tailX.toFixed(1));
+      streak.setAttribute('y1', tailY.toFixed(1));
+      streak.setAttribute('x2', headX.toFixed(1));
+      streak.setAttribute('y2', headY.toFixed(1));
+      streak.setAttribute('opacity', (0.6 + Math.sin(k*Math.PI)*0.4).toFixed(2));
+      if (e >= stateDur) {
+        startBurst(now);
+      }
+    } else if (state === 'bursting') {
+      const k = Math.min(1, e / stateDur);
+      streak.setAttribute('opacity', ((1-k) * 0.3).toFixed(2));
+      sparks.forEach(s => {
+        const x = s._x0 + s._vx * e;
+        const y = s._y0 + s._vy * e + 0.0000005 * e * e; // very slight drift down
+        s.setAttribute('cx', x.toFixed(1));
+        s.setAttribute('cy', y.toFixed(1));
+        s.setAttribute('opacity', ((1 - k) * 0.85).toFixed(2));
+        s.setAttribute('r', (0.6 + (1 - k) * 0.6).toFixed(2));
+      });
+      if (e >= stateDur) {
+        endBurst(now);
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  console.log('[harbor v0.5.171] shooting star burst armed (meteors streak then sparkle-burst occasionally)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
