@@ -6849,6 +6849,70 @@
 })();
 
 
+// v0.5.149 crepuscular rays — soft moonlit shafts angling down through cloud breaks
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','crepuscularRays');
+  g.setAttribute('pointer-events','none');
+  // Rays angle outward from a point near the moon (cx=180,cy=115)
+  // They are large soft polygons fading into the surface haze.
+  // Each ray = a triangle from a near-moon emergence point spreading outward.
+  // We use a soft linear gradient + screen blend to make them faintly luminous.
+  g.innerHTML =
+    '<defs>' +
+      '<linearGradient id="rayGrad" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%"  stop-color="#f5f0d8" stop-opacity="0.10"/>' +
+        '<stop offset="55%" stop-color="#f5f0d8" stop-opacity="0.05"/>' +
+        '<stop offset="100%" stop-color="#f5f0d8" stop-opacity="0"/>' +
+      '</linearGradient>' +
+    '</defs>' +
+    '<g id="rayBundle" style="mix-blend-mode:screen">' +
+      // 5 rays, each a polygon: top point near (200,140), bottom edge spread along surface
+      // We'll generate the polygons in JS for cleaner numbers.
+    '</g>';
+  const help = svg.querySelector('#helpOverlay');
+  if (help) svg.insertBefore(g, help); else svg.appendChild(g);
+
+  const bundle = g.querySelector('#rayBundle');
+  // emergence point
+  const EX = 200, EY = 140;
+  // bottom y near surface band
+  const BY = 320;
+  // 5 rays, defined by center bottom-x and angular half-width
+  const rays = [
+    { cx: 110, hw: 18, op: 0.35 },
+    { cx: 240, hw: 22, op: 0.45 },
+    { cx: 360, hw: 18, op: 0.40 },
+    { cx: 480, hw: 14, op: 0.30 },
+    { cx: 600, hw: 12, op: 0.22 },
+  ];
+  const polys = rays.map((r,i)=>{
+    const x1 = r.cx - r.hw;
+    const x2 = r.cx + r.hw;
+    // top of ray near emergence point but slightly fanned
+    const top1 = EX - 1.2 + (r.cx-EX)*0.06;
+    const top2 = EX + 1.2 + (r.cx-EX)*0.06;
+    return '<polygon id="ray'+i+'" points="'+top1.toFixed(1)+','+EY+' '+top2.toFixed(1)+','+EY+' '+x2+','+BY+' '+x1+','+BY+'" fill="url(#rayGrad)" opacity="'+r.op+'"/>';
+  }).join('');
+  bundle.innerHTML = polys;
+
+  // Slow breathe — overall opacity sin
+  function frame(now){
+    const breath = 0.85 + Math.sin(now*0.00021)*0.20;
+    rays.forEach((r,i)=>{
+      const node = document.getElementById('ray'+i);
+      if (node) node.setAttribute('opacity', (r.op*breath).toFixed(3));
+    });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.149] crepuscular rays armed (5 moonlit shafts)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
