@@ -5641,6 +5641,73 @@
   }
 })();
 
+// v0.5.132 banded sea snake — yellow/black, fc-1
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var ns = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(ns,'g');
+    g.setAttribute('id','seaSnake');
+    g.setAttribute('opacity','0.88');
+    g.setAttribute('pointer-events','none');
+    svg.appendChild(g);
+
+    // build snake segments: 22 short ellipses, alternating yellow/black
+    var SEGS = 22;
+    var segs = [];
+    for (var i = 0; i < SEGS; i++){
+      var col = (i % 2 === 0) ? '#e8c860' : '#1a1a26';
+      var seg = document.createElementNS(ns,'ellipse');
+      seg.setAttribute('rx','3.4');
+      seg.setAttribute('ry','2.0');
+      seg.setAttribute('fill', col);
+      seg.setAttribute('stroke','#2a2a36');
+      seg.setAttribute('stroke-width','0.3');
+      g.appendChild(seg);
+      segs.push(seg);
+    }
+    // head: a small triangle/almond on top of segment[0]
+    var head = document.createElementNS(ns,'g');
+    head.innerHTML = '<ellipse cx="0" cy="0" rx="4.2" ry="2.4" fill="#e8c860" stroke="#2a2a36" stroke-width="0.3"/>' +
+                     '<circle cx="2.5" cy="-0.6" r="0.5" fill="#0a1828"/>' +
+                     '<path d="M 4.2 0 L 6.5 -0.6 M 4.2 0 L 6.5 0.6" stroke="#1a1a26" stroke-width="0.4" fill="none"/>';
+    g.appendChild(head);
+
+    // motion: snake travels horizontally with sinuous wave
+    var headX = -50, dirX = 1, baseY = 620, SPEED = 0.020; // px/ms
+    var DX = 4.2; // distance between segments along path
+    function tick(t){
+      // body wave: y(s, t) = baseY + sin(s*0.05 - t*0.0025) * 12
+      // place each segment at distance i*DX behind head along x-axis with wave
+      for (var i = 0; i < SEGS; i++){
+        var s = i;
+        var x = headX - dirX * (i + 1) * DX;
+        var phase = s * 0.55 - t * 0.0035;
+        var y = baseY + Math.sin(phase) * 14;
+        segs[i].setAttribute('cx', x.toFixed(1));
+        segs[i].setAttribute('cy', y.toFixed(1));
+      }
+      // head position + rotation matching first segment slope
+      var hx = headX, hy = baseY + Math.sin(-0.55 - t * 0.0035) * 14 + Math.sin(-1.10 - t * 0.0035) * 0;
+      // approximate head y by extrapolating one step ahead
+      var hyExtrap = baseY + Math.sin(0.0 - t * 0.0035) * 14;
+      var ang = Math.atan2((baseY + Math.sin(-0.55 - t*0.0035)*14) - hyExtrap, dirX * DX) * 180 / Math.PI;
+      head.setAttribute('transform','translate(' + hx.toFixed(1) + ',' + hyExtrap.toFixed(1) + ') rotate(' + ang.toFixed(1) + ') scale(' + (dirX>0?1:-1) + ',1)');
+
+      headX += dirX * SPEED * 16;
+      if (headX > 1300){ dirX = -1; headX = 1300; baseY = 540 + Math.random() * 160; }
+      else if (headX < -100){ dirX = 1; headX = -100; baseY = 540 + Math.random() * 160; }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    console.log('[harbor v0.5.132] banded sea snake armed (yellow/black, fc-1)');
+  } catch(err){
+    try { console.error('[harbor v0.5.132] sea snake init failed', err); } catch(e){}
+  }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
