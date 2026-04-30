@@ -5975,6 +5975,96 @@
   console.log('[harbor v0.5.135] deep haze armed (6 fog patches in fc-2/fc-3)');
 })();
 
+// v0.5.136 dramatic comet — rare bright slow streak across the sky
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const defs = svg.querySelector('defs') || svg;
+  // tail gradient
+  const lg = document.createElementNS('http://www.w3.org/2000/svg','linearGradient');
+  lg.setAttribute('id','cometTailGrad');
+  lg.setAttribute('x1','0%'); lg.setAttribute('y1','0%'); lg.setAttribute('x2','100%'); lg.setAttribute('y2','0%');
+  lg.innerHTML = [
+    '<stop offset="0%"   stop-color="#aef3ff" stop-opacity="0"/>',
+    '<stop offset="60%"  stop-color="#dff0ff" stop-opacity="0.65"/>',
+    '<stop offset="92%"  stop-color="#ffffff" stop-opacity="0.95"/>',
+    '<stop offset="100%" stop-color="#ffffff" stop-opacity="1"/>'
+  ].join('');
+  defs.appendChild(lg);
+  const headGrad = document.createElementNS('http://www.w3.org/2000/svg','radialGradient');
+  headGrad.setAttribute('id','cometHeadGrad');
+  headGrad.setAttribute('cx','0.5'); headGrad.setAttribute('cy','0.5'); headGrad.setAttribute('r','0.5');
+  headGrad.innerHTML = [
+    '<stop offset="0%"   stop-color="#ffffff" stop-opacity="1"/>',
+    '<stop offset="35%"  stop-color="#dff0ff" stop-opacity="0.85"/>',
+    '<stop offset="100%" stop-color="#aef3ff" stop-opacity="0"/>'
+  ].join('');
+  defs.appendChild(headGrad);
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('id','dramaticComet');
+  g.setAttribute('pointer-events','none');
+  g.setAttribute('opacity','0');
+  g.innerHTML = [
+    // tail rectangle (length 220, height 5, anchored at right end = head)
+    '<g id="cometBody">',
+      '<rect x="-220" y="-2.5" width="220" height="5" fill="url(#cometTailGrad)"/>',
+      '<circle cx="0" cy="0" r="14" fill="url(#cometHeadGrad)"/>',
+      '<circle cx="0" cy="0" r="3" fill="#ffffff"/>',
+    '</g>'
+  ].join('');
+  svg.appendChild(g);
+  // state
+  let state = 'idle';
+  let nextEventIn = 30000 + Math.random()*40000; // 30-70s first
+  let t0 = 0;
+  let startX, startY, endX, endY, dur, angle;
+  let t = 0, last = performance.now();
+  function planEvent(){
+    // streak across upper sky, top-left to lower-right or vice versa
+    const fromLeft = Math.random()<0.5;
+    startY = 30 + Math.random()*60;
+    endY = startY + 90 + Math.random()*60;
+    if(fromLeft){
+      startX = -40; endX = 1240;
+    } else {
+      startX = 1240; endX = -40;
+    }
+    dur = 2400 + Math.random()*1400; // 2.4-3.8s, slower than shooting star
+    const dx = endX - startX, dy = endY - startY;
+    angle = Math.atan2(dy,dx)*180/Math.PI;
+  }
+  function tick(now){
+    const dt = now-last; last = now; t += dt;
+    if(state==='idle'){
+      nextEventIn -= dt;
+      if(nextEventIn<=0){
+        state = 'streak';
+        planEvent();
+        t0 = t;
+      }
+    } else if(state==='streak'){
+      const k = (t-t0)/dur;
+      if(k>=1){
+        state='idle';
+        nextEventIn = 60000 + Math.random()*90000; // 60-150s between
+        g.setAttribute('opacity','0');
+      } else {
+        const x = startX + (endX-startX)*k;
+        const y = startY + (endY-startY)*k;
+        // fade in/out
+        let op = 1;
+        if(k<0.06) op = k/0.06;
+        else if(k>0.88) op = (1-k)/0.12;
+        g.setAttribute('opacity', Math.max(0,Math.min(1,op)).toFixed(3));
+        g.setAttribute('transform','translate('+x.toFixed(2)+','+y.toFixed(2)+') rotate('+angle.toFixed(2)+')');
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.136] dramatic comet armed (rare slow bright streak)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
