@@ -11029,6 +11029,76 @@
   console.log('[harbor v0.5.192] humpback breach armed (rare dramatic whale leap above surface every 3-7 minutes)');
 })();
 
+// v0.5.193 comet residual sparkle trail — sparkle motes shed from comet head linger and fade after comet passes
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  var SVG_NS='http://www.w3.org/2000/svg';
+  var g = document.createElementNS(SVG_NS,'g');
+  g.setAttribute('id','cometSparkleTrail');
+  g.setAttribute('style','mix-blend-mode:screen;pointer-events:none');
+  svg.appendChild(g);
+  var POOL = 40, motes = [], next = 0;
+  for(var i=0;i<POOL;i++){
+    var s = document.createElementNS(SVG_NS,'circle');
+    s.setAttribute('r','1.6');
+    s.setAttribute('fill','#dff0ff');
+    s.setAttribute('opacity','0');
+    g.appendChild(s);
+    motes.push({el:s, born:0, life:0, x:0, y:0, vx:0, vy:0, peak:0});
+  }
+  function spawn(now, x, y){
+    var m = motes[next]; next = (next+1)%POOL;
+    m.born = now;
+    m.life = 1400 + Math.random()*1600; // 1.4-3.0s linger
+    m.x = x + (Math.random()-0.5)*4;
+    m.y = y + (Math.random()-0.5)*4;
+    m.vx = (Math.random()-0.5)*8;
+    m.vy = (Math.random()-0.5)*4 - 1; // slight upward drift
+    m.peak = 0.45 + Math.random()*0.3;
+    m.el.setAttribute('r', (1.1 + Math.random()*1.0).toFixed(2));
+    m.el.setAttribute('fill', Math.random()<0.5 ? '#dff0ff' : '#ffffff');
+  }
+  var lastSampleAt = 0;
+  function tick(now){
+    var comet = document.getElementById('dramaticComet');
+    if(comet){
+      var op = parseFloat(comet.getAttribute('opacity')||'0');
+      if(op > 0.15){
+        // sample comet head position via transform attribute
+        var tr = comet.getAttribute('transform') || '';
+        var m = /translate\(\s*([\-0-9.]+)[ ,]+([\-0-9.]+)\s*\)/.exec(tr);
+        if(m && now - lastSampleAt > 70){
+          lastSampleAt = now;
+          var hx = parseFloat(m[1]); var hy = parseFloat(m[2]);
+          // shed 1-2 motes per sample
+          var k = 1 + (Math.random()<0.55 ? 1 : 0);
+          for(var j=0;j<k;j++) spawn(now, hx, hy);
+        }
+      }
+    }
+    // animate motes
+    for(var i=0;i<POOL;i++){
+      var mo = motes[i];
+      if(!mo.life) continue;
+      var t = now - mo.born;
+      if(t >= mo.life){ mo.el.setAttribute('opacity','0'); mo.life=0; continue; }
+      var k = t/mo.life;
+      // drift slightly
+      var dt = t/1000;
+      var px = mo.x + mo.vx*dt;
+      var py = mo.y + mo.vy*dt;
+      var op = Math.sin(k*Math.PI) * mo.peak;
+      mo.el.setAttribute('cx', px.toFixed(1));
+      mo.el.setAttribute('cy', py.toFixed(1));
+      mo.el.setAttribute('opacity', op.toFixed(3));
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.193] comet residual sparkle trail armed (sparkle motes shed from comet head linger and fade)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
