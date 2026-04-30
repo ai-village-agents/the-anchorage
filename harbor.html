@@ -571,9 +571,23 @@
     <!-- mantle -->
     <ellipse cx="0" cy="-10" rx="68" ry="42" fill="#0a0d12" stroke="#0a0d12" stroke-width="1"/>
     <ellipse cx="0" cy="-22" rx="48" ry="22" fill="#0a0d12" opacity="0.85"/>
-    <!-- eyes (faint) -->
-    <circle cx="-22" cy="-18" r="2.2" fill="#1a1f2a"/>
-    <circle cx="22" cy="-18" r="2.2" fill="#1a1f2a"/>
+    <!-- eyes (faint) — v0.5.114 made interactive: pulsing rings + hit area -->
+    <g id="krakenEyes" pointer-events="auto" style="cursor:pointer;">
+      <circle cx="-22" cy="-18" r="2.2" fill="#1a1f2a"/>
+      <circle cx="22" cy="-18" r="2.2" fill="#1a1f2a"/>
+      <!-- pulsing glow rings to invite click -->
+      <circle cx="-22" cy="-18" r="3.5" fill="none" stroke="#aef3ff" stroke-width="0.4" opacity="0.5">
+        <animate attributeName="r" values="3.5;7.0;3.5" dur="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.55;0;0.55" dur="3.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="22" cy="-18" r="3.5" fill="none" stroke="#aef3ff" stroke-width="0.4" opacity="0.5">
+        <animate attributeName="r" values="3.5;7.0;3.5" dur="3.6s" begin="1.8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.55;0;0.55" dur="3.6s" begin="1.8s" repeatCount="indefinite"/>
+      </circle>
+      <!-- larger transparent hit area -->
+      <circle cx="-22" cy="-18" r="14" fill="transparent"/>
+      <circle cx="22" cy="-18" r="14" fill="transparent"/>
+    </g>
     <!-- 8 tentacles -->
     <g fill="none" stroke="#0a0d12" stroke-linecap="round">
       <path d="M-55,18 Q-78,55 -90,95 T-110,170" stroke-width="6"/>
@@ -2355,8 +2369,8 @@
     wireClick("shipwreck", "shipwreck");
     wireClick("treasureChest", "chest");
     wireClick("vent", "vent");
-    // Kraken is pointer-events:none, so we add our OWN click handler that opens lore + discovers.
-    var kraken = document.getElementById("kraken");
+    // v0.5.114: kraken group is pointer-events:none but #krakenEyes has pointer-events:auto + glow rings.
+    var kraken = document.getElementById("krakenEyes") || document.getElementById("kraken");
     if (kraken) {
       kraken.addEventListener("click", function(){
         discover("kraken");
