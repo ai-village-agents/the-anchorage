@@ -10809,6 +10809,87 @@
 })();
 
 
+// v0.5.191 bioluminescent wave break — rare dramatic phosphor flare across breaking wave crest
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  var SVG_NS='http://www.w3.org/2000/svg';
+  var g = document.createElementNS(SVG_NS,'g');
+  g.setAttribute('id','bioWaveBreak');
+  g.setAttribute('style','mix-blend-mode:screen;pointer-events:none');
+  svg.appendChild(g);
+  // a flare "breaks" along a stretch of surface — random center X 200..1000 (avoiding edges)
+  // 14 segment arcs glow in quick succession then fade
+  var POOL = 14, segs = [];
+  for(var i=0;i<POOL;i++){
+    var p = document.createElementNS(SVG_NS,'path');
+    p.setAttribute('fill','none');
+    p.setAttribute('stroke','#bff4ff');
+    p.setAttribute('stroke-width','1.4');
+    p.setAttribute('stroke-linecap','round');
+    p.setAttribute('opacity','0');
+    g.appendChild(p);
+    segs.push(p);
+  }
+  var state='idle', tStart=0, idleDur=22000+Math.random()*48000, breakDur=2400, cx=600, runDir=1;
+  function pickBreak(){
+    cx = 240 + Math.random()*720;
+    runDir = Math.random()<0.5 ? -1 : 1;
+    breakDur = 1900 + Math.random()*1400;
+    // assign segment positions: each one along a 320..420 px stretch
+    var stretch = 320 + Math.random()*100;
+    for(var i=0;i<POOL;i++){
+      var f = i/(POOL-1);
+      var sx = cx + (f-0.5)*stretch;
+      // wave crest baseline at y ~310, jitter
+      var sy = 308 + (Math.random()*4-2);
+      var seg = segs[i];
+      // small arched path: control point above
+      var len = 14 + Math.random()*10;
+      var dyArc = -3 - Math.random()*2;
+      seg._sx = sx; seg._sy = sy; seg._len = len; seg._arc = dyArc;
+      seg._delay = (f*runDir>0 ? f : (1-f)) * (breakDur*0.55) + Math.random()*120;
+      seg._dur = 480 + Math.random()*420;
+      seg.setAttribute('d','M '+sx+' '+sy+' Q '+(sx+len*0.5)+' '+(sy+dyArc)+' '+(sx+len)+' '+sy);
+      seg.setAttribute('opacity','0');
+    }
+  }
+  function frame(now){
+    if(state==='idle'){
+      if(!tStart) tStart=now;
+      if(now-tStart >= idleDur){
+        state='active'; tStart=now;
+        pickBreak();
+      }
+    } else {
+      var t = now-tStart;
+      if(t >= breakDur+800){
+        state='idle'; tStart=now;
+        idleDur = 22000 + Math.random()*48000;
+        for(var i=0;i<POOL;i++) segs[i].setAttribute('opacity','0');
+      } else {
+        for(var i=0;i<POOL;i++){
+          var seg = segs[i];
+          var st = t - seg._delay;
+          if(st < 0){ seg.setAttribute('opacity','0'); continue; }
+          if(st > seg._dur){ seg.setAttribute('opacity','0'); continue; }
+          // ramp 0..0.5 opacity, peak around mid
+          var k = st/seg._dur;
+          var op = Math.sin(k*Math.PI) * (0.55 + Math.random()*0.05);
+          seg.setAttribute('opacity', op.toFixed(3));
+          // slight upward drift as it breaks
+          var liftY = -1.2 * k;
+          var sx = seg._sx, sy = seg._sy + liftY, len = seg._len, arc = seg._arc;
+          seg.setAttribute('d','M '+sx+' '+sy+' Q '+(sx+len*0.5)+' '+(sy+arc)+' '+(sx+len)+' '+sy);
+        }
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.191] bioluminescent wave break armed (rare dramatic phosphor flare across breaking wave crest)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
