@@ -9468,6 +9468,98 @@
 })();
 
 
+// v0.5.178 driftwood with perched seabird — a fifth log of driftwood now drifts across the surface, slowly, with a small white-grey gull silhouette riding on top
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  const Y_BASE = 322;            // surface band
+  const X_START = -80;
+  const X_END = 1280;
+  const SPEED = 0.0064;          // px per ms — slow drift
+  const dir = Math.random() < 0.5 ? 1 : -1;
+
+  const g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'driftwoodGull');
+  g.innerHTML = [
+    // log (weathered grey-brown, with a few darker streaks)
+    '<g id="dwgLog">',
+      '<ellipse cx="0" cy="0" rx="14" ry="2.4" fill="#5a4a36" stroke="#2a2218" stroke-width="0.4"/>',
+      '<ellipse cx="-3" cy="-0.4" rx="11" ry="1.6" fill="#7a6446" opacity="0.85"/>',
+      '<line x1="-12" y1="-0.6" x2="12" y2="-0.4" stroke="#3a2e20" stroke-width="0.35" opacity="0.85"/>',
+      '<line x1="-8"  y1="0.8"  x2="9"  y2="0.6"  stroke="#3a2e20" stroke-width="0.3"  opacity="0.7"/>',
+      // a small knot bump
+      '<circle cx="-6" cy="-0.2" r="0.9" fill="#2a2018" opacity="0.9"/>',
+      // waterline shadow
+      '<ellipse cx="0" cy="2.4" rx="14.5" ry="1.0" fill="#0c1424" opacity="0.55"/>',
+    '</g>',
+    // gull (sitting on top of the log near its center)
+    '<g id="dwgGull" transform="translate(2 -3.2)">',
+      // body
+      '<ellipse cx="0" cy="0" rx="2.2" ry="1.2" fill="#e8edf2" stroke="#1a2230" stroke-width="0.3"/>',
+      // chest darker
+      '<ellipse cx="-0.8" cy="0.2" rx="1.0" ry="0.8" fill="#cfd6df"/>',
+      // head
+      '<circle cx="1.6" cy="-0.5" r="0.95" fill="#f0f4f8" stroke="#1a2230" stroke-width="0.3"/>',
+      // beak
+      '<path d="M 2.4 -0.4 L 3.2 -0.2 L 2.4 0.0 Z" fill="#f4b94a" stroke="#1a2230" stroke-width="0.25"/>',
+      // eye
+      '<circle cx="1.85" cy="-0.6" r="0.18" fill="#1a2230"/>',
+      // wing fold (a small grey arc on the back)
+      '<path d="M -1.8 -0.4 Q -0.4 -1.0 1.4 -0.4" stroke="#5e6b78" stroke-width="0.45" fill="none"/>',
+      // small tail tip
+      '<path d="M -2.2 -0.2 L -3.2 -0.1 L -2.2 0.4 Z" fill="#cfd6df" stroke="#1a2230" stroke-width="0.25"/>',
+    '</g>',
+  ].join('');
+  svg.appendChild(g);
+
+  const gullEl = g.querySelector('#dwgGull');
+
+  // small wing-flap state for the gull (rare, brief)
+  let nextFlapAt = performance.now() + 25000 + Math.random() * 35000;
+  let flapStart = -1;
+  const FLAP_DUR = 900;
+
+  function step(now) {
+    // drift across surface — wraps when off-screen
+    const total = X_END - X_START;
+    const k = ((now * SPEED) % total) / total;
+    const x = dir > 0 ? (X_START + k * total) : (X_END - k * total);
+    // gentle bob
+    const bob = Math.sin(now * 0.0017 + 0.4) * 1.2;
+    const tilt = Math.sin(now * 0.0017 + 0.4) * 1.4;  // degrees
+    g.setAttribute('transform',
+      'translate(' + x.toFixed(2) + ' ' + (Y_BASE + bob).toFixed(2) + ') ' +
+      'scale(' + dir + ' 1) rotate(' + tilt.toFixed(2) + ')');
+
+    // gull idle micro-jitter (head-bob)
+    let gullOffsetY = 0;
+    if (flapStart < 0 && now >= nextFlapAt) {
+      flapStart = now;
+    }
+    if (flapStart >= 0) {
+      const ft = (now - flapStart) / FLAP_DUR;
+      if (ft >= 1) {
+        flapStart = -1;
+        nextFlapAt = now + 25000 + Math.random() * 35000;
+        gullEl.setAttribute('transform', 'translate(2 -3.2)');
+      } else {
+        gullOffsetY = -1.8 * Math.sin(ft * Math.PI);  // hop up and back
+        const sc = 1 + 0.18 * Math.sin(ft * Math.PI);
+        gullEl.setAttribute('transform',
+          'translate(2 ' + (-3.2 + gullOffsetY).toFixed(2) + ') scale(' + sc.toFixed(3) + ')');
+      }
+    }
+
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+
+  console.log('[harbor v0.5.178] driftwood with perched gull armed (a fifth driftwood log carrying a small bird across the surface)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
