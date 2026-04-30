@@ -8224,6 +8224,154 @@
 })();
 
 
+
+// v0.5.167 rain shower — rare passing rain shower with thin streaks and surface ripples
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('id', 'rainShower');
+  g.setAttribute('pointer-events', 'none');
+  svg.appendChild(g);
+  // Streak group + ripple group
+  const streakG = document.createElementNS(ns, 'g');
+  streakG.setAttribute('id', 'rainStreaks');
+  streakG.setAttribute('opacity', '0');
+  streakG.setAttribute('stroke', '#a0bcd0');
+  streakG.setAttribute('stroke-width', '0.4');
+  streakG.setAttribute('stroke-linecap', 'round');
+  g.appendChild(streakG);
+  const rippleG = document.createElementNS(ns, 'g');
+  rippleG.setAttribute('id', 'rainRipples');
+  rippleG.setAttribute('fill', 'none');
+  rippleG.setAttribute('stroke', '#9ec8d8');
+  rippleG.setAttribute('stroke-width', '0.35');
+  g.appendChild(rippleG);
+  // Streak slots
+  const N_STREAKS = 36;
+  const streaks = [];
+  for (let i = 0; i < N_STREAKS; i++) {
+    const ln = document.createElementNS(ns, 'line');
+    ln.setAttribute('x1', '0');
+    ln.setAttribute('y1', '0');
+    ln.setAttribute('x2', '0');
+    ln.setAttribute('y2', '0');
+    ln.setAttribute('opacity', '0');
+    streakG.appendChild(ln);
+    streaks.push({ el: ln, x: 0, y: 0, vy: 0, life: 0, born: -1 });
+  }
+  // Ripple slots
+  const N_RIPPLES = 16;
+  const ripples = [];
+  for (let i = 0; i < N_RIPPLES; i++) {
+    const c = document.createElementNS(ns, 'ellipse');
+    c.setAttribute('cx', '0');
+    c.setAttribute('cy', '0');
+    c.setAttribute('rx', '0');
+    c.setAttribute('ry', '0');
+    c.setAttribute('opacity', '0');
+    rippleG.appendChild(c);
+    ripples.push({ el: c, born: -1, life: 0, x: 0, y: 0 });
+  }
+  // Rain weather state machine
+  let state = 'idle';
+  let stateUntil = performance.now() + 60000 + Math.random() * 90000; // first wait 60–150s
+  let intensity = 0;
+  let nextStreakBirth = 0;
+  function step(t) {
+    // intensity envelope
+    if (state === 'rising') {
+      const k = 1 - (stateUntil - t) / 6000;
+      intensity = Math.min(1, k);
+      if (t > stateUntil) { state = 'falling'; stateUntil = t + 22000 + Math.random() * 20000; intensity = 1; }
+    } else if (state === 'falling') {
+      intensity = 1;
+      if (t > stateUntil) { state = 'fading'; stateUntil = t + 6000; }
+    } else if (state === 'fading') {
+      const k = 1 - (stateUntil - t) / 6000;
+      intensity = Math.max(0, 1 - k);
+      if (t > stateUntil) { state = 'idle'; stateUntil = t + 90000 + Math.random() * 120000; intensity = 0; }
+    } else if (state === 'idle') {
+      intensity = 0;
+      if (t > stateUntil) { state = 'rising'; stateUntil = t + 6000; }
+    }
+    streakG.setAttribute('opacity', (intensity * 0.55).toFixed(3));
+    // birth new streaks at rate proportional to intensity
+    if (intensity > 0) {
+      while (t > nextStreakBirth) {
+        for (let i = 0; i < N_STREAKS; i++) {
+          const sl = streaks[i];
+          if (sl.born < 0 || t - sl.born > sl.life) {
+            sl.born = t;
+            sl.life = 700 + Math.random() * 400;
+            sl.x = Math.random() * 1200;
+            sl.y = -10 + Math.random() * 60;
+            sl.vy = 0.85 + Math.random() * 0.25; // px per ms
+            sl.el.setAttribute('x1', sl.x.toFixed(2));
+            sl.el.setAttribute('x2', (sl.x + 2).toFixed(2)); // slight slant
+            break;
+          }
+        }
+        nextStreakBirth += 28 / Math.max(0.01, intensity);
+        if (nextStreakBirth < t - 200) nextStreakBirth = t + 30;
+      }
+    } else {
+      nextStreakBirth = t + 30;
+    }
+    // animate streaks falling
+    streaks.forEach(sl => {
+      if (sl.born < 0) return;
+      const dt = t - sl.born;
+      if (dt > sl.life) { sl.el.setAttribute('opacity', '0'); return; }
+      const yTop = sl.y + sl.vy * dt;
+      const yBot = yTop + 14;
+      sl.el.setAttribute('y1', yTop.toFixed(2));
+      sl.el.setAttribute('y2', yBot.toFixed(2));
+      // hide if below water surface (y > 320)
+      if (yBot > 320) {
+        sl.el.setAttribute('opacity', '0');
+        // spawn ripple at impact (only first time crossing)
+        if (!sl.rippled) {
+          sl.rippled = true;
+          for (let j = 0; j < N_RIPPLES; j++) {
+            const r = ripples[j];
+            if (r.born < 0 || t - r.born > r.life) {
+              r.born = t;
+              r.life = 800 + Math.random() * 400;
+              r.x = sl.x + sl.vy * dt * 0.07; // slight slant offset
+              r.y = 318 + Math.random() * 6;
+              break;
+            }
+          }
+        }
+      } else {
+        sl.el.setAttribute('opacity', '0.85');
+      }
+    });
+    // streak rippled flag reset
+    streaks.forEach(sl => { if (sl.born < 0 || t - sl.born > sl.life) { sl.rippled = false; }});
+    // animate ripples
+    ripples.forEach(r => {
+      if (r.born < 0) return;
+      const k = (t - r.born) / r.life;
+      if (k >= 1) { r.el.setAttribute('opacity', '0'); return; }
+      const rx = 1 + k * 5;
+      const ry = rx * 0.3;
+      const op = (1 - k) * 0.5 * intensity;
+      r.el.setAttribute('cx', r.x.toFixed(2));
+      r.el.setAttribute('cy', r.y.toFixed(2));
+      r.el.setAttribute('rx', rx.toFixed(2));
+      r.el.setAttribute('ry', ry.toFixed(2));
+      r.el.setAttribute('opacity', op.toFixed(3));
+    });
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+  console.log('[harbor v0.5.167] rain shower armed (rare passing rain with surface ripples)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
