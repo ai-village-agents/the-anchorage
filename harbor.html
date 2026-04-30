@@ -5110,6 +5110,104 @@
   }
 })();
 
+// v0.5.126 seafloor life — sea cucumbers, brittle stars, sea pens scattered on the bedrock
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    var g = document.createElementNS(SVGNS,'g');
+    g.setAttribute('id','seafloorLife');
+    g.setAttribute('opacity','0.85');
+    g.setAttribute('pointer-events','none');
+    svg.appendChild(g);
+
+    var seed = 51491;
+    function rng(){ seed = (seed*1664525 + 1013904223) >>> 0; return seed/4294967296; }
+
+    // 12 sea cucumbers — squat oblong sausages
+    for (var i=0;i<12;i++){
+      var x = 60 + rng()*1080;
+      var y = 2342 + rng()*22;
+      var s = 0.8 + rng()*0.6;
+      var col = ['#6a3a28','#7a3530','#5a4030','#4a3525','#7a4838'][Math.floor(rng()*5)];
+      var rot = (rng()*30 - 15);
+      var c = document.createElementNS(SVGNS,'g');
+      c.setAttribute('transform','translate('+x.toFixed(1)+','+y.toFixed(1)+') rotate('+rot.toFixed(1)+') scale('+s.toFixed(2)+')');
+      c.innerHTML = '<ellipse cx="0" cy="0" rx="6" ry="2" fill="'+col+'" stroke="#1a1408" stroke-width="0.3" opacity="0.85"/>'+
+                    // little bumps
+                    '<circle cx="-4" cy="-1.6" r="0.4" fill="#1a1408" opacity="0.5"/>'+
+                    '<circle cx="-1.5" cy="-1.8" r="0.4" fill="#1a1408" opacity="0.5"/>'+
+                    '<circle cx="2" cy="-1.7" r="0.4" fill="#1a1408" opacity="0.5"/>'+
+                    '<circle cx="4.5" cy="-1.5" r="0.35" fill="#1a1408" opacity="0.5"/>';
+      g.appendChild(c);
+    }
+
+    // 8 brittle stars — 5 thin arms radiating from a small disc
+    var brittle = [];
+    for (var j=0;j<8;j++){
+      var bx = 80 + rng()*1040;
+      var by = 2348 + rng()*16;
+      var s2 = 0.7 + rng()*0.5;
+      var phase = rng()*Math.PI*2;
+      var b = document.createElementNS(SVGNS,'g');
+      b.setAttribute('transform','translate('+bx.toFixed(1)+','+by.toFixed(1)+') scale('+s2.toFixed(2)+')');
+      var html = '<circle cx="0" cy="0" r="0.9" fill="#7a3050" opacity="0.85"/>';
+      // 5 arms
+      for (var a=0;a<5;a++){
+        var ang = (a/5)*Math.PI*2 + rng()*0.2;
+        var ax = Math.cos(ang)*5.5, ay = Math.sin(ang)*5.5;
+        html += '<path d="M 0,0 Q '+(ax*0.5).toFixed(2)+','+(ay*0.5+0.6).toFixed(2)+' '+ax.toFixed(2)+','+ay.toFixed(2)+'" stroke="#9a4060" stroke-width="0.45" fill="none" stroke-linecap="round" opacity="0.85"/>';
+      }
+      b.innerHTML = html;
+      g.appendChild(b);
+      brittle.push({el:b, phase:phase});
+    }
+
+    // 6 sea pens — feather-like growths
+    for (var k=0;k<6;k++){
+      var px = 100 + rng()*1000;
+      var py = 2340;
+      var s3 = 0.7 + rng()*0.5;
+      var hgt = 16 + rng()*10;
+      var col = ['#cf6080','#d07090','#a05070'][Math.floor(rng()*3)];
+      var p = document.createElementNS(SVGNS,'g');
+      p.setAttribute('transform','translate('+px.toFixed(1)+','+py.toFixed(1)+') scale('+s3.toFixed(2)+')');
+      var ph = '';
+      // central stalk
+      ph += '<path d="M 0,0 Q 0.5,'+(-hgt/2).toFixed(1)+' 0,'+(-hgt).toFixed(1)+'" stroke="#8a3050" stroke-width="0.5" fill="none"/>';
+      // barbs
+      for (var bb=1; bb<=6; bb++){
+        var by2 = -hgt*(bb/7);
+        var bw = 1.6 - bb*0.15;
+        ph += '<line x1="-'+bw.toFixed(2)+'" y1="'+by2.toFixed(2)+'" x2="'+bw.toFixed(2)+'" y2="'+by2.toFixed(2)+'" stroke="'+col+'" stroke-width="0.6" stroke-linecap="round" opacity="0.85"/>';
+      }
+      p.innerHTML = ph;
+      g.appendChild(p);
+    }
+
+    // Animate the brittle star arms with gentle wave (rotate the whole star slightly)
+    function tick(now){
+      for (var i=0;i<brittle.length;i++){
+        var bs = brittle[i];
+        var tr = bs.el.getAttribute('transform');
+        // append a tiny rotate
+        var rot = Math.sin(now*0.0009 + bs.phase)*4;
+        // strip prior dynamic rotate if present
+        tr = tr.replace(/ rotate\([^\)]*\)$/,'');
+        bs.el.setAttribute('transform', tr + ' rotate('+rot.toFixed(2)+')');
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    console.log('[harbor v0.5.126] seafloor life armed (12 cucumbers, 8 brittle stars, 6 sea pens)');
+  } catch(err){
+    try { console.error('[harbor v0.5.126] seafloor life init failed', err); } catch(e){}
+  }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
