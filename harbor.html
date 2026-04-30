@@ -4527,6 +4527,98 @@
   }
 })();
 
+// v0.5.118 giant squid — jet-propulsion squid silhouette in fc-4 with trailing tentacles
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    var g = document.createElementNS(SVGNS,'g');
+    g.setAttribute('id','giantSquid');
+    g.setAttribute('opacity','0.85');
+    g.setAttribute('pointer-events','none');
+
+    // mantle (the body) + fins. shape points "up" by default; we orient via rotation later
+    // Coords are in the squid's local frame: +y is "back" (away from direction of swim) — squid swims headfirst
+    g.innerHTML = [
+      // tentacles (8 short arms + 2 long ones), all trail away
+      '<g id="squidTentacles">',
+        // 2 long feeding tentacles
+        '<path id="squidTLA" d="M -2,0 Q -2.4,28 -1,56" fill="none" stroke="#1a2438" stroke-width="1.4" stroke-linecap="round" />',
+        '<path id="squidTLB" d="M  2,0 Q  2.4,28  1,56" fill="none" stroke="#1a2438" stroke-width="1.4" stroke-linecap="round" />',
+        // 8 shorter arms
+        '<path id="squidA1" d="M -7,0 Q -8,14 -7,26" fill="none" stroke="#0f1828" stroke-width="1.3" stroke-linecap="round" />',
+        '<path id="squidA2" d="M -5,0 Q -5.5,14 -5,26" fill="none" stroke="#0f1828" stroke-width="1.3" stroke-linecap="round" />',
+        '<path id="squidA3" d="M -3,0 Q -3,14 -3,26" fill="none" stroke="#0f1828" stroke-width="1.2" stroke-linecap="round" />',
+        '<path id="squidA4" d="M -1,0 Q -1,14 -1,26" fill="none" stroke="#0f1828" stroke-width="1.2" stroke-linecap="round" />',
+        '<path id="squidA5" d="M  1,0 Q  1,14  1,26" fill="none" stroke="#0f1828" stroke-width="1.2" stroke-linecap="round" />',
+        '<path id="squidA6" d="M  3,0 Q  3,14  3,26" fill="none" stroke="#0f1828" stroke-width="1.2" stroke-linecap="round" />',
+        '<path id="squidA7" d="M  5,0 Q  5.5,14  5,26" fill="none" stroke="#0f1828" stroke-width="1.3" stroke-linecap="round" />',
+        '<path id="squidA8" d="M  7,0 Q  8,14  7,26" fill="none" stroke="#0f1828" stroke-width="1.3" stroke-linecap="round" />',
+      '</g>',
+      // mantle: pointed cone tapering away from the head
+      '<path d="M -8,-4 Q 0,-6 8,-4 L 4,-30 Q 0,-36 -4,-30 Z" fill="#7a3050" stroke="#a04068" stroke-width="0.7" />',
+      // head + eye spots
+      '<ellipse cx="0" cy="-2" rx="9" ry="4.5" fill="#5a2540" stroke="#7a3050" stroke-width="0.5" />',
+      '<circle cx="-4" cy="-2" r="1.2" fill="#1a0608" />',
+      '<circle cx="-4.4" cy="-2.2" r="0.4" fill="#ffe8a8" opacity="0.65" />',
+      '<circle cx=" 4" cy="-2" r="1.2" fill="#1a0608" />',
+      '<circle cx="3.6" cy="-2.2" r="0.4" fill="#ffe8a8" opacity="0.65" />',
+      // fins on the mantle base
+      '<path d="M -4,-30 Q -10,-26 -4,-22 Z" fill="#5a2540" />',
+      '<path d="M  4,-30 Q  10,-26  4,-22 Z" fill="#5a2540" />'
+    ].join('');
+
+    // insert before help overlay block
+    svg.appendChild(g);
+
+    // Animation: squid drifts horizontally slowly, with periodic "jet" pulses (rapid motion)
+    // y range stays in fc-4 (1540-1940), let's pick band y=1700-1820
+    var x = 1240, y = 1760, dir = -1; // start at right, swim left
+    var BASE_SPEED = 0.018; // px/ms
+    var jetT = 0, jetDur = 1400; // ms
+    var lastT = null;
+    var nextJetIn = 4000 + Math.random()*4000;
+    var rotation = -90; // facing left
+    function frame(t){
+      if (lastT === null) lastT = t;
+      var dt = Math.min(60, t - lastT);
+      lastT = t;
+      // base slow drift
+      var speed = BASE_SPEED;
+      // jet boost
+      jetT += dt;
+      var jetK = 0;
+      if (jetT < jetDur) {
+        jetK = Math.sin((jetT/jetDur)*Math.PI); // 0..1..0
+      } else if (jetT - jetDur > nextJetIn) {
+        // start a new jet
+        jetT = 0;
+        nextJetIn = 3500 + Math.random()*5000;
+      }
+      speed = BASE_SPEED + jetK * 0.18;
+      x += dir * speed * dt;
+      // gentle vertical bob
+      var yBob = y + Math.sin(t * 0.0008) * 18;
+      // turn around at edges with margin
+      if (dir < 0 && x < -40) { dir = 1; rotation = 90; y = 1660 + Math.random()*120; }
+      if (dir > 0 && x > 1240) { dir = -1; rotation = -90; y = 1660 + Math.random()*120; }
+      // tentacle wave: scale tentacle group "horizontally" via sin
+      var tentSx = 1 + Math.sin(t*0.004) * 0.06;
+      g.setAttribute('transform', 'translate(' + x.toFixed(1) + ',' + yBob.toFixed(1) + ') rotate(' + rotation + ')');
+      var tents = document.getElementById('squidTentacles');
+      if (tents) tents.setAttribute('transform', 'scale(' + tentSx.toFixed(3) + ',1)');
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+    try { console.log('[harbor v0.5.118] giant squid armed (jet-propulsion drifter, fc-4)'); } catch(e){}
+  } catch (err) {
+    try { console.error('[harbor v0.5.118] giant squid init failed', err); } catch(e){}
+  }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
