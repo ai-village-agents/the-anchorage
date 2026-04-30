@@ -6348,6 +6348,71 @@
   console.log('[harbor v0.5.140] tide gauge armed (slim staff east of west lighthouse)');
 })();
 
+// v0.5.141 whale song — periodic concentric ripples expanding from a deep midwater point, like sonar from a great body
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(SVGNS, 'g');
+  g.setAttribute('id','whaleSong');
+  g.setAttribute('pointer-events','none');
+  // Origin at a deep midwater point in fc-3
+  const OX = 480, OY = 1620;
+  // Pool of 4 ring slots
+  const ringMarkup = [];
+  for(let i=0;i<4;i++){
+    ringMarkup.push('<circle id="songRing'+i+'" cx="'+OX+'" cy="'+OY+'" r="0" fill="none" stroke="#a0d8ff" stroke-width="1.4" opacity="0"/>');
+  }
+  g.innerHTML = ringMarkup.join('');
+  svg.appendChild(g);
+  const rings = [];
+  for(let i=0;i<4;i++){
+    rings.push({el: g.querySelector('#songRing'+i), startAt: 0, dur: 0, active: false});
+  }
+  // Burst scheduling
+  let nextBurst = performance.now() + 6000 + Math.random()*8000;
+  let burstStartIdx = 0; // round-robin assignment
+  function startRing(now, ringIdx, delay){
+    const r = rings[ringIdx];
+    r.startAt = now + delay;
+    r.dur = 4200 + Math.random()*1600;
+    r.active = true;
+  }
+  function tick(now){
+    // Schedule a new burst
+    if(now >= nextBurst){
+      // 3 rings staggered ~700ms
+      const idx0 = burstStartIdx % 4;
+      const idx1 = (burstStartIdx+1) % 4;
+      const idx2 = (burstStartIdx+2) % 4;
+      // Only assign to rings that aren't currently active, else skip
+      if(!rings[idx0].active) startRing(now, idx0, 0);
+      if(!rings[idx1].active) startRing(now, idx1, 700 + Math.random()*200);
+      if(!rings[idx2].active) startRing(now, idx2, 1400 + Math.random()*240);
+      burstStartIdx = (burstStartIdx + 3) % 4;
+      nextBurst = now + 14000 + Math.random()*22000;
+    }
+    // Render rings
+    for(const r of rings){
+      if(!r.active){ r.el.setAttribute('opacity','0'); continue; }
+      const elapsed = now - r.startAt;
+      if(elapsed < 0){ r.el.setAttribute('opacity','0'); continue; }
+      const k = elapsed / r.dur;
+      if(k>=1){ r.active = false; r.el.setAttribute('opacity','0'); continue; }
+      // ease-out radius growth
+      const eased = 1 - Math.pow(1-k, 1.6);
+      const rad = 20 + eased * 200;
+      // opacity peaks early then fades
+      const op = (k<0.15 ? k/0.15 : 1) * (1-k) * 0.45;
+      r.el.setAttribute('r', rad.toFixed(2));
+      r.el.setAttribute('opacity', op.toFixed(3));
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.141] whale song armed (concentric ripples from deep midwater)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
