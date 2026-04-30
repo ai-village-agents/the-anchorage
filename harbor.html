@@ -10890,6 +10890,145 @@
   console.log('[harbor v0.5.191] bioluminescent wave break armed (rare dramatic phosphor flare across breaking wave crest)');
 })();
 
+// v0.5.192 humpback breach — rare dramatic whale leap above surface with arc, twist, splash
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  var SVG_NS='http://www.w3.org/2000/svg';
+  var g = document.createElementNS(SVG_NS,'g');
+  g.setAttribute('id','humpbackBreach');
+  g.setAttribute('style','pointer-events:none');
+  svg.appendChild(g);
+  // whale body: dark silhouette path. Anchor at body center, rotate around it.
+  // simplified humpback: blunt head, thick body, narrow tail, long pectoral fin
+  var body = document.createElementNS(SVG_NS,'g');
+  body.setAttribute('opacity','0');
+  g.appendChild(body);
+  var silhouette = document.createElementNS(SVG_NS,'path');
+  silhouette.setAttribute('fill','#0d2233');
+  silhouette.setAttribute('opacity','0.92');
+  // body path: ellipse-ish whale ~64px long
+  silhouette.setAttribute('d','M -32 4 Q -28 -10 -8 -12 Q 14 -13 24 -8 Q 30 -3 32 4 Q 34 8 28 11 Q 24 12 22 9 L 28 14 L 24 14 L 19 9 Q 8 12 -10 11 Q -22 10 -32 4 Z');
+  body.appendChild(silhouette);
+  // pectoral fin (long signature humpback fin)
+  var fin = document.createElementNS(SVG_NS,'path');
+  fin.setAttribute('fill','#0a1c2a');
+  fin.setAttribute('opacity','0.95');
+  fin.setAttribute('d','M -4 6 Q -8 22 -2 30 Q 2 24 0 6 Z');
+  body.appendChild(fin);
+  // belly highlight (lighter underside, visible when twisting)
+  var belly = document.createElementNS(SVG_NS,'path');
+  belly.setAttribute('fill','#9bb8d0');
+  belly.setAttribute('opacity','0.18');
+  belly.setAttribute('d','M -22 8 Q -8 14 18 10 Q 22 11 22 9 Q 6 12 -22 9 Z');
+  body.appendChild(belly);
+
+  // splash group (created on landing)
+  var splash = document.createElementNS(SVG_NS,'g');
+  splash.setAttribute('style','mix-blend-mode:screen');
+  g.appendChild(splash);
+  var SPLASH_POOL=12, drops=[];
+  for(var i=0;i<SPLASH_POOL;i++){
+    var d = document.createElementNS(SVG_NS,'circle');
+    d.setAttribute('r','1.6');
+    d.setAttribute('fill','#dceaf4');
+    d.setAttribute('opacity','0');
+    splash.appendChild(d);
+    drops.push(d);
+  }
+  // splash arc (white foam burst)
+  var foam = document.createElementNS(SVG_NS,'ellipse');
+  foam.setAttribute('cx','0'); foam.setAttribute('cy','318');
+  foam.setAttribute('rx','22'); foam.setAttribute('ry','4');
+  foam.setAttribute('fill','#e8f3fb');
+  foam.setAttribute('opacity','0');
+  splash.appendChild(foam);
+
+  var Y_SURFACE = 318;
+  var state='idle', tStart=0, idleDur=60000+Math.random()*120000; // first leap 1-3 min
+  var leapDur=2200, splashDur=1500;
+  var startX=0, peakY=0, dirSign=1, twist=0;
+
+  function startLeap(){
+    state='leaping'; tStart=performance.now();
+    leapDur = 1900 + Math.random()*700;
+    startX = 200 + Math.random()*760;
+    dirSign = Math.random()<0.5 ? -1 : 1;
+    peakY = Y_SURFACE - (60 + Math.random()*30); // 60-90px peak above surface
+    twist = (Math.random()<0.6 ? 1 : -1) * (40 + Math.random()*80); // total rotation deg
+    foam.setAttribute('cx', startX); foam.setAttribute('opacity','0');
+  }
+  function spawnSplash(now, x){
+    for(var i=0;i<SPLASH_POOL;i++){
+      var d = drops[i];
+      var ang = (Math.random()-0.5)*Math.PI*0.9 - Math.PI/2; // upward fan
+      var sp = 60 + Math.random()*90;
+      d._x0 = x + (Math.random()-0.5)*8;
+      d._y0 = Y_SURFACE - 1;
+      d._vx = Math.cos(ang)*sp;
+      d._vy = Math.sin(ang)*sp;
+      d._t0 = now + Math.random()*120;
+      d._dur = 700 + Math.random()*500;
+    }
+  }
+
+  function frame(now){
+    if(state==='idle'){
+      if(!tStart) tStart=now;
+      if(now-tStart >= idleDur) startLeap();
+    } else if(state==='leaping'){
+      var t = now - tStart;
+      var k = t/leapDur;
+      if(k >= 1){
+        body.setAttribute('opacity','0');
+        spawnSplash(now, startX);
+        foam.setAttribute('cx', startX);
+        state='splashing'; tStart=now;
+      } else {
+        // parabolic arc; horizontal velocity slow
+        var x = startX + dirSign * 50 * k; // body travels ~50px during leap
+        var arc = 4*k*(1-k); // 0..1 peak at k=0.5
+        var y = Y_SURFACE - (Y_SURFACE - peakY) * arc;
+        var rot = (k-0.5) * 2 * twist; // rotation builds through arc
+        body.setAttribute('opacity', (k<0.05?k/0.05:(k>0.95?(1-k)/0.05:1)).toFixed(2));
+        body.setAttribute('transform','translate('+x.toFixed(1)+','+y.toFixed(1)+') rotate('+rot.toFixed(1)+') scale('+(dirSign>0?1:-1)+',1)');
+      }
+    } else if(state==='splashing'){
+      var t = now - tStart;
+      // foam fade
+      var fk = t/splashDur;
+      if(fk<1){
+        var fop = (fk<0.2 ? fk/0.2 : (1-fk)/0.8);
+        foam.setAttribute('opacity', (fop*0.85).toFixed(2));
+        foam.setAttribute('rx', (22 + 18*fk).toFixed(1));
+      } else { foam.setAttribute('opacity','0'); }
+      // drops physics
+      for(var i=0;i<SPLASH_POOL;i++){
+        var d = drops[i];
+        if(now < d._t0){ d.setAttribute('opacity','0'); continue; }
+        var dt = (now - d._t0)/1000;
+        if(dt > d._dur/1000){ d.setAttribute('opacity','0'); continue; }
+        var dx = d._vx*dt;
+        var dy = d._vy*dt + 60*dt*dt; // gravity
+        var px = d._x0 + dx, py = d._y0 + dy;
+        if(py > Y_SURFACE+2){ d.setAttribute('opacity','0'); continue; }
+        d.setAttribute('cx', px.toFixed(1));
+        d.setAttribute('cy', py.toFixed(1));
+        d.setAttribute('opacity', Math.max(0, 1 - dt/(d._dur/1000)).toFixed(2));
+      }
+      if(t > splashDur+400){
+        for(var j=0;j<SPLASH_POOL;j++) drops[j].setAttribute('opacity','0');
+        foam.setAttribute('opacity','0');
+        state='idle'; tStart=now;
+        idleDur = 180000 + Math.random()*240000;
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.192] humpback breach armed (rare dramatic whale leap above surface every 3-7 minutes)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
