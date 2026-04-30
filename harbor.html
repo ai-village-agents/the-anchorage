@@ -6997,6 +6997,84 @@
 })();
 
 
+// v0.5.151 phosphorescent surf — brief bioluminescent sparkles on the wave surface
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','phosphorSurf');
+  g.setAttribute('pointer-events','none');
+  g.setAttribute('style','mix-blend-mode:screen');
+  // Halo gradient
+  g.innerHTML =
+    '<defs>' +
+      '<radialGradient id="phosphorHalo" cx="50%" cy="50%" r="50%">' +
+        '<stop offset="0%" stop-color="#aaffe0" stop-opacity="0.85"/>' +
+        '<stop offset="60%" stop-color="#7fe0d0" stop-opacity="0.30"/>' +
+        '<stop offset="100%" stop-color="#7fe0d0" stop-opacity="0"/>' +
+      '</radialGradient>' +
+    '</defs>';
+  // 12 phosphor slots cycled round-robin
+  const N = 12;
+  for (let i=0;i<N;i++){
+    const slot =
+      '<g id="ph'+i+'" opacity="0">' +
+        '<circle id="phHalo'+i+'" cx="0" cy="0" r="9" fill="url(#phosphorHalo)"/>' +
+        '<circle id="phCore'+i+'" cx="0" cy="0" r="1.4" fill="#d9ffec" opacity="0.9"/>' +
+      '</g>';
+    g.insertAdjacentHTML('beforeend', slot);
+  }
+  const help = svg.querySelector('#helpOverlay');
+  if (help) svg.insertBefore(g, help); else svg.appendChild(g);
+
+  // Each slot is independent: idle (random wait) -> active (short bright flicker) -> idle
+  const slots = [];
+  for (let i=0;i<N;i++){
+    slots.push({ state:'idle', t0: performance.now(), wait: 800 + Math.random()*5000, dur: 0, x:0, y:0, scl:1 });
+  }
+  function pickPos(s){
+    s.x = 40 + Math.random()*1120;
+    s.y = 296 + Math.random()*30;
+    s.scl = 0.7 + Math.random()*0.9;
+  }
+  function frame(now){
+    for (let i=0;i<N;i++){
+      const s = slots[i];
+      const ms = now - s.t0;
+      const node = document.getElementById('ph'+i);
+      if (!node) continue;
+      if (s.state==='idle'){
+        if (ms > s.wait){
+          pickPos(s);
+          s.dur = 600 + Math.random()*1200;
+          s.state='active';
+          s.t0 = now;
+        } else {
+          node.setAttribute('opacity','0');
+        }
+      } else { // active
+        const k = ms / s.dur;
+        if (k>=1){
+          s.state='idle'; s.t0=now; s.wait = 1500 + Math.random()*7000;
+          node.setAttribute('opacity','0');
+        } else {
+          // bell-shaped opacity peaking mid-active, with fast flicker
+          const bell = Math.sin(k*Math.PI);
+          const flicker = 0.7 + 0.3*Math.sin(now*0.025 + i);
+          const op = bell * flicker * 0.85;
+          node.setAttribute('opacity', op.toFixed(3));
+          node.setAttribute('transform','translate('+s.x.toFixed(1)+','+s.y.toFixed(1)+') scale('+s.scl.toFixed(2)+')');
+        }
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.151] phosphorescent surf armed (12 surface sparkles cycling)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
