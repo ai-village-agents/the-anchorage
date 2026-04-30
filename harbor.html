@@ -6301,6 +6301,53 @@
   console.log('[harbor v0.5.139] perched bird armed (atop east lighthouse)');
 })();
 
+// v0.5.140 tide gauge — slim staff just right of west lighthouse islet, water level on a slow sine
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(SVGNS, 'g');
+  g.setAttribute('id','tideGauge');
+  g.setAttribute('pointer-events','none');
+  // West lighthouse at translate(240,220); islet runs x=212..270, base y≈236.
+  // Place a tide staff at SX=276 (just east of the islet), running from y=258 to y=336.
+  const SX = 276;
+  const TOP = 258, BOT = 336;
+  const partsTop = [
+    // base block sitting on the islet/rock edge above the surface
+    '<rect x="'+(SX-3)+'" y="252" width="6" height="6" fill="#1a2030"/>',
+    // staff pole
+    '<rect x="'+(SX-1)+'" y="'+TOP+'" width="2" height="'+(BOT-TOP)+'" fill="#0f1622" opacity="0.95"/>',
+  ];
+  // tick marks every 6px, longer at every 4 ticks
+  const ticks = [];
+  for(let i=0; i<=Math.floor((BOT-TOP)/6); i++){
+    const ty = TOP + i*6;
+    const long = (i%4===0);
+    const w = long ? 6 : 3;
+    ticks.push('<line x1="'+(SX+1)+'" y1="'+ty+'" x2="'+(SX+1+w)+'" y2="'+ty+'" stroke="#9ab0c8" stroke-width="0.6" opacity="0.7"/>');
+  }
+  // tiny finial at top
+  const finial = '<circle cx="'+SX+'" cy="'+TOP+'" r="1.6" fill="#cfd6e2" opacity="0.85"/>';
+  // small triangular indicator at current water level
+  const slider = '<g id="tideSlider"><polygon points="'+(SX-7)+',-4 '+(SX-7)+',4 '+(SX-1)+',0" fill="#7aa2ff" opacity="0.85"/><line x1="'+(SX-7)+'" y1="0" x2="'+(SX-13)+'" y2="0" stroke="#7aa2ff" stroke-width="0.6" opacity="0.5"/></g>';
+  g.innerHTML = partsTop.join('') + ticks.join('') + finial + '<g id="tideSliderWrap" transform="translate(0,310)">'+slider+'</g>';
+  svg.appendChild(g);
+  const wrap = g.querySelector('#tideSliderWrap');
+  // Long sine: full tide cycle ~ 90 seconds for visual legibility
+  const MID = (TOP+BOT)/2;
+  const AMP = 26;
+  const PERIOD = 90000;
+  function tick(now){
+    const k = (now % PERIOD) / PERIOD;
+    const y = MID + Math.sin(k*Math.PI*2) * AMP;
+    wrap.setAttribute('transform','translate(0,'+y.toFixed(2)+')');
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.140] tide gauge armed (slim staff east of west lighthouse)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
