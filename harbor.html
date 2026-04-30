@@ -8127,6 +8127,103 @@
 })();
 
 
+
+// v0.5.166 jelly bloom — small cluster of jellies in fc-2 that pulse in coordinated waves
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('id', 'jellyBloom');
+  g.setAttribute('pointer-events', 'none');
+  g.setAttribute('opacity', '0.78');
+  svg.appendChild(g);
+  // 6 jellies in a loose cluster within fc-2 band y=820..1080, x near 480..720
+  // Avoid existing baitball (CX0=800 CY0=920) and giant squid fc-4 (deeper).
+  const seed = 17;
+  let s = seed;
+  function rnd() { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }
+  const N = 6;
+  const jellies = [];
+  const CX = 540, CY = 940;
+  for (let i = 0; i < N; i++) {
+    const grp = document.createElementNS(ns, 'g');
+    const ang = rnd() * Math.PI * 2;
+    const r = 30 + rnd() * 90;
+    const ox = Math.cos(ang) * r;
+    const oy = Math.sin(ang) * r * 0.7;
+    const sz = 0.78 + rnd() * 0.45;
+    const phase = rnd() * Math.PI * 2;
+    const baseX = CX + ox;
+    const baseY = CY + oy;
+    grp.setAttribute('transform', 'translate(' + baseX + ',' + baseY + ') scale(' + sz + ')');
+    grp.innerHTML = [
+      // bell
+      '<ellipse cx="0" cy="0" rx="9" ry="6" fill="#a880c8" opacity="0.55"/>',
+      '<ellipse cx="0" cy="0" rx="9" ry="6" fill="none" stroke="#d2b8e8" stroke-width="0.4" opacity="0.7"/>',
+      '<ellipse cx="0" cy="-1.6" rx="4.5" ry="2.2" fill="#fff5ff" opacity="0.35"/>',
+      // tentacles
+      '<g stroke="#a880c8" stroke-width="0.45" fill="none" opacity="0.7" stroke-linecap="round">',
+        '<path d="M -5 5 Q -6 12 -5 18"/>',
+        '<path d="M -2 5 Q -2.2 14 -1 22"/>',
+        '<path d="M 0 5 Q 0 14 0 24"/>',
+        '<path d="M 2 5 Q 2.2 14 1 22"/>',
+        '<path d="M 5 5 Q 6 12 5 18"/>',
+      '</g>',
+      // glow
+      '<circle cx="0" cy="0" r="13" fill="#a880c8" opacity="0.0" id="jg' + i + '"/>',
+    ].join('');
+    g.appendChild(grp);
+    jellies.push({
+      el: grp,
+      glow: grp.querySelector('#jg' + i),
+      baseX: baseX,
+      baseY: baseY,
+      sz: sz,
+      phase: phase,
+      bloomT0: 0,
+    });
+  }
+  // bloom waves: every ~14–28s a coordinated pulse rolls through the cluster
+  let nextBloom = performance.now() + 8000 + Math.random() * 10000;
+  let inBloom = false;
+  let bloomT0 = 0, bloomDur = 6500;
+  function step(t) {
+    if (!inBloom && t > nextBloom) {
+      inBloom = true;
+      bloomT0 = t;
+      bloomDur = 6000 + Math.random() * 2500;
+    }
+    if (inBloom && t - bloomT0 > bloomDur) {
+      inBloom = false;
+      nextBloom = t + 14000 + Math.random() * 14000;
+    }
+    jellies.forEach((j, i) => {
+      const swayX = Math.sin(t * 0.0009 + j.phase) * 6;
+      const swayY = Math.sin(t * 0.0011 + j.phase * 0.7) * 4;
+      const x = j.baseX + swayX;
+      const y = j.baseY + swayY;
+      // base scale + bloom pulse traveling through cluster
+      let pulse = 0;
+      if (inBloom) {
+        const k = (t - bloomT0) / bloomDur;
+        // wave position normalized 0..1; wave passes through index in order
+        const waveAt = k * 1.4 - 0.2;
+        const dist = Math.abs(i / (N - 1) - waveAt);
+        const intensity = Math.max(0, 1 - dist * 4);
+        pulse = intensity;
+      }
+      const sz = j.sz * (1 + pulse * 0.18);
+      j.el.setAttribute('transform', 'translate(' + x.toFixed(2) + ',' + y.toFixed(2) + ') scale(' + sz.toFixed(3) + ')');
+      j.glow.setAttribute('opacity', (pulse * 0.65).toFixed(3));
+    });
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+  console.log('[harbor v0.5.166] jelly bloom armed (6 jellies in fc-2 cluster, periodic coordinated pulse waves)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
