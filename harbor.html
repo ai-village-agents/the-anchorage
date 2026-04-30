@@ -11099,6 +11099,76 @@
   console.log('[harbor v0.5.193] comet residual sparkle trail armed (sparkle motes shed from comet head linger and fade)');
 })();
 
+// v0.5.194 phosphor blooms around kraken — small bioluminescent puffs ignite around the kraken's tentacles
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  var SVG_NS='http://www.w3.org/2000/svg';
+  var g = document.createElementNS(SVG_NS,'g');
+  g.setAttribute('id','krakenPhosphorBloom');
+  g.setAttribute('style','mix-blend-mode:screen;pointer-events:none');
+  svg.appendChild(g);
+  // kraken at (540, 2120) on bedrock fc-5
+  var KX = 540, KY = 2120;
+  var POOL = 14, motes = [], next=0;
+  for(var i=0;i<POOL;i++){
+    var c = document.createElementNS(SVG_NS,'circle');
+    c.setAttribute('r','3.4');
+    c.setAttribute('fill','#9be8ff');
+    c.setAttribute('opacity','0');
+    
+    g.appendChild(c);
+    motes.push({el:c, born:0, life:0, x:0, y:0, peak:0});
+  }
+  var palette = ['#9be8ff','#a3f0d4','#cfd6ff','#bbf6ff'];
+  function spawn(now){
+    var m = motes[next]; next = (next+1)%POOL;
+    // random position around kraken — biased to upper-tentacle region (above body)
+    var ang = Math.random()*Math.PI*2;
+    // radius 30-110 px from kraken center, upward bias
+    var r = 30 + Math.random()*80;
+    var dx = Math.cos(ang)*r;
+    var dy = Math.sin(ang)*r * 0.7 - 10; // squash vertical, bias upward
+    m.x = KX + dx; m.y = KY + dy;
+    m.born = now; m.life = 1800 + Math.random()*1700;
+    m.peak = 0.30 + Math.random()*0.30;
+    m.el.setAttribute('fill', palette[Math.floor(Math.random()*palette.length)]);
+    m.el.setAttribute('r', (2.4 + Math.random()*1.6).toFixed(2));
+    m.el.setAttribute('cx', m.x.toFixed(1));
+    m.el.setAttribute('cy', m.y.toFixed(1));
+  }
+  var nextSpawnAt = 0;
+  function schedule(now){
+    // 8-25s between bloom events; bloom event spawns 2-4 motes in quick succession
+    nextSpawnAt = now + 8000 + Math.random()*17000;
+  }
+  function fire(now){
+    var k = 2 + Math.floor(Math.random()*3);
+    for(var i=0;i<k;i++){
+      setTimeout(function(){ spawn(performance.now()); }, i * (60+Math.random()*180));
+    }
+    schedule(now);
+  }
+  schedule(performance.now()-2000); // first ~6s
+  function frame(now){
+    if(now >= nextSpawnAt) fire(now);
+    for(var i=0;i<POOL;i++){
+      var m = motes[i]; if(!m.life) continue;
+      var t = now - m.born;
+      if(t >= m.life){ m.el.setAttribute('opacity','0'); m.life=0; continue; }
+      var k = t/m.life;
+      var op = Math.sin(k*Math.PI) * m.peak;
+      // gentle drift upward
+      var py = m.y - 8*k;
+      m.el.setAttribute('cy', py.toFixed(1));
+      m.el.setAttribute('opacity', op.toFixed(3));
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.194] phosphor blooms around kraken armed (small bioluminescent puffs ignite around tentacles)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
