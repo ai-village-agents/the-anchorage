@@ -11349,6 +11349,86 @@
 })();
 
 
+// v0.5.197 bioluminescent fireflies in kelp forest — tiny green-blue motes drift among kelp tips at fc-2
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) { console.warn('[harbor v0.5.197] svg not found, skipping'); return; }
+  const NS = 'http://www.w3.org/2000/svg';
+  // Kelp stalk anchor X positions and approximate tip Y (baseY 1120 - height range 300-360)
+  const STALK_X = [80, 165, 250, 420, 620, 800, 940, 1090];
+  const TIP_Y_MIN = 760;
+  const TIP_Y_MAX = 850;
+
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('id', 'kelpFireflies');
+  g.setAttribute('style', 'mix-blend-mode: screen; pointer-events: none;');
+  svg.appendChild(g);
+
+  const POOL = 18;
+  const motes = [];
+  const PALETTE = ['#a8f0c8', '#9be8ff', '#c0f7d6', '#bff4e8'];
+  for(let i=0; i<POOL; i++){
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('r', 1.4);
+    c.setAttribute('fill', PALETTE[i % PALETTE.length]);
+    c.setAttribute('opacity', '0');
+    g.appendChild(c);
+    motes.push({ el: c, active: false, t0: 0, dur: 0, x0: 0, y0: 0, drift: 0, swayAmp: 0, swayFreq: 0, peak: 0 });
+  }
+
+  function spawn(){
+    const slot = motes.find(m => !m.active);
+    if(!slot) return;
+    const sx = STALK_X[Math.floor(Math.random() * STALK_X.length)];
+    slot.x0 = sx + (Math.random() - 0.5) * 36;
+    slot.y0 = TIP_Y_MIN + Math.random() * (TIP_Y_MAX - TIP_Y_MIN);
+    slot.dur = 5500 + Math.random() * 5000;
+    slot.drift = -10 - Math.random() * 25;  // upward drift
+    slot.swayAmp = 4 + Math.random() * 7;
+    slot.swayFreq = 0.0014 + Math.random() * 0.0018;
+    slot.peak = 0.55 + Math.random() * 0.30;
+    slot.t0 = performance.now();
+    slot.active = true;
+    slot.el.setAttribute('r', (1.1 + Math.random() * 0.7).toFixed(2));
+  }
+
+  function scheduleSpawn(){
+    const wait = 280 + Math.random() * 700;
+    setTimeout(function tick(){
+      // keep ~10-14 active typically
+      const active = motes.filter(m => m.active).length;
+      if(active < 14) spawn();
+      const next = 280 + Math.random() * 700;
+      setTimeout(tick, next);
+    }, wait);
+  }
+  scheduleSpawn();
+
+  function frame(now){
+    motes.forEach(m => {
+      if(!m.active) return;
+      const u = (now - m.t0) / m.dur;
+      if(u >= 1){
+        m.active = false;
+        m.el.setAttribute('opacity', '0');
+        return;
+      }
+      const env = u < 0.15 ? (u / 0.15) : (1 - (u - 0.15) / 0.85);
+      const op = m.peak * Math.max(0, env);
+      const x = m.x0 + Math.sin((now - m.t0) * m.swayFreq) * m.swayAmp;
+      const y = m.y0 + m.drift * u;
+      m.el.setAttribute('cx', x.toFixed(2));
+      m.el.setAttribute('cy', y.toFixed(2));
+      m.el.setAttribute('opacity', op.toFixed(3));
+    });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  console.log('[harbor v0.5.197] bioluminescent fireflies in kelp forest armed (tiny motes drift among kelp tips at fc-2)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
