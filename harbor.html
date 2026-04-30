@@ -5208,6 +5208,174 @@
   }
 })();
 
+// v0.5.127 floating driftwood — 4 weathered logs drift independently across the surface
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    var g = document.createElementNS(SVGNS,'g');
+    g.setAttribute('id','driftwood');
+    g.setAttribute('opacity','0.9');
+    g.setAttribute('pointer-events','none');
+    svg.appendChild(g);
+
+    var seed = 90210;
+    function rng(){ seed = (seed*1664525+1013904223)>>>0; return seed/4294967296; }
+
+    var LOGS = [];
+    var N = 4;
+    for (var i=0;i<N;i++){
+      var len = 14 + rng()*16;       // 14..30 long
+      var thick = 1.4 + rng()*1.2;   // 1.4..2.6 thick
+      var col = ['#5a3a20','#6a4a28','#4a3018','#7a5230'][i%4];
+      var dark = ['#3a2410','#4a2818','#2a1a08','#5a3820'][i%4];
+      var x = -50 - i*220 - rng()*180;  // staggered start positions
+      var y = 318 + rng()*8;          // sits on water-line, 318-326
+      var spd = 0.0035 + rng()*0.0035; // very slow horizontal drift
+      var phase = rng()*Math.PI*2;
+      var rot0 = (rng()-0.5)*8;       // initial slight tilt
+      var l = document.createElementNS(SVGNS,'g');
+      // log body + dark cap ends + a single broken branch nub
+      var html = '';
+      html += '<rect x="'+(-len/2).toFixed(2)+'" y="'+(-thick/2).toFixed(2)+'" width="'+len.toFixed(2)+'" height="'+thick.toFixed(2)+'" rx="'+(thick/2).toFixed(2)+'" fill="'+col+'" stroke="'+dark+'" stroke-width="0.25"/>';
+      // cap rings
+      html += '<circle cx="'+(-len/2).toFixed(2)+'" cy="0" r="'+(thick/2).toFixed(2)+'" fill="'+dark+'" opacity="0.85"/>';
+      html += '<circle cx="'+(len/2).toFixed(2)+'" cy="0" r="'+(thick/2).toFixed(2)+'" fill="'+dark+'" opacity="0.85"/>';
+      // a broken branch
+      var bx = (rng()-0.5)*len*0.6;
+      var blen = 2.5 + rng()*2.0;
+      var by = -thick/2 - 0.2;
+      html += '<line x1="'+bx.toFixed(2)+'" y1="'+by.toFixed(2)+'" x2="'+(bx + (rng()-0.5)*4).toFixed(2)+'" y2="'+(by-blen).toFixed(2)+'" stroke="'+dark+'" stroke-width="0.6" stroke-linecap="round"/>';
+      // tiny shadow on water below
+      html += '<ellipse cx="0" cy="'+(thick*0.5+0.4).toFixed(2)+'" rx="'+(len*0.45).toFixed(2)+'" ry="0.5" fill="#0a141a" opacity="0.3"/>';
+      l.innerHTML = html;
+      g.appendChild(l);
+      LOGS.push({el:l, x:x, y:y, spd:spd, phase:phase, rot0:rot0, len:len});
+    }
+
+    function tick(now){
+      for (var i=0;i<LOGS.length;i++){
+        var L = LOGS[i];
+        L.x += L.spd * 16; // ~per-frame
+        if (L.x > 1240 + L.len) L.x = -L.len - 40;
+        var bob = Math.sin(now*0.0007 + L.phase)*0.8;
+        var rot = L.rot0 + Math.sin(now*0.0005 + L.phase*1.2)*2.5;
+        L.el.setAttribute('transform','translate('+L.x.toFixed(2)+','+(L.y+bob).toFixed(2)+') rotate('+rot.toFixed(2)+')');
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    console.log('[harbor v0.5.127] driftwood armed (4 weathered logs on the surface)');
+  } catch(err){
+    try { console.error('[harbor v0.5.127] driftwood init failed', err); } catch(e){}
+  }
+})();
+
+// v0.5.128 wreck colonization — anemones and hydroids growing on the shipwreck
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    var wreck = document.getElementById('shipwreck');
+    if(!wreck) return;
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    var g = document.createElementNS(SVGNS,'g');
+    g.setAttribute('id','wreckColonization');
+    g.setAttribute('opacity','0.92');
+    g.setAttribute('pointer-events','none');
+    // Append to the wreck group so transform follows it (wreck is at translate(220,1820))
+    wreck.appendChild(g);
+
+    var seed = 22789;
+    function rng(){ seed = (seed*1664525+1013904223)>>>0; return seed/4294967296; }
+
+    // Anemone positions on hull (relative to wreck origin):
+    // hull top runs from about x=-82 to +84 with rough deck at y=-2..-18
+    var ANEMS = [
+      {x:-72, y:-4,  c:'#d05080'},
+      {x:-44, y:-12, c:'#cf6080'},
+      {x:-18, y:-16, c:'#a85080'},
+      {x: 12, y:-14, c:'#d06090'},
+      {x: 38, y:-8,  c:'#b04070'},
+      {x: 64, y:-2,  c:'#cf5070'},
+      {x: 88, y:  4, c:'#a05070'}
+    ];
+    var anemEls = [];
+    for (var i=0;i<ANEMS.length;i++){
+      var a = ANEMS[i];
+      var sz = 0.85 + rng()*0.35;
+      var phase = rng()*Math.PI*2;
+      var ae = document.createElementNS(SVGNS,'g');
+      ae.setAttribute('transform','translate('+a.x+','+a.y+') scale('+sz.toFixed(2)+')');
+      // base + tentacles
+      var html = '';
+      html += '<ellipse cx="0" cy="0" rx="2.0" ry="0.8" fill="#5a2030" opacity="0.85"/>';
+      // 7 tentacles fanning upward
+      for (var t=0;t<7;t++){
+        var ang = -Math.PI*0.5 + ((t-3)/3)*0.9;
+        var len = 2.4 + rng()*1.4;
+        var tx = Math.cos(ang)*len, ty = Math.sin(ang)*len;
+        html += '<line class="tt" x1="0" y1="-0.4" x2="'+tx.toFixed(2)+'" y2="'+ty.toFixed(2)+'" stroke="'+a.c+'" stroke-width="0.45" stroke-linecap="round" opacity="0.85"/>';
+      }
+      ae.innerHTML = html;
+      g.appendChild(ae);
+      anemEls.push({el:ae, baseX:a.x, baseY:a.y, sz:sz, phase:phase});
+    }
+
+    // Hydroids: small feathery growths along the hull edges
+    var HYDS = [
+      {x:-86, y: 4}, {x:-66, y: 18}, {x:-30, y: 26}, {x: 0, y: 28}, {x: 30, y: 26}, {x: 60, y: 22}, {x: 88, y: 14}, {x: 96, y: 0}
+    ];
+    var hydEls = [];
+    for (var j=0;j<HYDS.length;j++){
+      var h = HYDS[j];
+      var sz2 = 0.7 + rng()*0.4;
+      var phase2 = rng()*Math.PI*2;
+      var hg = document.createElementNS(SVGNS,'g');
+      // tilt: hydroids growing perpendicular to local hull normal (approximated by side)
+      var rot0 = h.x < -50 ? -30 : h.x > 50 ? 30 : 0;
+      hg.setAttribute('transform','translate('+h.x+','+h.y+') rotate('+rot0+') scale('+sz2.toFixed(2)+')');
+      var hh = '';
+      // central stalk
+      hh += '<path d="M 0,0 Q 0.2,-3 0,-7" stroke="#506050" stroke-width="0.4" fill="none"/>';
+      // barbs
+      for (var bb=1; bb<=4; bb++){
+        var by = -bb*1.6;
+        var bw = 1.0 - bb*0.12;
+        hh += '<line x1="-'+bw.toFixed(2)+'" y1="'+by.toFixed(2)+'" x2="'+bw.toFixed(2)+'" y2="'+by.toFixed(2)+'" stroke="#cfe6cf" stroke-width="0.35" stroke-linecap="round" opacity="0.7"/>';
+      }
+      hg.innerHTML = hh;
+      g.appendChild(hg);
+      hydEls.push({el:hg, x:h.x, y:h.y, sz:sz2, rot0:rot0, phase:phase2});
+    }
+
+    function tick(now){
+      // anemones: tentacles sway via slight scale-x variation on the whole anemone
+      for (var i=0;i<anemEls.length;i++){
+        var ae = anemEls[i];
+        var sway = Math.sin(now*0.0011 + ae.phase)*4;
+        ae.el.setAttribute('transform','translate('+ae.baseX+','+ae.baseY+') scale('+ae.sz.toFixed(2)+') rotate('+sway.toFixed(2)+')');
+      }
+      // hydroids: gentle wave
+      for (var j=0;j<hydEls.length;j++){
+        var he = hydEls[j];
+        var wob = Math.sin(now*0.0014 + he.phase)*5;
+        he.el.setAttribute('transform','translate('+he.x+','+he.y+') rotate('+(he.rot0+wob).toFixed(2)+') scale('+he.sz.toFixed(2)+')');
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    console.log('[harbor v0.5.128] wreck colonization armed (7 anemones, 8 hydroids)');
+  } catch(err){
+    try { console.error('[harbor v0.5.128] colonization init failed', err); } catch(e){}
+  }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
