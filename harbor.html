@@ -9337,6 +9337,137 @@
 })();
 
 
+// v0.5.177 full-scene lightning flash — rare, dramatic full-frame brighten that lights up the entire harbor for a fraction of a second (often a quick double flash)
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  // overlay rect spans the whole viewBox (1200x2400) — appended last so it sits on top
+  const flash = document.createElementNS(SVG_NS, 'rect');
+  flash.setAttribute('id', 'fullSceneFlash');
+  flash.setAttribute('x', '0');
+  flash.setAttribute('y', '0');
+  flash.setAttribute('width', '1200');
+  flash.setAttribute('height', '2400');
+  flash.setAttribute('fill', '#f6faff');
+  flash.style.mixBlendMode = 'lighten';
+  flash.style.pointerEvents = 'none';
+  flash.setAttribute('opacity', '0');
+  svg.appendChild(flash);
+
+  // narrow bolt path (thin diagonal jagged stroke from sky to surface) — appears mid-flash
+  const bolt = document.createElementNS(SVG_NS, 'path');
+  bolt.setAttribute('id', 'fullSceneFlashBolt');
+  bolt.setAttribute('stroke', '#ffffff');
+  bolt.setAttribute('stroke-width', '1.4');
+  bolt.setAttribute('stroke-linecap', 'round');
+  bolt.setAttribute('stroke-linejoin', 'round');
+  bolt.setAttribute('fill', 'none');
+  bolt.setAttribute('opacity', '0');
+  bolt.style.mixBlendMode = 'screen';
+  bolt.style.filter = 'drop-shadow(0 0 2px #cfe0ff)';
+  svg.appendChild(bolt);
+
+  function genBoltPath() {
+    // start somewhere up in the sky and zigzag down to near the horizon
+    const xStart = 200 + Math.random() * 800;
+    const yStart = 30 + Math.random() * 60;
+    const yEnd = 250 + Math.random() * 30;
+    const segs = 5 + Math.floor(Math.random() * 3);
+    let d = 'M ' + xStart.toFixed(1) + ' ' + yStart.toFixed(1);
+    let x = xStart, y = yStart;
+    for (let i = 1; i <= segs; i++) {
+      const k = i / segs;
+      const ny = yStart + (yEnd - yStart) * k;
+      const nx = x + (Math.random() - 0.5) * 60;
+      d += ' L ' + nx.toFixed(1) + ' ' + ny.toFixed(1);
+      x = nx; y = ny;
+    }
+    return d;
+  }
+
+  // state machine: idle -> flashing (rapid envelope) -> idle
+  let state = 'idle';
+  let stateStart = performance.now();
+  let stateDur = 90000 + Math.random() * 90000; // first one within 1.5-3 min so it's noticed
+  let phase = 0;            // 0 = primary flash, 1 = optional re-flash
+  let envT0 = 0;            // start of current envelope ramp
+  let envDur = 0;           // duration of current envelope
+  let envPeak = 0;          // peak opacity for current envelope
+  let willDouble = false;
+  let nextFlashAt = 0;
+
+  function pickIdle() {
+    return 180000 + Math.random() * 240000; // 3-7 min between events
+  }
+
+  function startFlash(now, peak) {
+    envT0 = now;
+    envDur = 360 + Math.random() * 180;
+    envPeak = peak;
+    bolt.setAttribute('d', genBoltPath());
+  }
+
+  function step(now) {
+    if (state === 'idle') {
+      flash.setAttribute('opacity', '0');
+      bolt.setAttribute('opacity', '0');
+      if (now - stateStart >= stateDur) {
+        state = 'flashing';
+        phase = 0;
+        willDouble = Math.random() < 0.55;
+        startFlash(now, 0.62 + Math.random() * 0.18);
+      }
+    } else if (state === 'flashing') {
+      const t = now - envT0;
+      const k = Math.min(1, t / envDur);
+      // envelope: very fast rise (0-12%), short hold (12-28%), longer fall (28-100%)
+      let amp;
+      if (k < 0.12) amp = (k / 0.12);
+      else if (k < 0.28) amp = 1;
+      else amp = Math.max(0, 1 - (k - 0.28) / 0.72);
+      flash.setAttribute('opacity', (amp * envPeak).toFixed(3));
+      // bolt visible briefly during peak
+      let bAmp;
+      if (k < 0.06) bAmp = 0;
+      else if (k < 0.30) bAmp = 1;
+      else bAmp = Math.max(0, 1 - (k - 0.30) / 0.30);
+      bolt.setAttribute('opacity', (bAmp * 0.9).toFixed(3));
+
+      if (k >= 1) {
+        if (phase === 0 && willDouble) {
+          phase = 1;
+          // small gap then a slightly weaker re-flash
+          nextFlashAt = now + (90 + Math.random() * 110);
+          state = 'gap';
+          envT0 = now;
+        } else {
+          state = 'idle';
+          stateStart = now;
+          stateDur = pickIdle();
+          flash.setAttribute('opacity', '0');
+          bolt.setAttribute('opacity', '0');
+        }
+      }
+    } else if (state === 'gap') {
+      flash.setAttribute('opacity', '0');
+      bolt.setAttribute('opacity', '0');
+      if (now >= nextFlashAt) {
+        state = 'flashing';
+        startFlash(now, 0.40 + Math.random() * 0.18);
+      }
+    }
+
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+
+  console.log('[harbor v0.5.177] full-scene lightning flash armed (rare bright frame, often a quick double flash with a thin bolt)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
