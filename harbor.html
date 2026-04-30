@@ -7804,6 +7804,80 @@
 })();
 
 
+
+// v0.5.162 tide pool with anemone — small rocky pool on the eastern shore between heron rock and pilings
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('id', 'tidePool');
+  g.setAttribute('pointer-events', 'none');
+  // PX,PY on shore between heron rock (388,312) and pilings (840,312); place at PX=620, PY=332
+  // Sit just below the wave crest band, on a small flat rock outcrop above the bedrock-shadow.
+  const PX = 620, PY = 332;
+  // gradient for the water reflection
+  const defs = svg.querySelector('defs') || svg.insertBefore(document.createElementNS(ns, 'defs'), svg.firstChild);
+  if (!svg.querySelector('#tidepoolWater')) {
+    const grad = document.createElementNS(ns, 'radialGradient');
+    grad.setAttribute('id', 'tidepoolWater');
+    grad.setAttribute('cx', '50%');
+    grad.setAttribute('cy', '40%');
+    grad.setAttribute('r', '60%');
+    grad.innerHTML = [
+      '<stop offset="0%" stop-color="#88c8e8" stop-opacity="0.55"/>',
+      '<stop offset="60%" stop-color="#3a86a8" stop-opacity="0.45"/>',
+      '<stop offset="100%" stop-color="#102030" stop-opacity="0.35"/>',
+    ].join('');
+    defs.appendChild(grad);
+  }
+  g.innerHTML = [
+    '<g transform="translate(' + PX + ',' + PY + ')">',
+      // small rock plate around the pool (low-relief)
+      '<path d="M -22 0 Q -18 -3 -10 -3 Q 0 -4 12 -3 Q 20 -2 24 0 Q 26 2 22 3 Q 14 4 0 4 Q -16 4 -22 3 Z" fill="#1a1410" opacity="0.92"/>',
+      // pool ellipse
+      '<ellipse cx="0" cy="-0.2" rx="14" ry="2.4" fill="url(#tidepoolWater)"/>',
+      // pool rim hint
+      '<ellipse cx="0" cy="-0.4" rx="14" ry="2.4" fill="none" stroke="#0a1220" stroke-width="0.5" opacity="0.55"/>',
+      // anemone (tentacles wave): cluster of thin lines from a base
+      '<g id="tidepoolAnemone" transform="translate(-6,-1)">',
+        '<ellipse cx="0" cy="0.4" rx="2.0" ry="0.7" fill="#5a1830" opacity="0.85"/>',
+        '<g id="tidepoolTentacles" stroke="#a04060" stroke-width="0.35" stroke-linecap="round" opacity="0.85" fill="none">',
+          '<path d="M -1.6 0 Q -2.0 -1.4 -1.8 -2.6"/>',
+          '<path d="M -0.8 0 Q -1.0 -1.6 -0.7 -3.0"/>',
+          '<path d="M 0 0 Q 0 -1.6 0 -3.2"/>',
+          '<path d="M 0.8 0 Q 1.0 -1.6 0.7 -3.0"/>',
+          '<path d="M 1.6 0 Q 2.0 -1.4 1.8 -2.6"/>',
+        '</g>',
+      '</g>',
+      // tiny snail on rim
+      '<g transform="translate(7,-0.2)">',
+        '<ellipse cx="0" cy="0" rx="0.9" ry="0.65" fill="#6a4828" opacity="0.9"/>',
+        '<circle cx="0.2" cy="0" r="0.4" fill="#3a2a18" opacity="0.9"/>',
+      '</g>',
+      // surface highlight
+      '<ellipse id="tidepoolGleam" cx="-3" cy="-1.3" rx="4" ry="0.4" fill="#cfe8f2" opacity="0.4"/>',
+    '</g>',
+  ].join('');
+  svg.appendChild(g);
+  const tentacles = g.querySelector('#tidepoolTentacles');
+  const gleam = g.querySelector('#tidepoolGleam');
+  function step(t) {
+    // tentacles sway
+    const sw = Math.sin(t * 0.0021) * 6;
+    tentacles.setAttribute('transform', 'rotate(' + sw.toFixed(2) + ' 0 0)');
+    // gleam drift
+    const gx = -3 + Math.sin(t * 0.00041) * 2.2;
+    const op = 0.30 + Math.sin(t * 0.0009) * 0.10;
+    gleam.setAttribute('cx', gx.toFixed(2));
+    gleam.setAttribute('opacity', op.toFixed(3));
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+  console.log('[harbor v0.5.162] tide pool armed (small pool with anemone + snail at 620,332)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
