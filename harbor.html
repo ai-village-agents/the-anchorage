@@ -9929,6 +9929,109 @@
 })();
 
 
+// v0.5.181 distant rain band — a localized slanted grey wash on the horizon, separate from the full-scene shower
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id','distantRain');
+  g.setAttribute('opacity','0');
+  g.setAttribute('style','mix-blend-mode:multiply;');
+  svg.appendChild(g);
+
+  // band base position — varies between left and right horizon each event
+  var BAND_W = 130;
+  var BAND_H = 110; // y span (sky y=170-280)
+  var Y_TOP = 170;
+  var Y_BOT = 282;
+
+  // background soft wash
+  var wash = document.createElementNS(SVG_NS, 'rect');
+  wash.setAttribute('x','-65');
+  wash.setAttribute('y', Y_TOP);
+  wash.setAttribute('width','130');
+  wash.setAttribute('height', (Y_BOT-Y_TOP).toString());
+  wash.setAttribute('fill','#6a7b8a');
+  wash.setAttribute('opacity','0.32');
+  // soft edge on the rectangle via slight rounding
+  wash.setAttribute('rx','12');
+  wash.setAttribute('ry','24');
+  g.appendChild(wash);
+
+  // thin slanted streaks inside band (slight motion to add texture)
+  var STREAK_N = 16;
+  var streaks = [];
+  for (var i=0;i<STREAK_N;i++){
+    var s = document.createElementNS(SVG_NS, 'line');
+    s.setAttribute('stroke','#aab6c2');
+    s.setAttribute('stroke-width','0.5');
+    s.setAttribute('opacity','0.5');
+    s.setAttribute('stroke-linecap','round');
+    g.appendChild(s);
+    streaks.push({el:s,
+      x: -55 + Math.random()*110,
+      y: Y_TOP + Math.random()*(Y_BOT-Y_TOP-20),
+      len: 12+Math.random()*10,
+      speed: 0.0085 + Math.random()*0.005,
+      offset: Math.random()*1
+    });
+  }
+
+  // state machine
+  var state = 'idle';
+  var stateUntil = performance.now() + (60000 + Math.random()*120000); // first 1-3min
+  var bandT0 = 0, bandDur = 80000;
+  var bandX = 0;
+
+  function startBand(){
+    state = 'band';
+    bandT0 = performance.now();
+    bandDur = 60000 + Math.random()*70000; // 60-130s on screen
+    // pick left or right horizon side
+    bandX = Math.random()<0.5 ? (90 + Math.random()*120) : (1000 + Math.random()*100);
+    g.setAttribute('transform','translate('+bandX.toFixed(1)+',0)');
+  }
+
+  function step(t){
+    if (state === 'idle'){
+      g.setAttribute('opacity','0');
+      if (t >= stateUntil) startBand();
+    } else if (state === 'band'){
+      var k = (t - bandT0) / bandDur;
+      if (k>=1){
+        state = 'idle';
+        stateUntil = t + (200000 + Math.random()*240000); // 200-440s idle
+        g.setAttribute('opacity','0');
+        return requestAnimationFrame(step);
+      }
+      // envelope: fade in 12%, hold, fade out last 18%
+      var env = 1.0;
+      if (k < 0.12) env = k/0.12;
+      else if (k > 0.82) env = (1-k)/0.18;
+      g.setAttribute('opacity', (env*0.72).toFixed(3));
+
+      // streaks drift downward and recycle
+      for (var i=0;i<streaks.length;i++){
+        var s = streaks[i];
+        var ty = s.y + ((t * s.speed * 60) % (Y_BOT-Y_TOP));
+        if (ty > Y_BOT-10) ty = Y_TOP + (ty - (Y_BOT-10));
+        var x = s.x;
+        s.el.setAttribute('x1', x.toFixed(1));
+        s.el.setAttribute('y1', ty.toFixed(1));
+        s.el.setAttribute('x2', (x+5).toFixed(1));
+        s.el.setAttribute('y2', (ty+s.len).toFixed(1));
+      }
+    }
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+
+  console.log('[harbor v0.5.181] distant rain band armed (a localized slanted grey wash on the horizon)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
