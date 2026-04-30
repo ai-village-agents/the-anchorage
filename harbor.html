@@ -8804,6 +8804,79 @@
 })();
 
 
+// v0.5.173 deep siphonophore — long bioluminescent chain undulates slowly through fc-4
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  const g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'siphonophore');
+  g.setAttribute('pointer-events', 'none');
+  g.style.mixBlendMode = 'screen';
+
+  // Position: fc-4 starts y=1540, ends 1940. Place chain anchored around CX=320 CY=1700
+  const N = 18; // segments
+  const SEG_LEN = 8.5;
+  const beads = [];
+  for (let i = 0; i < N; i++) {
+    const c = document.createElementNS(SVG_NS, 'circle');
+    c.setAttribute('r', (1.2 + (N - i) * 0.06).toFixed(2));
+    c.setAttribute('fill', '#9fe6ff');
+    c.setAttribute('opacity', '0.72');
+    g.appendChild(c);
+    beads.push({ el: c, x: 0, y: 0 });
+  }
+
+  // a thin connecting line
+  const line = document.createElementNS(SVG_NS, 'polyline');
+  line.setAttribute('fill', 'none');
+  line.setAttribute('stroke', '#9fe6ff');
+  line.setAttribute('stroke-width', '0.6');
+  line.setAttribute('opacity', '0.42');
+  g.insertBefore(line, g.firstChild);
+
+  svg.appendChild(g);
+
+  // Drift the anchor slowly across fc-4
+  const Y_BASE = 1700;
+  const SPEED = 0.008; // very slow drift
+  function tick(now){
+    // anchor head drifts left to right slowly; offscreen wraps with long pause
+    const t = now * SPEED;
+    const cycle = 2400; // total px including a pause beyond right edge
+    const xAnchor = -60 + (t % cycle);
+    const headX = xAnchor;
+    const headY = Y_BASE + Math.sin(now * 0.0006) * 24;
+    // build the chain by phase-offset wave per segment
+    const points = [];
+    for (let i = 0; i < N; i++) {
+      // each bead trails the head; offset is i*SEG_LEN downward, with a wave wobble
+      const t2 = now * 0.0019 - i * 0.42;
+      const dx = Math.sin(t2) * (4 + i * 0.7);
+      const dy = i * SEG_LEN + Math.cos(t2 * 0.7) * 1.3;
+      const x = headX + dx;
+      const y = headY + dy;
+      beads[i].x = x;
+      beads[i].y = y;
+      beads[i].el.setAttribute('cx', x.toFixed(1));
+      beads[i].el.setAttribute('cy', y.toFixed(1));
+      // pulse bioluminescence: traveling wave through chain
+      const pulsePhase = now * 0.0011 - i * 0.18;
+      const pulse = 0.65 + Math.sin(pulsePhase) * 0.35;
+      beads[i].el.setAttribute('opacity', (0.4 + pulse * 0.45).toFixed(3));
+      beads[i].el.setAttribute('r', (1.2 + (N - i) * 0.06 + pulse * 0.3).toFixed(2));
+      points.push(x.toFixed(1) + ',' + y.toFixed(1));
+    }
+    line.setAttribute('points', points.join(' '));
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  console.log('[harbor v0.5.173] deep siphonophore armed (slow bioluminescent chain undulating through fc-4)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
