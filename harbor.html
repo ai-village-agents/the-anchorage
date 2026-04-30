@@ -10174,6 +10174,88 @@
   console.log('[harbor v0.5.183] hermit crab armed (small spiral-shelled crab side-shuffling along the bedrock)');
 })();
 
+// v0.5.184 clamshell — small ridged clam on the bedrock that periodically opens to reveal a pearl glow inside
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if(!svg){ return; }
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var defs = svg.querySelector('defs') || (function(){ var d=document.createElementNS(SVGNS,'defs'); svg.insertBefore(d, svg.firstChild); return d; })();
+  if(!document.getElementById('pearlGlow')){
+    var rg = document.createElementNS(SVGNS,'radialGradient');
+    rg.setAttribute('id','pearlGlow');
+    rg.setAttribute('cx','50%'); rg.setAttribute('cy','50%'); rg.setAttribute('r','50%');
+    rg.innerHTML = '<stop offset="0%" stop-color="#fff8dc" stop-opacity="0.95"/><stop offset="50%" stop-color="#dccf94" stop-opacity="0.55"/><stop offset="100%" stop-color="#7a6a3a" stop-opacity="0"/>';
+    defs.appendChild(rg);
+  }
+
+  var CX = 340, CY = 2388;  // bedrock — left of starfish (220) is too close, right of starfish (220) and left of hermit crab range (380-530)
+
+  var g = document.createElementNS(SVGNS,'g');
+  g.setAttribute('id','clamshell');
+  g.setAttribute('transform','translate(' + CX + ',' + CY + ')');
+  g.style.pointerEvents = 'none';
+  g.innerHTML = [
+    // pearl glow (inside, hidden until shell opens)
+    '<circle class="pearl" cx="0" cy="0" r="0" fill="url(#pearlGlow)" opacity="0.0"/>',
+    // bottom valve (always visible, fixed)
+    '<g class="bottom">',
+      '<path d="M -7 0 Q -5 4 0 4.4 Q 5 4 7 0 Z" fill="#b3a47a" stroke="#3a2f14" stroke-width="0.5"/>',
+      '<path d="M -5.6 0.6 Q 0 3.2 5.6 0.6" fill="none" stroke="#7a6840" stroke-width="0.4" opacity="0.7"/>',
+      '<path d="M -4.2 1.6 Q 0 3.6 4.2 1.6" fill="none" stroke="#7a6840" stroke-width="0.35" opacity="0.55"/>',
+    '</g>',
+    // top valve (rotates to open)
+    '<g class="top">',
+      '<path d="M -7 0 Q -5 -4 0 -4.4 Q 5 -4 7 0 Z" fill="#bfb087" stroke="#3a2f14" stroke-width="0.5"/>',
+      '<path d="M -5.6 -0.6 Q 0 -3.2 5.6 -0.6" fill="none" stroke="#85734a" stroke-width="0.4" opacity="0.7"/>',
+      '<path d="M -4.2 -1.6 Q 0 -3.6 4.2 -1.6" fill="none" stroke="#85734a" stroke-width="0.35" opacity="0.55"/>',
+      '<path d="M -2.8 -2.6 Q 0 -3.8 2.8 -2.6" fill="none" stroke="#85734a" stroke-width="0.3" opacity="0.45"/>',
+    '</g>',
+    // hinge dot
+    '<circle cx="-7" cy="0" r="0.5" fill="#3a2f14"/>',
+    '<circle cx="7" cy="0" r="0.5" fill="#3a2f14"/>'
+  ].join('');
+  svg.appendChild(g);
+
+  var top = g.querySelector('.top');
+  var pearl = g.querySelector('.pearl');
+
+  // open/close cycle: idle (closed), opening, open, closing, idle...
+  var phase = 'idle';
+  var phaseT = 0;
+  var phaseDur = 18000 + Math.random()*22000; // 18-40s closed
+  var t0 = performance.now();
+
+  function tick(ts){
+    var dt = ts - t0; t0 = ts;
+    phaseT += dt;
+    var openAmt = 0;
+    if(phase === 'idle'){
+      if(phaseT >= phaseDur){ phase='opening'; phaseT=0; phaseDur=1400+Math.random()*900; }
+    } else if(phase === 'opening'){
+      var k = Math.min(1, phaseT / phaseDur);
+      openAmt = k * k * (3 - 2*k); // smoothstep
+      if(k >= 1){ phase='open'; phaseT=0; phaseDur=2400+Math.random()*3600; openAmt=1; }
+    } else if(phase === 'open'){
+      openAmt = 1 + Math.sin(phaseT*0.0035)*0.03;  // little breath
+      if(phaseT >= phaseDur){ phase='closing'; phaseT=0; phaseDur=1100+Math.random()*700; }
+    } else if(phase === 'closing'){
+      var k2 = Math.min(1, phaseT / phaseDur);
+      openAmt = 1 - (k2 * k2 * (3 - 2*k2));
+      if(k2 >= 1){ phase='idle'; phaseT=0; phaseDur=18000+Math.random()*22000; openAmt=0; }
+    }
+    var ang = -openAmt * 38; // up to 38° upward rotation about hinge midline
+    if(top){ top.setAttribute('transform','rotate(' + ang.toFixed(2) + ',0,0)'); }
+    if(pearl){
+      pearl.setAttribute('r', (openAmt * 4.2).toFixed(2));
+      pearl.setAttribute('opacity', (openAmt * 0.85).toFixed(3));
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  console.log('[harbor v0.5.184] clamshell armed (small ridged clam on the bedrock that periodically opens to reveal a pearl glow)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
