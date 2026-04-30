@@ -7645,6 +7645,90 @@
 })();
 
 
+
+// v0.5.160 crab on dock pilings — small dark crab side-shuffles on top of the eastern pilings
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('id', 'pilingCrab');
+  g.setAttribute('pointer-events', 'none');
+  // pilings: base x=840, dx 0/18/34. Tops near y≈312. Crab walks across this span.
+  const BX = 840;
+  const X_MIN = BX - 4;
+  const X_MAX = BX + 38;
+  const TOP_Y = 312;
+  // crab: small dark blob with claws
+  g.innerHTML = [
+    '<g id="crabBody" transform="translate(' + BX + ',' + TOP_Y + ')">',
+      '<ellipse cx="0" cy="-1.4" rx="2.6" ry="1.4" fill="#1a0f0a" opacity="0.92"/>',
+      '<ellipse cx="0" cy="-1.6" rx="1.4" ry="0.7" fill="#3a1f12" opacity="0.7"/>',
+      // legs (4 thin lines per side)
+      '<g id="crabLegs" stroke="#0a0508" stroke-width="0.5" stroke-linecap="round" opacity="0.85">',
+        '<line x1="-2.0" y1="-1" x2="-3.4" y2="0.4"/>',
+        '<line x1="-2.4" y1="-1.4" x2="-4.0" y2="-1.4"/>',
+        '<line x1="-2.0" y1="-1.8" x2="-3.4" y2="-2.6"/>',
+        '<line x1="2.0" y1="-1" x2="3.4" y2="0.4"/>',
+        '<line x1="2.4" y1="-1.4" x2="4.0" y2="-1.4"/>',
+        '<line x1="2.0" y1="-1.8" x2="3.4" y2="-2.6"/>',
+      '</g>',
+      // claws (small filled triangles)
+      '<g id="crabClaws" fill="#1a0f0a" opacity="0.92">',
+        '<path id="crabClawL" d="M -2.6 -1.7 L -4.4 -2.4 L -3.2 -1.0 Z"/>',
+        '<path id="crabClawR" d="M 2.6 -1.7 L 4.4 -2.4 L 3.2 -1.0 Z"/>',
+      '</g>',
+      // tiny eyes
+      '<circle cx="-1.0" cy="-2.2" r="0.28" fill="#ffd060" opacity="0.85"/>',
+      '<circle cx="1.0" cy="-2.2" r="0.28" fill="#ffd060" opacity="0.85"/>',
+    '</g>',
+  ].join('');
+  // insert before help overlay; pilings group gets a sibling
+  const harborLayer = svg.querySelector('.harbor-svg') || svg;
+  svg.appendChild(g);
+  const body = g.querySelector('#crabBody');
+  const clawL = g.querySelector('#crabClawL');
+  const clawR = g.querySelector('#crabClawR');
+  const legs = g.querySelector('#crabLegs');
+  let x = BX + Math.random() * 30;
+  let dir = Math.random() < 0.5 ? -1 : 1;
+  let state = 'rest';
+  let stateUntil = performance.now() + 1500 + Math.random() * 3500;
+  function step(t) {
+    if (state === 'rest') {
+      // tiny idle sway
+      const sway = Math.sin(t * 0.0019) * 0.6;
+      body.setAttribute('transform', 'translate(' + x.toFixed(2) + ',' + (TOP_Y + Math.sin(t * 0.0011) * 0.3).toFixed(2) + ') scale(' + dir + ',1)');
+      const cl = Math.sin(t * 0.0033) * 6 + sway * 2;
+      clawL.setAttribute('transform', 'rotate(' + (-cl).toFixed(2) + ' -2.6 -1.7)');
+      clawR.setAttribute('transform', 'rotate(' + (cl).toFixed(2) + ' 2.6 -1.7)');
+      legs.setAttribute('transform', '');
+      if (t > stateUntil) {
+        state = 'walk';
+        stateUntil = t + 900 + Math.random() * 1800;
+      }
+    } else {
+      const speed = 0.018 * dir;
+      x += speed * 16; // approx per frame
+      // legs alternation
+      const legPhase = Math.sin(t * 0.022) * 0.6;
+      legs.setAttribute('transform', 'translate(0,' + (legPhase * 0.4).toFixed(2) + ')');
+      const bob = Math.abs(Math.sin(t * 0.022)) * 0.5;
+      body.setAttribute('transform', 'translate(' + x.toFixed(2) + ',' + (TOP_Y - bob).toFixed(2) + ') scale(' + dir + ',1)');
+      const cl = Math.sin(t * 0.014) * 8;
+      clawL.setAttribute('transform', 'rotate(' + (-cl).toFixed(2) + ' -2.6 -1.7)');
+      clawR.setAttribute('transform', 'rotate(' + (cl).toFixed(2) + ' 2.6 -1.7)');
+      if (x < X_MIN) { x = X_MIN; dir = 1; state = 'rest'; stateUntil = t + 1500 + Math.random() * 4500; }
+      else if (x > X_MAX) { x = X_MAX; dir = -1; state = 'rest'; stateUntil = t + 1500 + Math.random() * 4500; }
+      else if (t > stateUntil) { state = 'rest'; stateUntil = t + 1800 + Math.random() * 4800; }
+    }
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+  console.log('[harbor v0.5.160] piling crab armed (small crab side-shuffles on eastern pilings 840-878)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
