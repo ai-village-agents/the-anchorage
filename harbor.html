@@ -5042,6 +5042,74 @@
   }
 })();
 
+// v0.5.125 krill swarm — drifting cloud of tiny krill in fc-3 (lower) / fc-4 transition
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    var g = document.createElementNS(SVGNS,'g');
+    g.setAttribute('id','krillSwarm');
+    g.setAttribute('opacity','0.78');
+    g.setAttribute('pointer-events','none');
+    svg.appendChild(g);
+
+    // Seeded LCG
+    var seed = 271828;
+    function rng(){ seed = (seed*1664525 + 1013904223) >>> 0; return seed/4294967296; }
+
+    var N = 64;
+    var KRILL = [];
+    for (var i=0;i<N;i++){
+      var ox = (rng()-0.5)*180;       // local offset within cluster
+      var oy = (rng()-0.5)*60;
+      var amp = 4 + rng()*6;
+      var freq = 0.0008 + rng()*0.0014;
+      var phase = rng()*Math.PI*2;
+      var size = 0.7 + rng()*0.5;
+      // build a tiny krill: short curved line w/ tail flick
+      var k = document.createElementNS(SVGNS,'g');
+      k.innerHTML = '<line x1="-1.2" y1="0" x2="1.2" y2="0" stroke="#ffd0b0" stroke-width="'+(0.6*size).toFixed(2)+'" stroke-linecap="round" opacity="0.85"/>'+
+                    '<line x1="1.2" y1="0" x2="2.4" y2="-0.4" stroke="#ff9080" stroke-width="'+(0.4*size).toFixed(2)+'" stroke-linecap="round" opacity="0.7"/>'+
+                    '<circle cx="-1.4" cy="0" r="'+(0.45*size).toFixed(2)+'" fill="#1a0608" opacity="0.7"/>';
+      g.appendChild(k);
+      KRILL.push({el:k, ox:ox, oy:oy, amp:amp, freq:freq, phase:phase});
+    }
+
+    // Cluster wanders slowly within fc-3 lower / fc-4 upper region
+    var cx = 600, cy = 1480; // start near fc-3/fc-4 boundary
+    var dirX = -1; // initial direction
+    var SPEED = 0.010;
+    var last = performance.now();
+
+    function tick(now){
+      var dt = Math.min(64, now-last); last = now;
+      cx += dirX * SPEED * dt;
+      // gentle vertical wander
+      cy = 1480 + Math.sin(now*0.00015)*30;
+      if (cx < 80){ dirX = 1; }
+      if (cx > 1120){ dirX = -1; }
+      // each krill animates around the cluster
+      for (var i=0;i<KRILL.length;i++){
+        var k = KRILL[i];
+        var dx = Math.sin(now*k.freq + k.phase) * k.amp;
+        var dy = Math.cos(now*k.freq*1.3 + k.phase) * k.amp*0.5;
+        var px = cx + k.ox + dx;
+        var py = cy + k.oy + dy;
+        // krill orient with motion: rotation slight, follow cluster direction
+        var rot = (dirX>0 ? 0 : 180) + Math.sin(now*0.003 + k.phase)*10;
+        k.el.setAttribute('transform','translate('+px.toFixed(2)+','+py.toFixed(2)+') rotate('+rot.toFixed(1)+')');
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    console.log('[harbor v0.5.125] krill swarm armed ('+N+' krill, fc-3/fc-4 boundary)');
+  } catch(err){
+    try { console.error('[harbor v0.5.125] krill init failed', err); } catch(e){}
+  }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
