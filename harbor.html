@@ -8015,6 +8015,118 @@
 })();
 
 
+
+// v0.5.165 small squid jets — small squids occasionally jet through fc-3 with ink-trail bursts
+(() => {
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('id', 'smallSquidJets');
+  g.setAttribute('pointer-events', 'none');
+  svg.appendChild(g);
+  // 2 small squid actors, fc-3 band y=1140..1540 (avoid v0.5.118 giant squid in fc-4 and v0.5.122 ribbon eel)
+  const ACTORS = 2;
+  const actors = [];
+  for (let i = 0; i < ACTORS; i++) {
+    const grp = document.createElementNS(ns, 'g');
+    grp.setAttribute('opacity', '0');
+    grp.innerHTML = [
+      '<g>',
+        // mantle (rear), pointed cone
+        '<path d="M -14 0 L 0 -3.0 L 14 0 L 0 3.0 Z" fill="#352a44" opacity="0.92"/>',
+        // body highlight
+        '<ellipse cx="-2" cy="-0.6" rx="6" ry="1.0" fill="#9aa6c0" opacity="0.35"/>',
+        // fins (small triangles at rear)
+        '<path d="M -14 -0.5 L -19 -2.5 L -14 -1.5 Z" fill="#352a44" opacity="0.7"/>',
+        '<path d="M -14 0.5 L -19 2.5 L -14 1.5 Z" fill="#352a44" opacity="0.7"/>',
+        // tentacles trailing back from front (jet propulsion = squid moves backwards relative to body)
+        '<g stroke="#5a4868" stroke-width="0.5" fill="none" opacity="0.85" stroke-linecap="round" id="squidTents' + i + '">',
+          '<path d="M 14 0 Q 22 -0.6 30 0"/>',
+          '<path d="M 14 0 Q 22 0.6 30 0.4"/>',
+          '<path d="M 14 -0.6 Q 22 -1.6 28 -2"/>',
+          '<path d="M 14 0.6 Q 22 1.6 28 2"/>',
+        '</g>',
+        // small eye
+        '<circle cx="6" cy="-0.6" r="0.6" fill="#0a0608" opacity="0.85"/>',
+        '<circle cx="6.2" cy="-0.7" r="0.18" fill="#ffe080" opacity="0.85"/>',
+      '</g>',
+    ].join('');
+    g.appendChild(grp);
+    actors.push({
+      el: grp,
+      tents: grp.querySelector('#squidTents' + i),
+      state: 'idle',
+      stateUntil: performance.now() + 6000 + Math.random() * 18000 + i * 4000,
+      x: 0, y: 0, vx: 0, vy: 0, dir: 1, jetT0: 0, jetDur: 0,
+      ink: null,
+    });
+  }
+  function pickJet(a, t) {
+    a.state = 'jet';
+    a.jetT0 = t;
+    a.jetDur = 1400 + Math.random() * 1200; // 1.4–2.6s burst
+    a.dir = Math.random() < 0.5 ? -1 : 1;
+    a.x = a.dir > 0 ? -40 + Math.random() * 100 : 1140 + Math.random() * 100;
+    a.y = 1180 + Math.random() * 320; // fc-3 band
+    a.vx = a.dir * (160 + Math.random() * 80) / 1000; // 160–240 px/s
+    a.vy = (Math.random() - 0.5) * 30 / 1000;
+    a.el.setAttribute('opacity', '0.9');
+    // ink puff
+    const ink = document.createElementNS(ns, 'ellipse');
+    ink.setAttribute('cx', (a.x - a.dir * 16).toFixed(2));
+    ink.setAttribute('cy', a.y.toFixed(2));
+    ink.setAttribute('rx', '4');
+    ink.setAttribute('ry', '2.5');
+    ink.setAttribute('fill', '#0a0810');
+    ink.setAttribute('opacity', '0.45');
+    g.appendChild(ink);
+    a.ink = { el: ink, born: t, life: 1800 };
+  }
+  function step(t) {
+    actors.forEach(a => {
+      if (a.state === 'idle') {
+        if (t > a.stateUntil) pickJet(a, t);
+      } else {
+        const dt = 16; // approx
+        a.x += a.vx * dt;
+        a.y += a.vy * dt;
+        // mantle pulse animation: sin(t·0.012)·0.6 used as scale for mantle is too complex; instead pulse opacity of fins via tentacle wiggle
+        const k = (t - a.jetT0) / a.jetDur;
+        const tentSway = Math.sin(t * 0.022) * 6;
+        a.tents.setAttribute('transform', 'rotate(' + tentSway.toFixed(2) + ' 14 0)');
+        // squid faces direction of travel; head/tentacles point forward = direction of motion
+        const facing = a.dir; // dir>0 means moving right, base art has tentacles to the right (positive x), so facing = dir
+        a.el.setAttribute('transform', 'translate(' + a.x.toFixed(2) + ',' + a.y.toFixed(2) + ') scale(' + facing + ',1)');
+        const fade = (k < 0.08 ? k / 0.08 : (k > 0.85 ? (1 - k) / 0.15 : 1)) * 0.9;
+        a.el.setAttribute('opacity', fade.toFixed(3));
+        if (k >= 1) {
+          a.state = 'idle';
+          a.stateUntil = t + 8000 + Math.random() * 22000;
+          a.el.setAttribute('opacity', '0');
+        }
+      }
+      if (a.ink) {
+        const ik = (t - a.ink.born) / a.ink.life;
+        if (ik >= 1) {
+          a.ink.el.remove();
+          a.ink = null;
+        } else {
+          const r = 4 + ik * 16;
+          const op = (1 - ik) * 0.45;
+          a.ink.el.setAttribute('rx', r.toFixed(2));
+          a.ink.el.setAttribute('ry', (r * 0.7).toFixed(2));
+          a.ink.el.setAttribute('opacity', op.toFixed(3));
+        }
+      }
+    });
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+  console.log('[harbor v0.5.165] small squid jets armed (2 actors burst across fc-3 with ink puffs)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
