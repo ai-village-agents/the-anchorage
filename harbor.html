@@ -9560,6 +9560,186 @@
 })();
 
 
+// v0.5.179 storm petrels — small low-flying flock that skims the surface and pats the water
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  // group on top of the surface band
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id','stormPetrels');
+  g.setAttribute('opacity','0');
+  svg.appendChild(g);
+
+  // build N petrels with body, wing, foot-puff slot
+  var N = 5;
+  var birds = [];
+  for (var i=0;i<N;i++){
+    var b = document.createElementNS(SVG_NS, 'g');
+    b.setAttribute('id','petrel'+i);
+    // body silhouette
+    var body = document.createElementNS(SVG_NS, 'ellipse');
+    body.setAttribute('cx','0');
+    body.setAttribute('cy','0');
+    body.setAttribute('rx','3.0');
+    body.setAttribute('ry','1.0');
+    body.setAttribute('fill','#1a2030');
+    b.appendChild(body);
+    // wing path — V shape with slight flutter
+    var wing = document.createElementNS(SVG_NS, 'path');
+    wing.setAttribute('d','M -3.5 -0.4 Q -1.6 -2.1 0 -0.4 Q 1.6 -2.1 3.5 -0.4');
+    wing.setAttribute('fill','none');
+    wing.setAttribute('stroke','#1a2030');
+    wing.setAttribute('stroke-width','0.7');
+    wing.setAttribute('stroke-linecap','round');
+    b.appendChild(wing);
+    g.appendChild(b);
+    birds.push({el:b, wing:wing, body:body,
+      ox: (Math.random()*60-30),
+      oy: (Math.random()*16-8),
+      flutterPhase: Math.random()*Math.PI*2,
+      flutterRate: 18 + Math.random()*8,
+      patState: 'flying',
+      patUntil: 0,
+      nextPatAt: 0
+    });
+  }
+
+  // ripple pool for foot-patters
+  var RIPPLE_N = 6;
+  var ripples = [];
+  for (var r=0;r<RIPPLE_N;r++){
+    var rg = document.createElementNS(SVG_NS, 'circle');
+    rg.setAttribute('cx','0');
+    rg.setAttribute('cy','0');
+    rg.setAttribute('r','0');
+    rg.setAttribute('fill','none');
+    rg.setAttribute('stroke','#bcd0e0');
+    rg.setAttribute('stroke-width','0.6');
+    rg.setAttribute('opacity','0');
+    g.appendChild(rg);
+    ripples.push({el:rg, t0:0, dur:1400, maxR:8+Math.random()*4, active:false});
+  }
+
+  function spawnRipple(x, y){
+    var slot = ripples.find(function(r){return !r.active;});
+    if (!slot) return;
+    slot.active = true;
+    slot.t0 = performance.now();
+    slot.maxR = 6 + Math.random()*5;
+    slot.el.setAttribute('cx', x);
+    slot.el.setAttribute('cy', y);
+  }
+
+  // state machine
+  var state = 'idle';
+  var stateUntil = performance.now() + (15000 + Math.random()*30000); // first arrival within 15-45s
+  var flightDir = 1;
+  var flightT0 = 0;
+  var flightDur = 38000; // 38s crossing
+  var leadY = 298;
+
+  function startFlight(){
+    flightDir = Math.random()<0.5 ? -1 : 1;
+    flightT0 = performance.now();
+    flightDur = 32000 + Math.random()*16000; // 32-48s
+    leadY = 296 + Math.random()*8; // 296-304
+    state = 'flying';
+    // randomize per-bird offsets each flight
+    for (var i=0;i<N;i++){
+      birds[i].ox = (Math.random()*70-35);
+      birds[i].oy = (Math.random()*18-9);
+      birds[i].nextPatAt = flightT0 + 4000 + Math.random()*(flightDur-8000);
+      birds[i].patState = 'flying';
+    }
+  }
+
+  function step(t){
+    // ripple update
+    for (var ri=0;ri<ripples.length;ri++){
+      var r = ripples[ri];
+      if (!r.active) continue;
+      var k = (t - r.t0) / r.dur;
+      if (k>=1){ r.active=false; r.el.setAttribute('opacity','0'); r.el.setAttribute('r','0'); continue; }
+      r.el.setAttribute('r', (k*r.maxR).toFixed(2));
+      r.el.setAttribute('opacity', (0.55*(1-k)).toFixed(3));
+    }
+
+    if (state === 'idle'){
+      g.setAttribute('opacity','0');
+      if (t >= stateUntil) startFlight();
+    } else if (state === 'flying'){
+      var k = (t - flightT0) / flightDur;
+      if (k >= 1){
+        state = 'idle';
+        stateUntil = t + (90000 + Math.random()*90000); // 90-180s next idle
+        g.setAttribute('opacity','0');
+        return requestAnimationFrame(step);
+      }
+      // group fade in/out envelope
+      var op = 1.0;
+      if (k < 0.06) op = k/0.06;
+      else if (k > 0.92) op = (1-k)/0.08;
+      g.setAttribute('opacity', op.toFixed(3));
+
+      // leader X across screen
+      var startX = flightDir>0 ? -80 : 1280;
+      var endX = flightDir>0 ? 1280 : -80;
+      var leadX = startX + (endX-startX) * k;
+      // small group altitude wobble
+      var wobble = Math.sin(t*0.0006) * 1.6;
+
+      for (var i=0;i<N;i++){
+        var bird = birds[i];
+        var bx = leadX + bird.ox * flightDir;
+        // each bird has its own small y wobble offset
+        var by = leadY + bird.oy + wobble + Math.sin(t*0.0008 + i*1.3)*0.8;
+
+        // check foot-pat trigger
+        if (bird.patState === 'flying' && t >= bird.nextPatAt && t < flightT0 + flightDur - 3000){
+          bird.patState = 'pat';
+          bird.patUntil = t + 700 + Math.random()*400;
+        }
+        if (bird.patState === 'pat'){
+          // dip down to surface (y=320) and back up
+          var pk = (t - (bird.patUntil - 1000)) / 1000;
+          if (pk < 0) pk = 0; if (pk>1) pk=1;
+          var dip = Math.sin(pk*Math.PI) * 16;
+          by += dip;
+          // when at lowest, spawn ripple
+          if (pk > 0.45 && pk < 0.55 && !bird.patSpawned){
+            spawnRipple(bx, 322 + Math.random()*1.5);
+            bird.patSpawned = true;
+          }
+          if (t >= bird.patUntil){
+            bird.patState = 'flying';
+            bird.patSpawned = false;
+            // schedule another pat sometimes
+            if (Math.random() < 0.4){
+              bird.nextPatAt = t + 2500 + Math.random()*5500;
+            } else {
+              bird.nextPatAt = flightT0 + flightDur + 99999; // no more
+            }
+          }
+        }
+
+        // wing flutter — scale wing's stroke-width or use small Y squish
+        var fl = Math.sin(t*0.001*bird.flutterRate + bird.flutterPhase);
+        var wScale = 1 + fl*0.08;
+        // direction flip via scaleX
+        var sx = flightDir;
+        bird.el.setAttribute('transform','translate('+bx.toFixed(2)+','+by.toFixed(2)+') scale('+sx+','+wScale.toFixed(3)+')');
+      }
+    }
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+
+  console.log('[harbor v0.5.179] storm petrels armed (small low-flying flock skimming the surface and pattering the water)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
