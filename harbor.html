@@ -6710,6 +6710,70 @@
 })();
 
 
+// v0.5.147 schooling baitball at fc-2 — tight swirling cluster of ~40 small fish
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','baitball');
+  g.setAttribute('pointer-events','none');
+  // 40 fish in 2 orbital rings, each fish gets random radius/phase/speed
+  const N = 40;
+  // simple deterministic pseudo-random
+  let seed = 22317;
+  function rnd(){ seed = (seed*9301+49297) % 233280; return seed/233280; }
+  const fish = [];
+  for (let i=0;i<N;i++){
+    fish.push({
+      r: 8 + rnd()*22,            // radius from cluster center
+      ph: rnd()*Math.PI*2,        // phase
+      sp: 0.0009 + rnd()*0.0014,  // angular speed
+      sz: 1.4 + rnd()*0.7,        // size
+      verticalAmp: 2 + rnd()*4,   // vertical wobble
+      verticalPh: rnd()*Math.PI*2,
+      verticalFreq: 0.0008 + rnd()*0.0012,
+    });
+  }
+  const inner = fish.map((f,i)=>(
+    '<ellipse id="bf'+i+'" cx="0" cy="0" rx="'+f.sz.toFixed(2)+'" ry="'+(f.sz*0.45).toFixed(2)+'" fill="#cfd8dc" opacity="0.85"/>'
+  )).join('');
+  // soft halo behind cluster
+  g.innerHTML = '<defs><radialGradient id="baitballHalo" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#aab8c0" stop-opacity="0.16"/><stop offset="100%" stop-color="#aab8c0" stop-opacity="0"/></radialGradient></defs>' +
+    '<g id="baitballInner">' +
+      '<circle id="baitballGlow" cx="0" cy="0" r="42" fill="url(#baitballHalo)"/>' +
+      inner +
+    '</g>';
+  const help = svg.querySelector('#helpOverlay');
+  if (help) svg.insertBefore(g, help); else svg.appendChild(g);
+  // Cluster center drifts slowly through fc-2 (y=740..1140) on a slow lissajous
+  const CX0 = 800, CY0 = 920, AX = 220, AY = 60;
+  function frame(now){
+    const cx = CX0 + Math.sin(now*0.00012)*AX;
+    const cy = CY0 + Math.sin(now*0.00018+1.3)*AY;
+    // overall threat-pulse: cluster contracts/expands subtly
+    const breath = 1 + Math.sin(now*0.0009)*0.10;
+    fish.forEach((f,i)=>{
+      const a = f.ph + now*f.sp;
+      const r = f.r * breath;
+      const x = cx + Math.cos(a)*r;
+      const y = cy + Math.sin(a)*r*0.55 + Math.sin(now*f.verticalFreq + f.verticalPh)*f.verticalAmp;
+      // fish faces motion direction; tangential angle
+      const tdx = -Math.sin(a)*r;
+      const tdy = Math.cos(a)*r*0.55;
+      const ang = Math.atan2(tdy, tdx) * 180/Math.PI;
+      const node = document.getElementById('bf'+i);
+      if (node) node.setAttribute('transform','translate('+x.toFixed(2)+','+y.toFixed(2)+') rotate('+ang.toFixed(1)+')');
+    });
+    const glow = document.getElementById('baitballGlow');
+    if (glow) glow.setAttribute('transform','translate('+cx.toFixed(2)+','+cy.toFixed(2)+')');
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.147] baitball armed (40 fish swirling at fc-2)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
