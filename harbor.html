@@ -6518,6 +6518,69 @@
   console.log('[harbor v0.5.143] trawler nav lights armed (port red, starboard green, masthead strobe)');
 })();
 
+// v0.5.144 wandering jellyfish at fc-1 — single translucent moon jelly drifting slowly
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.id = 'wanderingJelly';
+  g.setAttribute('pointer-events','none');
+  g.setAttribute('opacity','0.78');
+  g.innerHTML = [
+    '<defs>',
+      '<radialGradient id="jellyBellGrad" cx="50%" cy="42%" r="62%">',
+        '<stop offset="0%" stop-color="#e0f4ff" stop-opacity="0.50"/>',
+        '<stop offset="65%" stop-color="#9be3ff" stop-opacity="0.30"/>',
+        '<stop offset="100%" stop-color="#5aa8d8" stop-opacity="0.16"/>',
+      '</radialGradient>',
+    '</defs>',
+    '<g id="wanderingJellyInner">',
+      '<g id="wanderingJellyTentacles">',
+        '<path id="jellyT0" d="M -8 4 Q -9 10 -7 16" fill="none" stroke="#cdeefc" stroke-opacity="0.55" stroke-width="0.7"/>',
+        '<path id="jellyT1" d="M -3 5 Q -4 12 -2 20" fill="none" stroke="#cdeefc" stroke-opacity="0.55" stroke-width="0.7"/>',
+        '<path id="jellyT2" d="M 3 5 Q 4 12 2 20" fill="none" stroke="#cdeefc" stroke-opacity="0.55" stroke-width="0.7"/>',
+        '<path id="jellyT3" d="M 8 4 Q 9 10 7 16" fill="none" stroke="#cdeefc" stroke-opacity="0.55" stroke-width="0.7"/>',
+      '</g>',
+      '<g id="wanderingJellyBell">',
+        '<ellipse cx="0" cy="0" rx="16" ry="10" fill="url(#jellyBellGrad)" stroke="#cdeefc" stroke-opacity="0.40" stroke-width="0.6"/>',
+        '<path d="M -14 1 Q -7 4 0 3 Q 7 4 14 1" fill="none" stroke="#e0f4ff" stroke-opacity="0.45" stroke-width="0.5"/>',
+        '<ellipse cx="-4" cy="-3" rx="3" ry="2" fill="#ffffff" fill-opacity="0.28"/>',
+      '</g>',
+    '</g>',
+  ].join('');
+  svg.appendChild(g);
+  var inner = g.querySelector('#wanderingJellyInner');
+  var bell = g.querySelector('#wanderingJellyBell');
+  var t0e = g.querySelector('#jellyT0');
+  var t1e = g.querySelector('#jellyT1');
+  var t2e = g.querySelector('#jellyT2');
+  var t3e = g.querySelector('#jellyT3');
+  var x = 200, dir = 1;
+  var SPEED = 0.0042;
+  var Y_BASE = 480;
+  var lt = performance.now();
+  function tick(now){
+    var dt = now - lt; lt = now;
+    x += SPEED * dir * dt;
+    if (x > 1240) { x = 1240; dir = -1; }
+    if (x < -40) { x = -40; dir = 1; }
+    var bob = Math.sin(now*0.0007) * 14;
+    var sway = Math.sin(now*0.0011 + 0.6) * 6;
+    var yy = Y_BASE + bob;
+    inner.setAttribute('transform','translate('+(x+sway)+','+yy+')');
+    var pulse = 0.92 + Math.sin(now*0.0024) * 0.16;
+    bell.setAttribute('transform','scale(1,'+pulse+')');
+    var tw = Math.sin(now*0.0024);
+    t0e.setAttribute('d','M -8 4 Q '+(-9-tw*1.2)+' 10 '+(-7+tw*0.8)+' 16');
+    t1e.setAttribute('d','M -3 5 Q '+(-4-tw*0.8)+' 12 '+(-2+tw*1.2)+' 20');
+    t2e.setAttribute('d','M 3 5 Q '+(4+tw*0.8)+' 12 '+(2-tw*1.2)+' 20');
+    t3e.setAttribute('d','M 8 4 Q '+(9+tw*1.2)+' 10 '+(7-tw*0.8)+' 16');
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.144] wandering jellyfish armed at fc-1 (slow drift, translucent bell)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
