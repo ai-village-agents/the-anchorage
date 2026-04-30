@@ -4972,6 +4972,76 @@
   console.log('[harbor v0.5.123] aurora reflection armed (water smear)');
 })();
 
+// v0.5.124 trailing fishing net — net trails behind the trawler, descends into fc-1
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    // The net group. We'll position it absolutely each frame, tracking the trawler.
+    var g = document.createElementNS(SVGNS,'g');
+    g.setAttribute('id','trawlerNet');
+    g.setAttribute('opacity','0.55');
+    g.setAttribute('pointer-events','none');
+
+    // Build a trapezoidal mesh: top width 22 (along stern), bottom width 60, depth ~190 px.
+    // Top is at y=8 (trawler deck level), bottom at y=198 (down into fc-1).
+    // 5 vertical strands and 8 horizontal strands.
+    var html = '';
+    // outline trapezoid
+    html += '<path d="M -11,8 L 11,8 L 30,198 L -30,198 Z" fill="none" stroke="#cfd8e8" stroke-width="0.4" opacity="0.55"/>';
+    // tow lines from net top to stern of trawler
+    html += '<line x1="-22" y1="6" x2="-11" y2="8" stroke="#cfd8e8" stroke-width="0.35" opacity="0.6"/>';
+    html += '<line x1="-22" y1="6" x2="11" y2="8" stroke="#cfd8e8" stroke-width="0.35" opacity="0.6"/>';
+    // vertical strands (gentle inward slope)
+    for (var i=1;i<5;i++){
+      var f = i/5; // 0..1
+      var x1 = -11 + 22*f;
+      var x2 = -30 + 60*f;
+      html += '<line x1="'+x1.toFixed(2)+'" y1="8" x2="'+x2.toFixed(2)+'" y2="198" stroke="#9eaec0" stroke-width="0.25" opacity="0.55"/>';
+    }
+    // horizontal strands (8)
+    for (var j=1;j<=8;j++){
+      var t = j/8;
+      var ly = 8 + (198-8)*t;
+      var lw = 11 + (30-11)*t;
+      html += '<line x1="'+(-lw).toFixed(2)+'" y1="'+ly.toFixed(2)+'" x2="'+lw.toFixed(2)+'" y2="'+ly.toFixed(2)+'" stroke="#9eaec0" stroke-width="0.22" opacity="0.5"/>';
+    }
+    // float buoy line at top
+    html += '<rect x="-11" y="6" width="22" height="2" fill="#7a3050" opacity="0.55"/>';
+    // bottom weight line
+    html += '<rect x="-30" y="196" width="60" height="2" fill="#3a4960" opacity="0.55"/>';
+    // a few sparkles trapped (small fish silhouettes)
+    html += '<ellipse cx="-10" cy="60" rx="1.6" ry="0.5" fill="#cfd8e8" opacity="0.55"/>';
+    html += '<ellipse cx="6" cy="120" rx="1.6" ry="0.5" fill="#cfd8e8" opacity="0.55"/>';
+    html += '<ellipse cx="-14" cy="170" rx="2.0" ry="0.6" fill="#cfd8e8" opacity="0.5"/>';
+    g.innerHTML = html;
+    svg.appendChild(g);
+
+    function tick(){
+      var trawler = document.getElementById('trawler');
+      if (trawler) {
+        var tr = trawler.getAttribute('transform') || '';
+        var m = tr.match(/translate\(\s*([\-0-9.]+)\s*,\s*([\-0-9.]+)/);
+        if (m) {
+          var tx = parseFloat(m[1]);
+          var ty = parseFloat(m[2]);
+          // gentle sway driven by time
+          var sway = Math.sin(performance.now()*0.0007)*1.4;
+          // net trails behind: trawler moves rightward (SPEED>0) so net should be at smaller x by ~26
+          g.setAttribute('transform', 'translate('+(tx-26+sway).toFixed(2)+','+ty.toFixed(2)+')');
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    console.log('[harbor v0.5.124] trailing fishing net armed (trawler tow)');
+  } catch(err){
+    try { console.error('[harbor v0.5.124] net init failed', err); } catch(e){}
+  }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
