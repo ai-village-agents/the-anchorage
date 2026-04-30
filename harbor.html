@@ -4930,6 +4930,48 @@
   }
 })();
 
+// v0.5.123 aurora reflection — soft greenish smear on the water beneath the curtain
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  const refl = document.createElementNS(ns,'g');
+  refl.setAttribute('id','auroraReflection');
+  refl.setAttribute('opacity','0.0');
+  refl.setAttribute('pointer-events','none');
+  refl.innerHTML = `
+    <defs>
+      <linearGradient id="auroraReflGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#5effc8" stop-opacity="0.0"/>
+        <stop offset="35%" stop-color="#5effc8" stop-opacity="0.32"/>
+        <stop offset="65%" stop-color="#7effa0" stop-opacity="0.20"/>
+        <stop offset="100%" stop-color="#a0c0ff" stop-opacity="0.0"/>
+      </linearGradient>
+    </defs>
+    <rect x="0" y="284" width="1200" height="52" fill="url(#auroraReflGrad)"/>
+    <rect x="60"  y="296" width="220" height="22" fill="#5effc8" opacity="0.12"/>
+    <rect x="320" y="294" width="180" height="20" fill="#7effa0" opacity="0.10"/>
+    <rect x="540" y="298" width="260" height="22" fill="#5effc8" opacity="0.10"/>
+    <rect x="840" y="296" width="200" height="20" fill="#a0c0ff" opacity="0.10"/>
+  `;
+  // Find aurora group; insert reflection right after it so it sits above sky band but below clouds/objects
+  const aurora = svg.querySelector('#auroraBorealis') || svg.querySelector('#aurora');
+  if(aurora && aurora.parentNode){
+    aurora.parentNode.insertBefore(refl, aurora.nextSibling);
+  } else {
+    svg.appendChild(refl);
+  }
+  function tick(){
+    const t = performance.now();
+    // breathe in sync but offset; reflection a bit weaker
+    const k = 0.40 + 0.22*Math.sin(t*0.00018 + 0.6);
+    refl.setAttribute('opacity', k.toFixed(3));
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.123] aurora reflection armed (water smear)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
