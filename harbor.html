@@ -6581,6 +6581,74 @@
   console.log('[harbor v0.5.144] wandering jellyfish armed at fc-1 (slow drift, translucent bell)');
 })();
 
+// v0.5.145 surfacing seal — small head pokes above water periodically, then dives
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.id = 'surfacingSeal';
+  g.setAttribute('pointer-events','none');
+  g.setAttribute('opacity','0');
+  g.innerHTML = [
+    '<g id="surfacingSealInner">',
+      '<ellipse cx="0" cy="3" rx="11" ry="2.5" fill="#0a1828" opacity="0.45"/>',
+      '<ellipse cx="0" cy="0" rx="9" ry="5.5" fill="#3a4a5a"/>',
+      '<ellipse cx="-1" cy="-1" rx="6.5" ry="3.5" fill="#4a5a6c"/>',
+      '<ellipse cx="6.5" cy="0.5" rx="3.5" ry="2.5" fill="#3a4a5a"/>',
+      '<circle cx="8.5" cy="0" r="0.6" fill="#0a0612"/>',
+      '<circle cx="3" cy="-2.2" r="0.7" fill="#0a0612"/>',
+      '<circle cx="-1.5" cy="-2.4" r="0.7" fill="#0a0612"/>',
+      '<circle cx="3.2" cy="-2.4" r="0.25" fill="#ffffff" opacity="0.7"/>',
+      '<circle cx="-1.3" cy="-2.6" r="0.25" fill="#ffffff" opacity="0.7"/>',
+      '<path d="M 7 1.5 L 10 1.8 M 7 2 L 10 2.4" stroke="#7a8a9c" stroke-width="0.25" stroke-opacity="0.55"/>',
+    '</g>',
+  ].join('');
+  svg.appendChild(g);
+  var inner = g.querySelector('#surfacingSealInner');
+  var state = 'idle';
+  var nextT = performance.now() + 6000 + Math.random()*8000;
+  var stateStart = 0;
+  var px = 600, pyBase = 310, headTurn = 0;
+  function pickPos(){
+    px = 200 + Math.random()*700;
+    pyBase = 308 + Math.random()*4;
+  }
+  function tick(now){
+    if (state === 'idle') {
+      g.setAttribute('opacity','0');
+      if (now >= nextT) { pickPos(); state='rise'; stateStart=now; }
+    } else if (state === 'rise') {
+      var k = Math.min(1, (now - stateStart) / 1100);
+      var op = k * 0.85;
+      var yOff = (1-k) * 8;
+      g.setAttribute('opacity', op);
+      inner.setAttribute('transform','translate('+px+','+(pyBase + yOff)+')');
+      if (k >= 1) { state='visible'; stateStart=now; }
+    } else if (state === 'visible') {
+      var ms = now - stateStart;
+      var dur = 1800 + Math.random()*0; // computed at entry-ish; fine
+      var bob = Math.sin(now*0.0028) * 1.3;
+      headTurn = Math.sin(now*0.0017 + 0.5) * 14;
+      g.setAttribute('opacity','0.85');
+      inner.setAttribute('transform','translate('+px+','+(pyBase + bob)+') rotate('+headTurn+')');
+      if (ms > 2800) { state='dive'; stateStart=now; }
+    } else if (state === 'dive') {
+      var k2 = Math.min(1, (now - stateStart) / 950);
+      var op2 = (1 - k2) * 0.85;
+      var yOff2 = k2 * 10;
+      g.setAttribute('opacity', op2);
+      inner.setAttribute('transform','translate('+px+','+(pyBase + yOff2)+') rotate('+(headTurn*(1-k2))+')');
+      if (k2 >= 1) {
+        state = 'idle';
+        nextT = now + 14000 + Math.random()*22000;
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.145] surfacing seal armed (periodic head above water)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
