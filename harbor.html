@@ -6649,6 +6649,67 @@
   console.log('[harbor v0.5.145] surfacing seal armed (periodic head above water)');
 })();
 
+// v0.5.146 floating kelp paddies — small mats of detached kelp drifting on the surface
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','kelpPaddies');
+  g.setAttribute('pointer-events','none');
+  // 3 paddies with different start, speed, scale, y-offset
+  const PADDIES = [
+    { x: 120,  y: 320, sp: 0.0028, sc: 1.00, ph: 0.0 },
+    { x: 540,  y: 326, sp: 0.0036, sc: 0.78, ph: 1.7 },
+    { x: 880,  y: 322, sp: 0.0023, sc: 1.18, ph: 3.4 },
+  ];
+  const inner = PADDIES.map((p,i)=>(
+    '<g id="kelpPaddy'+i+'">' +
+      // wake
+      '<ellipse cx="0" cy="3.4" rx="26" ry="0.9" fill="#7aa2ff" opacity="0.16"/>' +
+      // main mat
+      '<ellipse cx="0" cy="0" rx="24" ry="3.4" fill="#3a5a3e" opacity="0.78"/>' +
+      '<ellipse cx="-7" cy="-1.2" rx="11" ry="2.2" fill="#4f7a55" opacity="0.65"/>' +
+      '<ellipse cx="9" cy="0.8" rx="9" ry="1.8" fill="#2d4a32" opacity="0.7"/>' +
+      // bladders / fronds peeking up
+      '<circle cx="-12" cy="-2.2" r="1.4" fill="#7fa078" opacity="0.85"/>' +
+      '<circle cx="-3" cy="-2.8" r="1.2" fill="#7fa078" opacity="0.8"/>' +
+      '<circle cx="6" cy="-2.4" r="1.5" fill="#86a87a" opacity="0.85"/>' +
+      '<circle cx="14" cy="-1.8" r="1.1" fill="#7fa078" opacity="0.78"/>' +
+      // trailing fronds
+      '<path id="kelpFrondA'+i+'" d="M -18 1 q -8 4 -14 2" fill="none" stroke="#3a5a3e" stroke-width="1.4" stroke-linecap="round" opacity="0.55"/>' +
+      '<path id="kelpFrondB'+i+'" d="M 17 1.5 q 9 3 16 1" fill="none" stroke="#3a5a3e" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>' +
+    '</g>'
+  )).join('');
+  g.innerHTML = inner;
+  // Insert near other surface elements
+  const help = svg.querySelector('#helpOverlay');
+  if (help) svg.insertBefore(g, help); else svg.appendChild(g);
+
+  function frame(now){
+    PADDIES.forEach((p,i)=>{
+      // drift right; wrap
+      let x = p.x + now * p.sp;
+      x = ((x + 60) % 1320) - 60;
+      const bob = Math.sin(now*0.0007 + p.ph) * 1.4;
+      const sway = Math.sin(now*0.0011 + p.ph + 0.6) * 1.2;
+      const y = p.y + bob;
+      const node = document.getElementById('kelpPaddy'+i);
+      if (node) node.setAttribute('transform','translate('+x.toFixed(2)+','+y.toFixed(2)+') scale('+p.sc+',1) rotate('+(sway*0.6).toFixed(2)+')');
+      // wiggle fronds
+      const fA = document.getElementById('kelpFrondA'+i);
+      const fB = document.getElementById('kelpFrondB'+i);
+      const w = Math.sin(now*0.0019 + p.ph)*3;
+      if (fA) fA.setAttribute('d','M -18 1 q -8 '+(4+w).toFixed(2)+' -14 '+(2-w*0.4).toFixed(2));
+      if (fB) fB.setAttribute('d','M 17 1.5 q 9 '+(3-w).toFixed(2)+' 16 '+(1+w*0.5).toFixed(2));
+    });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.146] floating kelp paddies armed (3 surface drifters)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
