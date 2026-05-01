@@ -14822,6 +14822,118 @@
   try { console.log('[harbor v0.5.231] festival crowd waving armed (' + N + ' tiny warm pinpricks bob along the village base)'); } catch(e){}
 })();
 
+// v0.5.232 distant orca sighting — every several minutes a tall straight dorsal fin glides across the distant surface, dives, surfaces again twice more, then disappears
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','distantOrcaPod');
+  g.setAttribute('pointer-events','none');
+  // distant surface band — fin breaks waterline at y=320, far enough we render small
+  const SURF_Y = 320;
+  // build orca: tall straight dorsal + slight back curve behind it (not the dolphins' arched curve)
+  const orca = document.createElementNS(NS,'g');
+  orca.setAttribute('id','distantOrca');
+  orca.setAttribute('transform','translate(-100,'+SURF_Y+') scale(0.85)');
+  orca.setAttribute('opacity','0');
+  // back hump (a small slice above water in front of fin)
+  const back = document.createElementNS(NS,'path');
+  back.setAttribute('d','M -20,0 Q -10,-2 0,-2 Q 10,-2 20,0 Z');
+  back.setAttribute('fill','#1a1d24');
+  back.setAttribute('opacity','0.85');
+  orca.appendChild(back);
+  // dorsal fin — tall (orcas have very tall fins, especially males)
+  const fin = document.createElementNS(NS,'path');
+  fin.setAttribute('d','M -3,-1 L -2,-12 L 1,-13 L 4,-2 Z');
+  fin.setAttribute('fill','#13161c');
+  fin.setAttribute('opacity','0.92');
+  orca.appendChild(fin);
+  // small white saddle patch hint behind fin
+  const saddle = document.createElementNS(NS,'ellipse');
+  saddle.setAttribute('cx','7'); saddle.setAttribute('cy','-1.3');
+  saddle.setAttribute('rx','3'); saddle.setAttribute('ry','0.6');
+  saddle.setAttribute('fill','#7a8090');
+  saddle.setAttribute('opacity','0.6');
+  orca.appendChild(saddle);
+  g.appendChild(orca);
+  // splash mark
+  const splash = document.createElementNS(NS,'g');
+  splash.setAttribute('id','distantOrcaSplash');
+  splash.setAttribute('opacity','0');
+  g.appendChild(splash);
+  svg.appendChild(g);
+
+  // schedule
+  let nextAt = performance.now() + 30000 + Math.random()*60000;
+  let active = null;
+
+  function startEvent(now){
+    // pick direction and starting x
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const startX = dir > 0 ? -40 : 1240;
+    active = {
+      t0: now,
+      dir,
+      startX,
+      // 3 surfacings: 0-2.5s, 8-12s, 18-22s, total ~24s
+      surfs: [
+        { t0: 0, t1: 3000 },
+        { t0: 9000, t1: 12500 },
+        { t0: 19000, t1: 22500 }
+      ],
+      speed: 0.018, // px/ms — slow drift
+      end: 24000
+    };
+  }
+  function frame(now){
+    if(!active && now >= nextAt){ startEvent(now); }
+    if(active){
+      const t = now - active.t0;
+      if(t > active.end){ active = null; orca.setAttribute('opacity','0'); splash.setAttribute('opacity','0'); nextAt = now + 90000 + Math.random()*180000; return requestAnimationFrame(frame); }
+      // determine if currently surfacing
+      let surfacing = null;
+      for(const s of active.surfs){ if(t >= s.t0 && t <= s.t1){ surfacing = s; break; } }
+      if(surfacing){
+        // rise/fall opacity over the surface window: ramp up first 350ms, hold, ramp down last 500ms
+        const dt = t - surfacing.t0;
+        const dur = surfacing.t1 - surfacing.t0;
+        let op = 1;
+        if(dt < 350) op = dt/350;
+        else if(dt > dur-500) op = Math.max(0,(dur-dt)/500);
+        // x position drifts during the whole event
+        const x = active.startX + active.dir * active.speed * t;
+        const scale = 0.7 + 0.4*(1 - Math.min(1, Math.abs(x-600)/600)); // a bit larger near center
+        orca.setAttribute('transform','translate('+x.toFixed(1)+','+SURF_Y+') scale('+(scale*0.85).toFixed(2)+')');
+        orca.setAttribute('opacity', op.toFixed(2));
+        // splash mark just at surfacing start
+        if(dt < 220){
+          const so = (1 - dt/220);
+          // small horizontal mist patch behind the fin
+          while(splash.firstChild) splash.removeChild(splash.firstChild);
+          const mist = document.createElementNS(NS,'ellipse');
+          mist.setAttribute('cx', x.toFixed(1));
+          mist.setAttribute('cy', (SURF_Y-1).toFixed(1));
+          mist.setAttribute('rx', (10 + dt*0.04).toFixed(1));
+          mist.setAttribute('ry','1.4');
+          mist.setAttribute('fill','#cfd8e3');
+          mist.setAttribute('opacity', (0.55*so).toFixed(2));
+          splash.appendChild(mist);
+          splash.setAttribute('opacity','1');
+        } else {
+          splash.setAttribute('opacity','0');
+        }
+      } else {
+        orca.setAttribute('opacity','0');
+        splash.setAttribute('opacity','0');
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.232] distant orca sighting armed (a tall straight dorsal fin glides past the distant surface, surfacing three times before disappearing; recurs every 1.5-4.5 minutes)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
