@@ -18613,6 +18613,182 @@
   } catch(e){ try { console.warn('[harbor v0.5.266] error', e); } catch(_){} }
 })();
 
+// v0.5.267 leaping marlin — every several minutes a large blue marlin breaks the surface, arcs through the air with its long bill, and splashes back down
+(function(){
+  try {
+    const svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    const SVGNS = 'http://www.w3.org/2000/svg';
+    if (svg.querySelector('#leapingMarlin')) return;
+
+    const Y_SURFACE = 318;
+    const g = document.createElementNS(SVGNS, 'g');
+    g.setAttribute('id', 'leapingMarlin');
+    g.setAttribute('opacity', '0');
+    svg.appendChild(g);
+
+    // marlin shape (drawn pointing right, dir handled via scale)
+    const inner = document.createElementNS(SVGNS, 'g');
+    g.appendChild(inner);
+
+    // body — slim torpedo
+    const body = document.createElementNS(SVGNS, 'ellipse');
+    body.setAttribute('cx', '0'); body.setAttribute('cy', '0');
+    body.setAttribute('rx', '14'); body.setAttribute('ry', '2.6');
+    body.setAttribute('fill', '#264a66');
+    inner.appendChild(body);
+    // belly
+    const belly = document.createElementNS(SVGNS, 'ellipse');
+    belly.setAttribute('cx', '-1'); belly.setAttribute('cy', '1.1');
+    belly.setAttribute('rx', '11'); belly.setAttribute('ry', '1.3');
+    belly.setAttribute('fill', '#3e6a90');
+    inner.appendChild(belly);
+    // bill — long thin spike forward
+    const bill = document.createElementNS(SVGNS, 'path');
+    bill.setAttribute('d', 'M 13.5 -0.1 L 24 -0.4 L 13.5 0.4 Z');
+    bill.setAttribute('fill', '#1a3346');
+    inner.appendChild(bill);
+    // dorsal — a tall sail-like fin
+    const sail = document.createElementNS(SVGNS, 'path');
+    sail.setAttribute('d', 'M -5 -2.4 Q -2 -8.6 5 -2.6 Z');
+    sail.setAttribute('fill', '#1d3a52');
+    inner.appendChild(sail);
+    // pectoral fin
+    const pec = document.createElementNS(SVGNS, 'path');
+    pec.setAttribute('d', 'M -1 1.6 L -6 5.6 L 2 2.2 Z');
+    pec.setAttribute('fill', '#1d3a52');
+    inner.appendChild(pec);
+    // tail crescent
+    const tail = document.createElementNS(SVGNS, 'path');
+    tail.setAttribute('d', 'M -14 0 L -22 -5 L -18 0 L -22 5 Z');
+    tail.setAttribute('fill', '#1d3a52');
+    inner.appendChild(tail);
+    // eye
+    const eye = document.createElementNS(SVGNS, 'circle');
+    eye.setAttribute('cx', '9'); eye.setAttribute('cy', '-0.4');
+    eye.setAttribute('r', '0.55');
+    eye.setAttribute('fill', '#0a1218');
+    inner.appendChild(eye);
+
+    // splash bursts (one at takeoff, one at landing)
+    const splashTakeoff = document.createElementNS(SVGNS, 'g');
+    splashTakeoff.setAttribute('opacity', '0');
+    g.appendChild(splashTakeoff);
+    const splashLanding = document.createElementNS(SVGNS, 'g');
+    splashLanding.setAttribute('opacity', '0');
+    g.appendChild(splashLanding);
+
+    function makeSplash(parent){
+      // 5 ascending droplets + 2 expanding ripples
+      const drops = [];
+      for (let i=0;i<6;i++){
+        const c = document.createElementNS(SVGNS,'circle');
+        c.setAttribute('r', 0.6 + Math.random()*0.6);
+        c.setAttribute('fill', '#cfe0ec');
+        parent.appendChild(c);
+        drops.push({el:c, ang: -Math.PI/2 + (Math.random()-0.5)*1.4, sp: 1.4 + Math.random()*1.6, off: Math.random()*180});
+      }
+      const ringA = document.createElementNS(SVGNS,'ellipse');
+      ringA.setAttribute('fill','none');
+      ringA.setAttribute('stroke','#cfe0ec');
+      ringA.setAttribute('stroke-width','0.4');
+      parent.appendChild(ringA);
+      const ringB = document.createElementNS(SVGNS,'ellipse');
+      ringB.setAttribute('fill','none');
+      ringB.setAttribute('stroke','#cfe0ec');
+      ringB.setAttribute('stroke-width','0.3');
+      parent.appendChild(ringB);
+      return {drops, ringA, ringB};
+    }
+    const sFx0 = makeSplash(splashTakeoff);
+    const sFx1 = makeSplash(splashLanding);
+    function renderSplash(parent, fx, x0, t /* 0..1 */){
+      // droplets rise then fall
+      for (const d of fx.drops){
+        const ph = Math.min(1, (t + 0.0) * 1.0);
+        const y = -Math.sin(d.ang) * d.sp * ph * 14 + Math.pow(ph,2) * 12;
+        const dx = Math.cos(d.ang) * d.sp * ph * 10;
+        d.el.setAttribute('cx', x0 + dx);
+        d.el.setAttribute('cy', y);
+        d.el.setAttribute('opacity', Math.max(0, 1 - t));
+      }
+      fx.ringA.setAttribute('cx', x0); fx.ringA.setAttribute('cy', 0);
+      fx.ringA.setAttribute('rx', 1 + t*16); fx.ringA.setAttribute('ry', 0.3 + t*3.2);
+      fx.ringA.setAttribute('opacity', Math.max(0, 0.7 - t*0.7));
+      fx.ringB.setAttribute('cx', x0); fx.ringB.setAttribute('cy', 0);
+      fx.ringB.setAttribute('rx', 0.5 + t*9); fx.ringB.setAttribute('ry', 0.15 + t*1.8);
+      fx.ringB.setAttribute('opacity', Math.max(0, 0.55 - t*0.55));
+    }
+
+    // ---- leap state machine ----
+    let lastTs = performance.now();
+    let phase = 'idle'; // idle | leaping | done
+    let phaseStart = 0;
+    let nextLeapAt = lastTs + (90000 + Math.random() * 240000); // first 1.5–5.5 min
+    const LEAP_DUR = 1700;
+    let originX = 0, dir = 1, peakY = 0, archDX = 0, takeoffY = 0;
+
+    function startLeap(){
+      // pick starting x and direction
+      originX = 220 + Math.random() * 760;
+      dir = Math.random() < 0.5 ? 1 : -1;
+      peakY = Y_SURFACE - (38 + Math.random() * 22); // peak height above surface
+      archDX = (60 + Math.random() * 38) * dir; // horizontal travel
+      takeoffY = Y_SURFACE - 1;
+      phase = 'leaping';
+      phaseStart = lastTs;
+      g.setAttribute('opacity', '1');
+      splashTakeoff.setAttribute('opacity', '1');
+      splashLanding.setAttribute('opacity', '0');
+      // place takeoff splash at originX, surface
+      splashTakeoff.setAttribute('transform', `translate(${originX}, ${Y_SURFACE})`);
+    }
+
+    function frame(ts){
+      const dt = ts - lastTs; lastTs = ts;
+      if (phase === 'idle' && ts >= nextLeapAt) {
+        startLeap();
+      }
+      if (phase === 'leaping') {
+        const t = (ts - phaseStart) / LEAP_DUR;
+        if (t >= 1) {
+          phase = 'idle';
+          g.setAttribute('opacity', '0');
+          nextLeapAt = ts + (140000 + Math.random() * 320000);
+        } else {
+          // arc — parabolic from (originX, Y_SURFACE) to (originX + archDX, Y_SURFACE)
+          const u = t;
+          const x = originX + archDX * u;
+          const y = Y_SURFACE - 4 * (peakY === 0 ? 0 : (Y_SURFACE - peakY)) * u * (1 - u);
+          // angle along arc
+          // dy/dx ~ -(Y_SURFACE-peakY)*4*(1-2u)
+          const slope = -(Y_SURFACE - peakY) * 4 * (1 - 2*u) / Math.max(1, archDX);
+          let rot = Math.atan2(slope * dir, 1) * 180 / Math.PI;
+          // body moves nose-up on ascent, nose-down on descent
+          inner.setAttribute('transform', `translate(${x}, ${y}) scale(${dir},1) rotate(${rot})`);
+          // takeoff splash 0..30%
+          if (t < 0.3) {
+            renderSplash(splashTakeoff, sFx0, 0, t / 0.3);
+          } else {
+            splashTakeoff.setAttribute('opacity', '0');
+          }
+          // landing splash 70..100%
+          if (t >= 0.7) {
+            splashLanding.setAttribute('opacity', '1');
+            const lt = (t - 0.7) / 0.3;
+            const lx = originX + archDX;
+            splashLanding.setAttribute('transform', `translate(${lx}, ${Y_SURFACE})`);
+            renderSplash(splashLanding, sFx1, 0, lt);
+          }
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    try { console.log('[harbor v0.5.267] leaping marlin armed (every several minutes a large blue marlin breaks the surface, arcs through the air with its long bill, and splashes back down)'); } catch(e){}
+  } catch(e){ try { console.warn('[harbor v0.5.267] error', e); } catch(_){} }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
