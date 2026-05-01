@@ -15628,6 +15628,122 @@
   try { console.log('[harbor v0.5.239] phantom drum echoes armed (three slow ripples rise from the kraken zone every 1.5-3.5 min)'); } catch(e){}
 })();
 
+// v0.5.240 squid armada migration — every several minutes a tight formation of 6 small squid migrates across fc-3 in synchronized jet-pulses
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','squidArmada');
+  g.setAttribute('pointer-events','none');
+  g.setAttribute('opacity','0');
+  // 6 squid in arrowhead formation around (0,0)
+  const N = 6;
+  // Formation offsets (rotated arrowhead pointing -dir)
+  const offsets = [
+    [0, 0],
+    [-12, -6], [-12, 6],
+    [-24, -12], [-24, 12],
+    [-36, 0],
+  ];
+  const SQUIDS = [];
+  for(let i=0;i<N;i++){
+    const sg = document.createElementNS(NS,'g');
+    // mantle
+    const m = document.createElementNS(NS,'ellipse');
+    m.setAttribute('rx','5'); m.setAttribute('ry','2.2');
+    m.setAttribute('fill','#7d6580');
+    m.setAttribute('opacity','0.85');
+    sg.appendChild(m);
+    // 4 tentacle strokes behind mantle
+    for(let k=0;k<4;k++){
+      const t = document.createElementNS(NS,'line');
+      t.setAttribute('x1','5'); t.setAttribute('y1', String(-1.4 + k*0.93));
+      t.setAttribute('x2','11'); t.setAttribute('y2', String(-1.4 + k*0.93));
+      t.setAttribute('stroke','#5d4863');
+      t.setAttribute('stroke-width','0.7');
+      t.setAttribute('stroke-linecap','round');
+      sg.appendChild(t);
+    }
+    // tail fins
+    const fin = document.createElementNS(NS,'path');
+    fin.setAttribute('d','M -5 -1 Q -8 0 -5 1 Z');
+    fin.setAttribute('fill','#5d4863');
+    sg.appendChild(fin);
+    // tiny ink puff (used during pulse), held offstage
+    const puff = document.createElementNS(NS,'circle');
+    puff.setAttribute('r','0');
+    puff.setAttribute('fill','#3a2e3f');
+    puff.setAttribute('opacity','0');
+    sg.appendChild(puff);
+    g.appendChild(sg);
+    SQUIDS.push({el:sg, ox:offsets[i][0], oy:offsets[i][1], puff, pulsePhase: i*0.07});
+  }
+  svg.appendChild(g);
+
+  let active = null;
+  let nextAt = performance.now() + 100000 + Math.random()*180000; // first: 1.7-4.7 min
+  const SPEED = 0.07; // px/ms during pulse, 0.025 baseline glide
+  const Y_FC3_LOW = 1300, Y_FC3_HIGH = 1460;
+
+  function startMigration(now){
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const startX = dir > 0 ? -50 : 1250;
+    active = { dir, startX, t0: now, y: Y_FC3_LOW + Math.random()*(Y_FC3_HIGH-Y_FC3_LOW) };
+    g.setAttribute('opacity','0.95');
+  }
+
+  function frame(now){
+    if(!active){
+      if(now >= nextAt){ startMigration(now); }
+      requestAnimationFrame(frame);
+      return;
+    }
+    const dt = now - active.t0;
+    // periodic jet pulse — formation lurches forward in waves
+    const pulsePeriod = 1100;
+    const phase = (dt % pulsePeriod) / pulsePeriod;
+    // smooth pulse: slow then fast
+    const speedMul = 0.4 + 1.6 * Math.max(0, Math.sin(phase*Math.PI));
+    const baseSpeed = 0.030;
+    // accumulate distance integrating per-frame is approximate; use mean*dt
+    // mean speed ≈ baseSpeed*0.4 + baseSpeed*1.6*(2/pi)
+    const meanSpeed = baseSpeed * (0.4 + 1.6*0.6366);
+    const x = active.startX + active.dir * meanSpeed * dt;
+    // fade in/out
+    const fadeIn = active.dir > 0 ? Math.min(1,(x+40)/40) : Math.min(1,(1240-x)/40);
+    const fadeOut = active.dir > 0 ? Math.min(1,(1240-x)/40) : Math.min(1,(x+40)/40);
+    const op = 0.95 * Math.max(0, Math.min(fadeIn, fadeOut));
+    g.setAttribute('opacity', op.toFixed(2));
+    g.setAttribute('transform','translate('+x.toFixed(1)+','+active.y.toFixed(1)+') scale('+active.dir+',1)');
+    // each squid wobble + ink puff at peak pulse
+    for(let i=0;i<N;i++){
+      const sq = SQUIDS[i];
+      const localPhase = ((dt + sq.pulsePhase*pulsePeriod) % pulsePeriod) / pulsePeriod;
+      const lurch = Math.sin(localPhase*Math.PI) * 1.6; // forward lurch px
+      const wob = Math.sin((dt/520) + i*1.1)*0.6;
+      sq.el.setAttribute('transform','translate('+(sq.ox + lurch).toFixed(2)+','+(sq.oy+wob).toFixed(2)+')');
+      // ink puff: appears when localPhase ~ 0.0 (rear-jet release)
+      if(localPhase > 0.92 || localPhase < 0.06){
+        const k = localPhase > 0.5 ? (1 - localPhase)/0.08 : localPhase/0.06;
+        sq.puff.setAttribute('cx', '4');
+        sq.puff.setAttribute('cy', '0');
+        sq.puff.setAttribute('r', (1.2 + 1.6*k).toFixed(2));
+        sq.puff.setAttribute('opacity', (0.3*k).toFixed(2));
+      } else {
+        sq.puff.setAttribute('opacity','0');
+      }
+    }
+    if((active.dir>0 && x>1240) || (active.dir<0 && x<-40)){
+      active = null; g.setAttribute('opacity','0');
+      nextAt = now + 200000 + Math.random()*240000; // next: 3.3-7.3 min
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.240] squid armada migration armed (6 squid arrowhead formation traverses fc-3 every 3.3-7.3 min)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
