@@ -17946,6 +17946,103 @@
   try { console.log('[harbor v0.5.260] cleaner-fish station armed (large grouper hovers at fc-2 while 4 cleaner wrasses pick at it)'); } catch(e){}
 })();
 
+// v0.5.261 anchor-aligned shooting star — a special bright shooting star occasionally streaks straight along the anchor constellation's main shaft and breaks at its base
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'anchorAlignedStar');
+  g.setAttribute('pointer-events', 'none');
+  // The anchor constellation main shaft runs roughly from (110,60) at the top through (130,90), (165,110), (125,130) to (85,130)
+  // For an "aligned" shooting star, trace from above the top star down past the base, slight diagonal lean
+  // Path tangent: from (118,40) to (118,160), small leftward arc
+  var trail = document.createElementNS(SVG_NS, 'line');
+  trail.setAttribute('stroke', '#fff8d8'); trail.setAttribute('stroke-width', '1.0'); trail.setAttribute('opacity', '0');
+  trail.setAttribute('stroke-linecap', 'round');
+  g.appendChild(trail);
+  var head = document.createElementNS(SVG_NS, 'circle');
+  head.setAttribute('r', '1.6'); head.setAttribute('fill', '#fff8d8'); head.setAttribute('opacity', '0');
+  g.appendChild(head);
+  var halo = document.createElementNS(SVG_NS, 'circle');
+  halo.setAttribute('r', '4.4'); halo.setAttribute('fill', '#fff8d8'); halo.setAttribute('opacity', '0');
+  g.appendChild(halo);
+  // burst sparks at base
+  var burst = document.createElementNS(SVG_NS, 'g');
+  burst.setAttribute('opacity', '0');
+  var sparks = [];
+  for (var i=0; i<7; i++) {
+    var a = (i / 7) * Math.PI * 2;
+    var sp = document.createElementNS(SVG_NS, 'line');
+    sp.setAttribute('x1', '0'); sp.setAttribute('y1', '0');
+    sp.setAttribute('x2', (Math.cos(a)*4).toFixed(2));
+    sp.setAttribute('y2', (Math.sin(a)*4).toFixed(2));
+    sp.setAttribute('stroke', '#fff8d8'); sp.setAttribute('stroke-width', '0.4');
+    burst.appendChild(sp);
+    sparks.push({el: sp, ax: Math.cos(a), ay: Math.sin(a)});
+  }
+  g.appendChild(burst);
+  svg.appendChild(g);
+
+  var SX = 118, SY = 40, EX = 118, EY = 160; // anchor-aligned axis (roughly through center)
+  var state = 'idle', t0 = 0;
+  var DURATION = 1500; // streak duration
+  var BURST_DUR = 900;
+  var nextAt = performance.now() + (240 + Math.random() * 360) * 1000;
+
+  function spawn(now){
+    state = 'streaking';
+    t0 = now;
+  }
+
+  function tick(now){
+    if (state === 'idle') {
+      if (now >= nextAt) spawn(now);
+    } else if (state === 'streaking') {
+      var t = (now - t0) / DURATION;
+      if (t >= 1) {
+        state = 'bursting';
+        t0 = now;
+      } else {
+        var x = SX + (EX - SX) * t;
+        var y = SY + (EY - SY) * t;
+        // lateral lean (pull to left then right)
+        var lean = Math.sin(t * Math.PI) * 6;
+        x -= lean;
+        head.setAttribute('cx', x.toFixed(2)); head.setAttribute('cy', y.toFixed(2));
+        head.setAttribute('opacity', '1');
+        halo.setAttribute('cx', x.toFixed(2)); halo.setAttribute('cy', y.toFixed(2));
+        halo.setAttribute('opacity', '0.45');
+        // tail
+        var tx = SX, ty = SY;
+        var tlen = Math.min(t, 0.36);
+        tx = x - (EX - SX) * tlen;
+        ty = y - (EY - SY) * tlen;
+        trail.setAttribute('x1', tx.toFixed(2)); trail.setAttribute('y1', ty.toFixed(2));
+        trail.setAttribute('x2', x.toFixed(2)); trail.setAttribute('y2', y.toFixed(2));
+        trail.setAttribute('opacity', (0.85 * (1 - t)).toFixed(2));
+        trail.setAttribute('stroke-width', (1.0 - 0.5 * t).toFixed(2));
+      }
+    } else if (state === 'bursting') {
+      var t = (now - t0) / BURST_DUR;
+      if (t >= 1) {
+        state = 'idle';
+        head.setAttribute('opacity', '0'); halo.setAttribute('opacity', '0'); trail.setAttribute('opacity', '0');
+        burst.setAttribute('opacity', '0');
+        nextAt = now + (240 + Math.random() * 360) * 1000;
+      } else {
+        head.setAttribute('opacity', (1 - t).toFixed(2));
+        halo.setAttribute('opacity', (0.45 * (1 - t)).toFixed(2));
+        burst.setAttribute('opacity', (0.85 * (1 - t)).toFixed(2));
+        burst.setAttribute('transform', 'translate(' + EX + ',' + EY + ') scale(' + (1 + t * 1.6).toFixed(2) + ')');
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  try { console.log('[harbor v0.5.261] anchor-aligned shooting star armed (rare bright streak retraces the anchor constellation shaft and bursts at its base)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
