@@ -11653,6 +11653,105 @@
 })();
 
 
+// v0.5.200 tide ripple wave — every few minutes a single broad ripple wave travels across the surface left→right (or right→left)
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) { console.warn('[harbor v0.5.200] svg not found, skipping'); return; }
+  const NS = 'http://www.w3.org/2000/svg';
+
+  const Y_SURFACE = 318;
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('id', 'tideRipple');
+  g.setAttribute('style', 'mix-blend-mode: screen; pointer-events: none;');
+  svg.appendChild(g);
+
+  // ripple is a thin curved horizontal arc that translates across the surface
+  // we render as a path so it has a sinuous shape
+  const ripple = document.createElementNS(NS, 'path');
+  // baseline curve: shallow sine across width 220 with vertical amplitude 1.4
+  // path will be redrawn each frame to translate horizontally
+  ripple.setAttribute('stroke', '#bff4ff');
+  ripple.setAttribute('stroke-width', '1.4');
+  ripple.setAttribute('fill', 'none');
+  ripple.setAttribute('opacity', '0');
+  ripple.setAttribute('stroke-linecap', 'round');
+  g.appendChild(ripple);
+
+  // a softer second band trailing behind
+  const trail = document.createElementNS(NS, 'path');
+  trail.setAttribute('stroke', '#9be8ff');
+  trail.setAttribute('stroke-width', '0.8');
+  trail.setAttribute('fill', 'none');
+  trail.setAttribute('opacity', '0');
+  g.appendChild(trail);
+
+  let state = 'idle';
+  let t0 = 0;
+  let dur = 0;
+  let dirSign = 1;  // 1 = left→right, -1 = right→left
+
+  function startWave(){
+    state = 'sweep';
+    t0 = performance.now();
+    dur = 11000 + Math.random() * 5500;  // 11-16s for full crossing
+    dirSign = Math.random() < 0.55 ? 1 : -1;
+  }
+
+  function scheduleNext(now){
+    const wait = 110000 + Math.random() * 130000;  // 110-240s
+    setTimeout(startWave, wait);
+  }
+
+  // Start first one 60-180s in
+  setTimeout(startWave, 60000 + Math.random() * 120000);
+
+  function buildPath(headX, mainAmp, mainPhase){
+    // 5 segments of sinusoidal arc
+    const len = 220;
+    const segs = 12;
+    let d = '';
+    for(let i=0; i<=segs; i++){
+      const u = i / segs;
+      const lx = headX + (u - 0.5) * len * dirSign;
+      // taper amplitude near edges
+      const taper = Math.sin(u * Math.PI);
+      const ly = Y_SURFACE + Math.sin(u * 6 + mainPhase) * mainAmp * taper;
+      d += (i === 0 ? 'M' : 'L') + lx.toFixed(2) + ',' + ly.toFixed(2) + ' ';
+    }
+    return d;
+  }
+
+  function frame(now){
+    if(state === 'sweep'){
+      const u = (now - t0) / dur;
+      if(u >= 1){
+        state = 'idle';
+        ripple.setAttribute('opacity', '0');
+        trail.setAttribute('opacity', '0');
+        scheduleNext();
+      } else {
+        // head x sweeps -120 to 1320 (or reverse)
+        const startX = dirSign === 1 ? -120 : 1320;
+        const endX = dirSign === 1 ? 1320 : -120;
+        const headX = startX + (endX - startX) * u;
+        // envelope: rise 8% / hold / decay 8%
+        const env = u < 0.08 ? (u / 0.08) : (u > 0.92 ? (1 - (u - 0.92) / 0.08) : 1);
+        ripple.setAttribute('d', buildPath(headX, 1.6, now * 0.004));
+        ripple.setAttribute('opacity', (0.55 * env).toFixed(3));
+        // trail 60px behind
+        const trailX = headX - dirSign * 60;
+        trail.setAttribute('d', buildPath(trailX, 1.0, now * 0.004 + 1.5));
+        trail.setAttribute('opacity', (0.32 * env).toFixed(3));
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  console.log('[harbor v0.5.200] tide ripple wave armed (broad sinuous ripple crosses the surface every 2-4 minutes)');
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
