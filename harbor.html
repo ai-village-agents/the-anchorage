@@ -13260,6 +13260,124 @@
 })();
 
 
+// v0.5.217 bell tower in the village — small visible bell tower silhouette at x=552 that periodically rings out three quick concentric ripples
+(function(){
+  try {
+    const svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    const TX = 552;       // tower base x
+    const BASE_Y = 240;   // village rooftop level
+    const TOP_Y = 198;    // belfry top
+    const BELFRY_Y = 206; // bell ring origin (inside belfry)
+    const layer = document.createElementNS('http://www.w3.org/2000/svg','g');
+    layer.setAttribute('id','bellTower');
+    layer.setAttribute('pointer-events','none');
+    svg.appendChild(layer);
+    // tower shaft
+    const shaft = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    shaft.setAttribute('x', (TX-3).toFixed(1));
+    shaft.setAttribute('y', (TOP_Y+8).toFixed(1));
+    shaft.setAttribute('width','6');
+    shaft.setAttribute('height', (BASE_Y - (TOP_Y+8)).toFixed(1));
+    shaft.setAttribute('fill','#1a2030');
+    layer.appendChild(shaft);
+    // belfry box (open arches)
+    const belfry = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    belfry.setAttribute('x', (TX-5).toFixed(1));
+    belfry.setAttribute('y', (TOP_Y+0).toFixed(1));
+    belfry.setAttribute('width','10');
+    belfry.setAttribute('height','9');
+    belfry.setAttribute('fill','#1a2030');
+    layer.appendChild(belfry);
+    // belfry opening (tiny lit slit so it reads at night)
+    const slit = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    slit.setAttribute('x', (TX-2).toFixed(1));
+    slit.setAttribute('y', (TOP_Y+2).toFixed(1));
+    slit.setAttribute('width','4');
+    slit.setAttribute('height','5');
+    slit.setAttribute('fill','#3a3a20');
+    slit.setAttribute('opacity','0.85');
+    layer.appendChild(slit);
+    // pyramidal roof (simple triangle)
+    const roof = document.createElementNS('http://www.w3.org/2000/svg','path');
+    roof.setAttribute('d', `M ${(TX-6).toFixed(1)} ${TOP_Y} L ${TX} ${(TOP_Y-7).toFixed(1)} L ${(TX+6).toFixed(1)} ${TOP_Y} Z`);
+    roof.setAttribute('fill','#15192a');
+    layer.appendChild(roof);
+    // tiny weathervane
+    const vane = document.createElementNS('http://www.w3.org/2000/svg','line');
+    vane.setAttribute('x1', TX.toFixed(1));
+    vane.setAttribute('y1', (TOP_Y-7).toFixed(1));
+    vane.setAttribute('x2', TX.toFixed(1));
+    vane.setAttribute('y2', (TOP_Y-12).toFixed(1));
+    vane.setAttribute('stroke','#2a3344');
+    vane.setAttribute('stroke-width','0.7');
+    layer.appendChild(vane);
+    // ripple ring pool
+    const POOL = 6;
+    const rings = [];
+    for(let i=0;i<POOL;i++){
+      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx', TX.toFixed(1));
+      c.setAttribute('cy', BELFRY_Y.toFixed(1));
+      c.setAttribute('r','0');
+      c.setAttribute('fill','none');
+      c.setAttribute('stroke','#d8c89a');
+      c.setAttribute('stroke-width','0.9');
+      c.setAttribute('opacity','0');
+      layer.appendChild(c);
+      rings.push({el: c, t0: 0, dur: 0, active: false});
+    }
+    function fireRing(now){
+      for(const r of rings){
+        if(!r.active){
+          r.active = true;
+          r.t0 = now;
+          r.dur = 1700 + Math.random()*400;
+          return;
+        }
+      }
+    }
+    let nextRing = performance.now() + 60000 + Math.random()*60000;
+    let dingsLeft = 0;
+    let nextDing = 0;
+    function tick(){
+      const now = performance.now();
+      // schedule a triple-ding
+      if(dingsLeft === 0 && now >= nextRing){
+        dingsLeft = 3;
+        nextDing = now;
+        nextRing = now + 90000 + Math.random()*120000;
+      }
+      if(dingsLeft > 0 && now >= nextDing){
+        fireRing(now);
+        dingsLeft -= 1;
+        nextDing = now + 580 + Math.random()*120;
+      }
+      for(const r of rings){
+        if(r.active){
+          const u = (now - r.t0)/r.dur;
+          if(u >= 1){
+            r.active = false;
+            r.el.setAttribute('opacity','0');
+            r.el.setAttribute('r','0');
+          } else {
+            const rad = u * 36;
+            const op = (1-u) * 0.55;
+            r.el.setAttribute('r', rad.toFixed(2));
+            r.el.setAttribute('opacity', op.toFixed(3));
+          }
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    console.log('[harbor v0.5.217] bell tower in village armed (visible silhouette at x=552 with periodic triple-ding ripples every 1.5-3.5 min)');
+  } catch(err){
+    try { console.error('[harbor v0.5.217] bell tower init failed', err); } catch(e){}
+  }
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
