@@ -19916,6 +19916,46 @@
   console.log('[harbor v0.5.277] lighthouse keeper boat armed (motors east from the west lighthouse and back)');
 })();
 
+// v0.5.278 tide pool starfish — small purple starfish in the tide pool that slowly rotates and waves its arms
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  // Tide pool at (620,332). Place the starfish off-center inside the pool.
+  const CX = 614, CY = 333.5;
+  const g = document.createElementNS(SVGNS, 'g');
+  g.setAttribute('id','tidePoolStar');
+  g.setAttribute('pointer-events','none');
+  g.setAttribute('transform','translate('+CX+','+CY+')');
+  // Build a 5-armed starfish path. Each arm reaches out from center on its own slow oscillation.
+  // Use 5 ellipse arms attached to a central disk.
+  const armParts = [];
+  const COL = '#7a4d8c'; // dusky purple
+  const COL2 = '#a07ab5'; // lighter highlight
+  for(let i=0; i<5; i++){
+    const ang = (i * 72) - 90; // degrees, top first
+    armParts.push('<g class="arm" data-i="'+i+'" transform="rotate('+ang+')"><ellipse cx="0" cy="-2.6" rx="0.9" ry="2.4" fill="'+COL+'"/><ellipse cx="0" cy="-2.6" rx="0.4" ry="1.4" fill="'+COL2+'" opacity="0.7"/></g>');
+  }
+  g.innerHTML = armParts.join('') + '<circle r="1.0" fill="'+COL+'"/>' + '<circle r="0.45" fill="'+COL2+'" opacity="0.85"/>';
+  svg.appendChild(g);
+  const arms = g.querySelectorAll('.arm');
+  // Slow rotation of the whole star + per-arm wiggle
+  const ROT_PERIOD = 38000;
+  function frame(now){
+    const rot = (now / ROT_PERIOD) * 360;
+    for(let i=0; i<arms.length; i++){
+      const baseAng = (i * 72) - 90;
+      // each arm has a small ±8° wiggle on its own period
+      const wiggle = Math.sin(now/(1900 + i*230)) * 8;
+      arms[i].setAttribute('transform','rotate('+(baseAng + wiggle)+')');
+    }
+    g.setAttribute('transform','translate('+CX+','+CY+') rotate('+rot.toFixed(2)+')');
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.278] tide pool starfish armed (small purple star slowly rotating in the tide pool with arm wiggles)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
