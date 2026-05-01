@@ -16664,6 +16664,113 @@
   try { console.log('[harbor v0.5.249] keeper window armed (small warm window in the west lighthouse tower; periodic dims/flickers/rare off as if someone moves around inside)'); } catch(e){}
 })();
 
+// v0.5.250 nudibranch on rock — small colorful sea slug crawling slowly back and forth on a rock at the bottom of fc-1
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','nudibranch');
+  g.setAttribute('pointer-events','none');
+  // Rock (small) at fc-1 bottom: a low dark mound around y=712, x=720..768
+  const rock = document.createElementNS(NS,'path');
+  rock.setAttribute('d','M716,720 Q720,705 730,704 Q745,701 755,705 Q770,710 772,720 Z');
+  rock.setAttribute('fill','#1a2330');
+  rock.setAttribute('opacity','0.85');
+  g.appendChild(rock);
+  // Smaller rock detail
+  const det = document.createElementNS(NS,'path');
+  det.setAttribute('d','M724,712 Q730,706 738,706 Q744,706 748,710');
+  det.setAttribute('fill','none'); det.setAttribute('stroke','#2a3340');
+  det.setAttribute('stroke-width','0.4'); det.setAttribute('opacity','0.7');
+  g.appendChild(det);
+
+  // Nudibranch on top — tiny cute sea slug (Spanish dancer / chromodoris-style)
+  const nub = document.createElementNS(NS,'g');
+  // Body — slim ovoid (length 7, height 1.6)
+  const body = document.createElementNS(NS,'ellipse');
+  body.setAttribute('cx','0'); body.setAttribute('cy','0');
+  body.setAttribute('rx','3.6'); body.setAttribute('ry','1.4');
+  body.setAttribute('fill','#a045a0');
+  body.setAttribute('stroke','#4a1450'); body.setAttribute('stroke-width','0.25');
+  nub.appendChild(body);
+  // Mantle edge — thin orange band
+  const edge = document.createElementNS(NS,'ellipse');
+  edge.setAttribute('cx','0'); edge.setAttribute('cy','0');
+  edge.setAttribute('rx','3.6'); edge.setAttribute('ry','1.4');
+  edge.setAttribute('fill','none');
+  edge.setAttribute('stroke','#ffae5a'); edge.setAttribute('stroke-width','0.45');
+  edge.setAttribute('opacity','0.85');
+  nub.appendChild(edge);
+  // Cerata (gill tufts) on back — small lines
+  for(let i=-1;i<=1;i++){
+    const cer = document.createElementNS(NS,'line');
+    cer.setAttribute('x1', String(i*1.4));
+    cer.setAttribute('y1','-0.6');
+    cer.setAttribute('x2', String(i*1.4));
+    cer.setAttribute('y2','-2.0');
+    cer.setAttribute('stroke','#fff5cc');
+    cer.setAttribute('stroke-width','0.35');
+    cer.setAttribute('opacity','0.8');
+    nub.appendChild(cer);
+  }
+  // Two rhinophore antennae at front (which side is "front" depends on direction)
+  const rhinos = [];
+  for(let i=0;i<2;i++){
+    const r = document.createElementNS(NS,'line');
+    r.setAttribute('stroke','#5a2050');
+    r.setAttribute('stroke-width','0.4');
+    r.setAttribute('stroke-linecap','round');
+    nub.appendChild(r);
+    rhinos.push(r);
+  }
+  // Tail tip (small triangle)
+  // We'll handle direction by transforming the whole nub
+  g.appendChild(nub);
+  svg.appendChild(g);
+
+  // Crawl across the rock top: x range 722..766
+  const X_MIN = 722, X_MAX = 766;
+  // The top of the rock follows a slight arc — y slightly varies. We'll approximate with quadratic.
+  function topY(x){
+    // Map x in [716, 772] to a y based on rock arc: roughly y_min around 702 in middle
+    const t = (x - 716) / (772 - 716);
+    const peak = 1; // shape factor
+    return 720 - 18 * Math.sin(t*Math.PI) * 0.95;
+  }
+
+  let dir = 1;
+  let x = 738; // start near middle
+  let last = performance.now();
+  let pauseUntil = performance.now() + 1500;
+  const SPEED = 0.0035; // px/ms — very slow
+  function tick(now){
+    const dt = Math.min(64, now - last); last = now;
+    if(now < pauseUntil){
+      // body breathing: tiny cerata sway. Skip motion.
+    } else {
+      x += dir * SPEED * dt;
+      if(x > X_MAX){ x = X_MAX; dir = -1; pauseUntil = now + 2000 + Math.random()*3000; }
+      else if(x < X_MIN){ x = X_MIN; dir = 1; pauseUntil = now + 2000 + Math.random()*3000; }
+      // Random pauses to "graze"
+      if(Math.random() < 0.001){ pauseUntil = now + 1500 + Math.random()*3500; }
+    }
+    const y = topY(x) - 2.2; // sit on top
+    const sx = dir;
+    nub.setAttribute('transform','translate('+x.toFixed(2)+','+y.toFixed(2)+') scale('+sx+',1)');
+    // rhinophores point forward
+    rhinos[0].setAttribute('x1','3.0'); rhinos[0].setAttribute('y1','-0.4');
+    rhinos[0].setAttribute('x2', (3.6+Math.sin(now*0.003)*0.2).toFixed(2));
+    rhinos[0].setAttribute('y2', (-1.6 + Math.sin(now*0.003)*0.1).toFixed(2));
+    rhinos[1].setAttribute('x1','2.6'); rhinos[1].setAttribute('y1','-0.4');
+    rhinos[1].setAttribute('x2', (2.9+Math.cos(now*0.0028)*0.2).toFixed(2));
+    rhinos[1].setAttribute('y2', (-1.5 + Math.cos(now*0.0028)*0.1).toFixed(2));
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  try { console.log('[harbor v0.5.250] nudibranch armed (small purple-orange sea slug crawling slowly back and forth on a rock in fc-1)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
