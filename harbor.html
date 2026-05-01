@@ -12389,6 +12389,71 @@
         })();
 
 
+        // v0.5.208 tide pool fish — a tiny silver fish darts back and forth inside the tide pool, briefly visible as a flick of light
+        (function(){
+          const svg = document.querySelector('.harbor-svg');
+          if(!svg) return;
+          // tide pool centered at (620,332) per v0.5.162; the pool basin radius about 18 wide x 5 high
+          const POOL_X = 620, POOL_Y = 332;
+          const layer = document.createElementNS('http://www.w3.org/2000/svg','g');
+          layer.setAttribute('id','tidePoolFishLayer');
+          layer.setAttribute('pointer-events','none');
+          svg.appendChild(layer);
+          const fish = document.createElementNS('http://www.w3.org/2000/svg','g');
+          fish.setAttribute('opacity','0');
+          fish.innerHTML = [
+            '<ellipse cx="0" cy="0" rx="2.0" ry="0.7" fill="#cfe6f0"/>',
+            '<path d="M -2.0 0 L -3.0 -0.6 L -2.4 0 L -3.0 0.6 Z" fill="#cfe6f0"/>',
+            '<circle cx="1.4" cy="-0.15" r="0.18" fill="#0a0e16"/>'
+          ].join('');
+          layer.appendChild(fish);
+          let X = POOL_X - 6;
+          let dir = 1;
+          let visible = false;
+          let nextTask = performance.now() + 4000 + Math.random()*4000;
+          let taskStart = 0;
+          let taskDur = 0;
+          let taskTargetX = 0;
+          let taskStartX = 0;
+          function tick(){
+            const now = performance.now();
+            if(!visible){
+              if(now >= nextTask){
+                // start a dart
+                visible = true;
+                taskStartX = X;
+                dir = (X < POOL_X) ? 1 : -1;
+                const span = 6 + Math.random()*8;
+                taskTargetX = Math.max(POOL_X-9, Math.min(POOL_X+9, X + dir*span));
+                taskStart = now;
+                taskDur = 700 + Math.random()*900;
+              } else {
+                fish.setAttribute('opacity','0');
+              }
+            } else {
+              const u = (now - taskStart)/taskDur;
+              if(u >= 1){
+                X = taskTargetX;
+                visible = false;
+                nextTask = now + 1800 + Math.random()*4500;
+              } else {
+                // ease in/out
+                const e = u<0.5 ? 2*u*u : 1 - Math.pow(-2*u+2,2)/2;
+                const x = taskStartX + (taskTargetX-taskStartX)*e;
+                const y = POOL_Y - 0.6 + Math.sin(u*Math.PI*2)*0.5;
+                const env = u<0.15 ? u/0.15 : (u>0.85 ? (1-u)/0.15 : 1);
+                const sx = dir;
+                fish.setAttribute('transform', `translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${sx} 1)`);
+                fish.setAttribute('opacity', (env*0.85).toFixed(3));
+              }
+            }
+            requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+          console.log('[harbor v0.5.208] tide pool fish armed (small fish darts inside the tide pool every few seconds)');
+        })();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
