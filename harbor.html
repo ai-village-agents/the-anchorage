@@ -19391,6 +19391,87 @@
   } catch(e){ try { console.warn('[harbor v0.5.272] error', e); } catch(_){} }
 })();
 
+// v0.5.273 tide line foam — a constant ambient line of small foam patches drifting along the eastern shore where waves meet the dock area, with sparkles
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('id','tideLineFoam');
+    g.style.pointerEvents = 'none';
+    svg.appendChild(g);
+
+    // POOL of small foam patches with sparkles
+    var POOL = 16;
+    var patches = [];
+    var Y_FOAM = 322; // just below surface 318
+    var X_MIN = 800; // eastern shore
+    var X_MAX = 1100;
+
+    for (var i=0; i<POOL; i++) {
+      var p = {};
+      p.elGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+      p.body = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+      p.body.setAttribute('rx', 4 + Math.random()*5);
+      p.body.setAttribute('ry', 0.7 + Math.random()*0.5);
+      p.body.setAttribute('fill', '#f4faff');
+      p.body.setAttribute('opacity', 0);
+      p.elGroup.appendChild(p.body);
+      // sparkle dot
+      p.spark = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      p.spark.setAttribute('r', 0.5);
+      p.spark.setAttribute('fill', '#ffffff');
+      p.spark.setAttribute('opacity', 0);
+      p.spark.setAttribute('cx', 0);
+      p.spark.setAttribute('cy', -0.4);
+      p.elGroup.appendChild(p.spark);
+      g.appendChild(p.elGroup);
+      p.x = X_MIN + Math.random() * (X_MAX - X_MIN);
+      p.y = Y_FOAM + (Math.random()-0.5) * 1.4;
+      p.vx = -0.012 - Math.random() * 0.018; // drift westward
+      p.life = Math.random() * 16000; // ms
+      p.maxLife = 18000 + Math.random()*9000;
+      p.sparkPhase = Math.random() * 6;
+      patches.push(p);
+    }
+
+    function frame(ts){
+      if (!frame._last) frame._last = ts;
+      var dt = Math.min(50, ts - frame._last);
+      frame._last = ts;
+
+      patches.forEach(function(p){
+        p.life += dt;
+        p.x += p.vx * dt;
+        // fade in over first 2s, fade out over last 3s
+        var op = 0;
+        if (p.life < 2000) op = (p.life/2000) * 0.55;
+        else if (p.life > p.maxLife - 3000) op = Math.max(0, (p.maxLife - p.life)/3000) * 0.55;
+        else op = 0.55;
+        p.body.setAttribute('opacity', op);
+        // sparkle blink
+        var s = (Math.sin((ts/280) + p.sparkPhase) > 0.85) ? 0.85 : 0;
+        p.spark.setAttribute('opacity', s * (op > 0 ? 1 : 0));
+        p.elGroup.setAttribute('transform','translate('+p.x.toFixed(2)+','+p.y.toFixed(2)+')');
+        // recycle
+        if (p.life >= p.maxLife || p.x < X_MIN - 20) {
+          p.life = 0;
+          p.maxLife = 18000 + Math.random()*9000;
+          p.x = X_MIN + Math.random() * (X_MAX - X_MIN);
+          p.y = Y_FOAM + (Math.random()-0.5) * 1.4;
+          p.vx = -0.012 - Math.random() * 0.018;
+          p.body.setAttribute('rx', 4 + Math.random()*5);
+          p.body.setAttribute('ry', 0.7 + Math.random()*0.5);
+          p.sparkPhase = Math.random() * 6;
+        }
+      });
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    try { console.log('[harbor v0.5.273] tide line foam armed (a constant ambient line of small foam patches drifting along the eastern shore with sparkles)'); } catch(e){}
+  } catch(e){ try { console.warn('[harbor v0.5.273] error', e); } catch(_){} }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
