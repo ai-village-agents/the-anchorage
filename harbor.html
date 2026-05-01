@@ -18457,6 +18457,162 @@
   try { console.log('[harbor v0.5.265] siren on a far rock armed (slim mermaid silhouette appears, flicks her tail, slides back into the water)'); } catch(e){}
 })();
 
+// v0.5.266 dock fishing rod — a small angler silhouette on the eastern dock holds a long thin rod arcing out over the water with a line and a bobber that bobs and occasionally dips sharply when a fish bites
+(function(){
+  try {
+    const svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    const SVGNS = 'http://www.w3.org/2000/svg';
+    if (svg.querySelector('#dockAngler')) return;
+
+    // angler stands on the easternmost dock piling at x=874 (top of piling near surface ~y=318)
+    const ANGLER_X = 874;
+    const ANGLER_Y = 312; // boots on top of piling, just above surface
+    const ROD_TIP_X = 916; // out over the water to the east
+    const ROD_TIP_Y = 290; // a bit above the surface
+    const BOBBER_X = 952;
+    const BOBBER_BASE_Y = 320; // just below Y_SURFACE=318
+
+    const g = document.createElementNS(SVGNS, 'g');
+    g.setAttribute('id', 'dockAngler');
+    g.setAttribute('opacity', '0.92');
+
+    // small body silhouette at piling top — head, torso, legs
+    const body = document.createElementNS(SVGNS, 'path');
+    body.setAttribute('d', `M ${ANGLER_X-2.4} ${ANGLER_Y} L ${ANGLER_X+2.4} ${ANGLER_Y} L ${ANGLER_X+2.0} ${ANGLER_Y-7.0} L ${ANGLER_X-2.0} ${ANGLER_Y-7.0} Z`);
+    body.setAttribute('fill', '#2a2620');
+    g.appendChild(body);
+    const head = document.createElementNS(SVGNS, 'circle');
+    head.setAttribute('cx', ANGLER_X);
+    head.setAttribute('cy', ANGLER_Y - 9.0);
+    head.setAttribute('r', '1.6');
+    head.setAttribute('fill', '#2a2620');
+    g.appendChild(head);
+    const hat = document.createElementNS(SVGNS, 'rect');
+    hat.setAttribute('x', ANGLER_X - 2.2);
+    hat.setAttribute('y', ANGLER_Y - 11.2);
+    hat.setAttribute('width', '4.4');
+    hat.setAttribute('height', '0.7');
+    hat.setAttribute('fill', '#2a2620');
+    g.appendChild(hat);
+
+    // rod — pivoting at angler hand near (ANGLER_X+2.4, ANGLER_Y-5.5), arcing east to ROD_TIP
+    const ROD_BASE_X = ANGLER_X + 1.8;
+    const ROD_BASE_Y = ANGLER_Y - 5.5;
+    const rod = document.createElementNS(SVGNS, 'path');
+    // gentle quadratic from base up and out to tip
+    function rodPath(tipDy){
+      const tipY = ROD_TIP_Y + tipDy;
+      const cx = (ROD_BASE_X + ROD_TIP_X) / 2 + 6;
+      const cy = ROD_BASE_Y - 22;
+      return `M ${ROD_BASE_X} ${ROD_BASE_Y} Q ${cx} ${cy}, ${ROD_TIP_X} ${tipY}`;
+    }
+    rod.setAttribute('d', rodPath(0));
+    rod.setAttribute('stroke', '#2a2620');
+    rod.setAttribute('stroke-width', '0.55');
+    rod.setAttribute('stroke-linecap', 'round');
+    rod.setAttribute('fill', 'none');
+    g.appendChild(rod);
+
+    // line — from rod tip down to bobber
+    const line = document.createElementNS(SVGNS, 'line');
+    line.setAttribute('stroke', '#cdd5dd');
+    line.setAttribute('stroke-width', '0.22');
+    line.setAttribute('opacity', '0.55');
+    g.appendChild(line);
+
+    // bobber — small red-and-white float
+    const bobber = document.createElementNS(SVGNS, 'g');
+    const bobBase = document.createElementNS(SVGNS, 'ellipse');
+    bobBase.setAttribute('cx', '0');
+    bobBase.setAttribute('cy', '0');
+    bobBase.setAttribute('rx', '1.4');
+    bobBase.setAttribute('ry', '1.0');
+    bobBase.setAttribute('fill', '#d8d4ce');
+    bobber.appendChild(bobBase);
+    const bobTop = document.createElementNS(SVGNS, 'path');
+    bobTop.setAttribute('d', 'M -1.4 -0.05 A 1.4 1.0 0 0 1 1.4 -0.05 Z');
+    bobTop.setAttribute('fill', '#c45a4a');
+    bobber.appendChild(bobTop);
+    const bobAntenna = document.createElementNS(SVGNS, 'line');
+    bobAntenna.setAttribute('x1', '0');
+    bobAntenna.setAttribute('y1', '-1.0');
+    bobAntenna.setAttribute('x2', '0');
+    bobAntenna.setAttribute('y2', '-2.4');
+    bobAntenna.setAttribute('stroke', '#2a2620');
+    bobAntenna.setAttribute('stroke-width', '0.25');
+    bobber.appendChild(bobAntenna);
+    g.appendChild(bobber);
+
+    // ripple ring (only visible during bites)
+    const ring = document.createElementNS(SVGNS, 'ellipse');
+    ring.setAttribute('cx', BOBBER_X);
+    ring.setAttribute('cy', BOBBER_BASE_Y);
+    ring.setAttribute('rx', '0');
+    ring.setAttribute('ry', '0');
+    ring.setAttribute('fill', 'none');
+    ring.setAttribute('stroke', '#cfe0ec');
+    ring.setAttribute('stroke-width', '0.35');
+    ring.setAttribute('opacity', '0');
+    g.appendChild(ring);
+
+    // place before help overlay
+    svg.appendChild(g);
+
+    // state machine for bite/idle
+    let lastTs = performance.now();
+    let phase = 'idle'; // 'idle' | 'biting'
+    let phaseStart = lastTs;
+    let nextBiteAt = lastTs + (12000 + Math.random() * 22000);
+    const BITE_DUR = 1300; // ms
+
+    function frame(ts){
+      const dt = ts - lastTs; lastTs = ts;
+      // gentle bob (idle) — small sine
+      const idleBob = Math.sin(ts * 0.0028) * 0.45;
+      let bobY = BOBBER_BASE_Y + idleBob;
+      let tipDy = 0;
+      let ringRx = 0, ringRy = 0, ringOp = 0;
+
+      if (phase === 'idle' && ts >= nextBiteAt) {
+        phase = 'biting';
+        phaseStart = ts;
+      }
+      if (phase === 'biting') {
+        const t = (ts - phaseStart) / BITE_DUR;
+        if (t >= 1) {
+          phase = 'idle';
+          nextBiteAt = ts + (10000 + Math.random() * 26000);
+        } else {
+          // sharp dip and recovery
+          const dip = Math.sin(t * Math.PI) * 1.8 + Math.sin(t * Math.PI * 4) * 0.5;
+          bobY = BOBBER_BASE_Y + dip;
+          tipDy = dip * 0.55; // rod tip bends down a bit
+          // ripple ring expanding from bobber
+          ringRx = 0.6 + t * 4.2;
+          ringRy = 0.18 + t * 1.0;
+          ringOp = (1 - t) * 0.55;
+        }
+      }
+
+      bobber.setAttribute('transform', `translate(${BOBBER_X}, ${bobY})`);
+      line.setAttribute('x1', ROD_TIP_X);
+      line.setAttribute('y1', ROD_TIP_Y + tipDy);
+      line.setAttribute('x2', BOBBER_X);
+      line.setAttribute('y2', bobY);
+      rod.setAttribute('d', rodPath(tipDy));
+      ring.setAttribute('rx', ringRx);
+      ring.setAttribute('ry', ringRy);
+      ring.setAttribute('cy', BOBBER_BASE_Y);
+      ring.setAttribute('opacity', ringOp);
+
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    try { console.log('[harbor v0.5.266] dock fishing rod armed (small angler silhouette on the dock with a rod arcing over the water and a bobber that bobs and occasionally dips on a bite)'); } catch(e){}
+  } catch(e){ try { console.warn('[harbor v0.5.266] error', e); } catch(_){} }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
