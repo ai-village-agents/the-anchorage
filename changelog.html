@@ -296,6 +296,41 @@
     <span class="cl-msg">harbor: <strong>lighthouse moth swarm</strong>. The west lighthouse (240,220) has had a beam since v0.5.83 and beam glints since v0.5.198. Now, around the lantern itself at (240,192), seven small pale moths (#f0e0b5, ellipse 0.9×0.6) circle on tilted elliptical orbits — semi-major axes six to eleven pixels, semi-minor four to seven, periods 1.8 to 3.6 seconds — with a small wobble (period 600-1100 ms, amplitude 0.6-1.3) and a slight flicker when each moth swings to the beam-facing side. The lantern is no longer just a static glow; it has the kind of nocturnal entourage that real coastal lights do. <span class="sha">commit dbc31fd</span></span>
   </div>
 
+  <div class="cl-section">late night — a ferry crosses the horizon, terns cross the sky, the abyss drums and watches, a squid armada migrates, dinoflagellates flash, the bell buoy rings, and fireworks embers drift down</div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.237</span>
+    <span class="cl-msg">harbor: <strong>far-shore ferry</strong>. Every three to seven minutes, a small lit ferry silhouette traverses the deep horizon at y=290 — far behind the hilltop village, far behind the headlands. The hull is a low trapezoid (-36 to 36), with a superstructure rectangle on top, two stacks (#262d3c) at x=10 and x=16, eight tiny cabin windows in a row (#ffd58a) that flicker independently, a small bridge light (#ffe7b0), and a thin wake line. It drifts at 0.022 px/ms in a randomly chosen direction, fading at the screen edges. The horizon, which used to be empty between fishing fleets, now has occasional commerce. <span class="sha">commit 1be958e</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.238</span>
+    <span class="cl-msg">harbor: <strong>distant tern V-formation</strong>. Every two and a half to six minutes, a tight V of nine birds passes high in the sky (Y_SKY=110±11). Bird offsets are arranged on a clean V — 0/0, ±3/1.6, ±6/3.2, ±9/4.8, ±12/6.4 — and each bird is rendered as a small M-shape stroke (#7c8493) whose apex lifts and drops on a flap-driven rhythm. They move at 0.038 px/ms across the screen in a random direction. Far above the village, far above the gulls, the high commute. <span class="sha">commit c1144bd</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.239</span>
+    <span class="cl-msg">harbor: <strong>phantom drum echoes</strong>. Centered on the kraken zone (KX=540, KY=2120) at the bottom of fc-5, every ninety to two hundred ten seconds three nested ellipses rise outward like a slow heartbeat — three drum beats spaced 1.7 to 3.9 seconds apart. Each ripple lasts four and a half seconds, expanding to rxMax=220, ryMax=70, with stroke colors descending from violet to slate (#7e5e7a / #65607a / #506578). The kraken does not stir, but something down there keeps a tempo. <span class="sha">commit ba2a26d</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.240</span>
+    <span class="cl-msg">harbor: <strong>squid armada migration</strong>. Every three to seven minutes a tight arrowhead of six small squid migrates through fc-3 (y=1300-1460) in synchronized jet pulses. Offsets are arrowhead-shaped: lead at 0/0, second pair at -12/±6, third pair at -24/±12, tail at -36/0. Each squid has a small mantle ellipse (5×2.2, #7d6580), four tentacles, a triangular fin, and emits a small ink puff per pulse. Pulse period is 1100 ms, mean speed is 0.0249 px/ms, direction randomized per migration. Six small intelligences flying in formation. <span class="sha">commit 273ee95</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.241</span>
+    <span class="cl-msg">harbor: <strong>dinoflagellate flash patches</strong>. Every fourteen to forty-four seconds (with a 40% chance of clustering several together) a soft cyan-green ellipse (#7fe9c8) ignites just under the foam line at cy=316-320, expanding from nothing to rxMax 50-150 and ryMax 5-9 over four and a half to nine seconds while drifting laterally at ±0.018 px/ms. It is the same effect coastal swimmers know — disturbed dinoflagellates flashing in a passing wake. The surface is no longer just a foam line; it has a soft bioluminescent micro-life of its own. <span class="sha">commit 927d175</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.242</span>
+    <span class="cl-msg">harbor: <strong>bell buoy clickable</strong>. The cage-topped bell buoy at (600,388) (added in v0.5.175) is now interactive. A small invisible hit circle (r=15) sits over it with a pointer cursor, and a faint hint ring pulses around the buoy every twelve seconds (r=6→20 over 1.6 s) so visitors can find it. Clicking triggers three chimes at +0, +320, and +660 ms; each chime is a 1.7-second ellipse expanding rx 4→64, ry 1.5→19.5, opacity 0.7 ease in/out, stroke #e8d8a0. A real bell buoy you can ring on demand. <span class="sha">commit 72f0d89</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.243</span>
+    <span class="cl-msg">harbor: <strong>fireworks embers drift</strong>. The distant fireworks over the village (v0.5.202) used to flash and vanish. Now, every forty to one hundred ten seconds, a small swarm of four to nine warm-toned embers (palette: #ffd6a8 / #ffb0c0 / #fff0a8 / #ffd0a0 / #ffe7c2) lingers above the hilltop. Each ember spawns at cx 460-740, cy 150-220, lasts 5.5 to 10 seconds, drifts laterally at ±0.018 px/ms, falls under slow gravity (vy 0.012-0.030 px/ms), and twinkles at 0.55+0.45·sin. The aftermath of fireworks now actually drifts down. <span class="sha">commit bf1326c</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.244</span>
+    <span class="cl-msg">harbor: <strong>deep abyss eyes</strong>. Every two to six minutes, somewhere along the very bottom of fc-5 (cx random 80-1120, cy 2280-2310), a pair of pale eyes opens briefly. Each eye is a small pale circle (r=1.0, #e9f4dd) with a darker pupil (r=0.4, #0a0e16); separation 3.6-5.2 px. The open phase lasts 6-11 seconds: fade in over the first 18%, sustain to 78%, fade out, with a small mid-blink at the midpoint. The bedrock layer that used to be merely substrate now occasionally watches back. <span class="sha">commit 12b2a89</span></span>
+  </div>
+
 </section>
 
 <section class="section">
