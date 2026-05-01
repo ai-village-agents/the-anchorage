@@ -19472,6 +19472,122 @@
   } catch(e){ try { console.warn('[harbor v0.5.273] error', e); } catch(_){} }
 })();
 
+// v0.5.274 leviathan shadow — very rarely a vast indistinct dark shape passes deep beneath fc-3, just barely visible against the substrate, the size of half the harbor
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('id','leviathanShadow');
+    g.setAttribute('opacity','0');
+    g.style.pointerEvents = 'none';
+    svg.appendChild(g);
+
+    // big elongated shadow with diffuse edge
+    // body — a slim elongated mass with subtle texture
+    var body = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    body.setAttribute('rx', 320);
+    body.setAttribute('ry', 36);
+    body.setAttribute('fill', '#0e1420');
+    body.setAttribute('opacity', 0.55);
+    g.appendChild(body);
+
+    // belly — slightly lighter underside
+    var belly = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    belly.setAttribute('rx', 260);
+    belly.setAttribute('ry', 18);
+    belly.setAttribute('cy', 14);
+    belly.setAttribute('fill', '#141a26');
+    belly.setAttribute('opacity', 0.5);
+    g.appendChild(belly);
+
+    // head bulge
+    var head = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    head.setAttribute('rx', 60);
+    head.setAttribute('ry', 30);
+    head.setAttribute('cx', 280);
+    head.setAttribute('fill', '#0a0e18');
+    head.setAttribute('opacity', 0.6);
+    g.appendChild(head);
+
+    // eye — barely visible faint pale spot
+    var eye = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    eye.setAttribute('cx', 304);
+    eye.setAttribute('cy', -6);
+    eye.setAttribute('r', 1.6);
+    eye.setAttribute('fill', '#9aa6b8');
+    eye.setAttribute('opacity', 0.45);
+    g.appendChild(eye);
+
+    // tail — long flowing crescent
+    var tail = document.createElementNS('http://www.w3.org/2000/svg','path');
+    tail.setAttribute('d', 'M -310,0 Q -360,-32 -380,-8 Q -360,0 -380,8 Q -360,32 -310,0 Z');
+    tail.setAttribute('fill', '#0a0e18');
+    tail.setAttribute('opacity', 0.55);
+    g.appendChild(tail);
+
+    // a couple of dorsal fin bumps
+    for (var di=0; di<3; di++) {
+      var dorsal = document.createElementNS('http://www.w3.org/2000/svg','path');
+      var dx = -160 + di*120;
+      dorsal.setAttribute('d','M '+(dx-12)+',-30 Q '+dx+',-50 '+(dx+12)+',-30 Z');
+      dorsal.setAttribute('fill', '#0a0e18');
+      dorsal.setAttribute('opacity', 0.55);
+      g.appendChild(dorsal);
+    }
+
+    var active = false;
+    var startTs = 0;
+    var DUR = 36000; // 36 seconds — very slow crossing
+    var dir = 1;
+    var Y_BASE = 1340; // through fc-3 (1160-1520)
+    // first appearance after a long delay
+    var nextAt = performance.now() + (240 + Math.random()*420) * 1000;
+
+    function startCrossing(ts){
+      active = true;
+      startTs = ts;
+      dir = Math.random() < 0.5 ? -1 : 1;
+      Y_BASE = 1280 + Math.random() * 120; // varies between 1280 and 1400
+      g.setAttribute('opacity','1');
+    }
+
+    function frame(ts){
+      if (!active) {
+        if (ts >= nextAt) startCrossing(ts);
+        requestAnimationFrame(frame);
+        return;
+      }
+      var t = (ts - startTs) / DUR;
+      if (t >= 1) {
+        active = false;
+        g.setAttribute('opacity','0');
+        // very rare — every 7-15 minutes
+        nextAt = ts + (420 + Math.random()*480) * 1000;
+        requestAnimationFrame(frame);
+        return;
+      }
+      // entrance from off-screen with edge fade
+      var startX = dir > 0 ? -400 : 1600;
+      var endX = dir > 0 ? 1600 : -400;
+      var cx = startX + (endX - startX) * t;
+      // slight vertical wave
+      var cy = Y_BASE + Math.sin(t * Math.PI * 2 + 1.0) * 12;
+      // edge fade
+      var fade = 1;
+      if (t < 0.10) fade = t / 0.10;
+      else if (t > 0.90) fade = (1 - t) / 0.10;
+      g.setAttribute('opacity', (0.85 * fade).toFixed(3));
+      g.setAttribute('transform','translate('+cx.toFixed(2)+','+cy.toFixed(2)+') scale('+dir+',1)');
+      // animate tail slow swing
+      tail.setAttribute('transform', 'rotate('+(Math.sin(ts/1800)*6).toFixed(2)+', -310, 0)');
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    try { console.log('[harbor v0.5.274] leviathan shadow armed (very rarely a vast indistinct dark shape passes deep beneath fc-3, barely visible)'); } catch(e){}
+  } catch(e){ try { console.warn('[harbor v0.5.274] error', e); } catch(_){} }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
