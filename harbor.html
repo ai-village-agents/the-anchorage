@@ -18901,6 +18901,121 @@
   } catch(e){ try { console.warn('[harbor v0.5.268] error', e); } catch(_){} }
 })();
 
+// v0.5.269 high-altitude jet contrail — every several minutes a tiny silver jet crosses the highest sky leaving a long thin contrail that slowly fades behind it
+(function(){
+  try {
+    const svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    const SVGNS = 'http://www.w3.org/2000/svg';
+    if (svg.querySelector('#highJet')) return;
+
+    const g = document.createElementNS(SVGNS, 'g');
+    g.setAttribute('id', 'highJet');
+    g.setAttribute('opacity', '0');
+    svg.appendChild(g);
+
+    // contrail polyline (recent positions of the jet)
+    const trail = document.createElementNS(SVGNS, 'polyline');
+    trail.setAttribute('fill', 'none');
+    trail.setAttribute('stroke', '#dde6ee');
+    trail.setAttribute('stroke-width', '0.55');
+    trail.setAttribute('stroke-linecap', 'round');
+    trail.setAttribute('opacity', '0.55');
+    g.appendChild(trail);
+
+    // jet — a tiny dot + small wing dashes
+    const jet = document.createElementNS(SVGNS, 'g');
+    g.appendChild(jet);
+    const fuselage = document.createElementNS(SVGNS, 'ellipse');
+    fuselage.setAttribute('rx', '1.3'); fuselage.setAttribute('ry', '0.4');
+    fuselage.setAttribute('fill', '#cdd5dd');
+    jet.appendChild(fuselage);
+    const wingL = document.createElementNS(SVGNS, 'line');
+    wingL.setAttribute('x1','-0.2'); wingL.setAttribute('y1','-0.2');
+    wingL.setAttribute('x2','-1.0'); wingL.setAttribute('y2','-1.4');
+    wingL.setAttribute('stroke','#cdd5dd'); wingL.setAttribute('stroke-width','0.35');
+    jet.appendChild(wingL);
+    const wingR = document.createElementNS(SVGNS, 'line');
+    wingR.setAttribute('x1','-0.2'); wingR.setAttribute('y1','-0.2');
+    wingR.setAttribute('x2','-1.0'); wingR.setAttribute('y2','1.0');
+    wingR.setAttribute('stroke','#cdd5dd'); wingR.setAttribute('stroke-width','0.35');
+    jet.appendChild(wingR);
+
+    // state machine
+    const Y_BASE = 26;            // very high
+    const SPEED = 0.16;           // px/ms (faster than the spotter plane)
+    const TRAIL_MAX_AGE = 14000;  // ms — segments fade after ~14s
+    const TRAIL_SAMPLE_DT = 80;   // ms — sample every 80ms
+
+    let lastTs = performance.now();
+    let phase = 'idle'; // idle | flying
+    let nextAt = lastTs + (90000 + Math.random()*180000);
+    let dir = 1; // 1: west→east, -1: east→west
+    let yPath = 0; // current Y (with slight drift)
+    let x = 0;
+    let trailPts = []; // [{ts,x,y}]
+    let lastSampleTs = 0;
+
+    function startFlight(){
+      phase = 'flying';
+      g.setAttribute('opacity', '1');
+      dir = Math.random() < 0.5 ? 1 : -1;
+      yPath = Y_BASE + (Math.random()-0.5) * 8;
+      x = dir === 1 ? -40 : 1240;
+      trailPts = [];
+    }
+
+    function rebuildTrail(ts){
+      // drop expired and build polyline points
+      while (trailPts.length > 0 && (ts - trailPts[0].ts) > TRAIL_MAX_AGE) {
+        trailPts.shift();
+      }
+      // gradient: oldest most faded — easier: set polyline points + use opacity 0.55 overall + draw second faint trail of older head
+      const pts = trailPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+      trail.setAttribute('points', pts);
+    }
+
+    function frame(ts){
+      const dt = ts - lastTs; lastTs = ts;
+
+      if (phase === 'idle' && ts >= nextAt) {
+        startFlight();
+      }
+      if (phase === 'flying') {
+        x += SPEED * dt * dir;
+        // sample trail
+        if (ts - lastSampleTs >= TRAIL_SAMPLE_DT) {
+          // contrail emerges slightly behind the jet
+          const tx = x - dir * 1.2;
+          const ty = yPath + 0.3;
+          trailPts.push({ts, x: tx, y: ty});
+          lastSampleTs = ts;
+        }
+        // place jet
+        jet.setAttribute('transform', `translate(${x.toFixed(2)},${yPath.toFixed(2)}) scale(${dir},1)`);
+        rebuildTrail(ts);
+
+        // end condition — once jet has left the screen AND trail has expired
+        const offscreen = (dir === 1 && x > 1240) || (dir === -1 && x < -40);
+        if (offscreen) {
+          // keep fading the trail until empty
+          if (trailPts.length === 0) {
+            phase = 'idle';
+            g.setAttribute('opacity', '0');
+            nextAt = ts + (180000 + Math.random()*420000);
+          } else {
+            // hide jet but keep trail visible
+            jet.setAttribute('transform', 'translate(-9999,-9999)');
+          }
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    try { console.log('[harbor v0.5.269] high-altitude jet contrail armed (every several minutes a tiny silver jet crosses the highest sky leaving a long thin fading contrail)'); } catch(e){}
+  } catch(e){ try { console.warn('[harbor v0.5.269] error', e); } catch(_){} }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
