@@ -19193,6 +19193,92 @@
   } catch(e){ try { console.warn('[harbor v0.5.270] error', e); } catch(_){} }
 })();
 
+// v0.5.271 festival kites — two small kites flown from the village hilltop, swaying on wind, tied by long thin strings to the hilltop
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('id','festivalKites');
+    g.style.pointerEvents = 'none';
+    svg.appendChild(g);
+
+    // Two anchor points along the hilltop ridge (peak ~232, x range 440-760)
+    var KITES = [
+      { ax: 520, ay: 234, hue: '#d4554a', stripe: '#fff5e0', baseX: 470, baseY: 130, swayX: 28, swayY: 14, periodX: 6800, periodY: 5100, phase: 0, size: 1.0 },
+      { ax: 690, ay: 230, hue: '#4a8ad4', stripe: '#fff5e0', baseX: 740, baseY: 145, swayX: 32, swayY: 16, periodX: 7400, periodY: 5800, phase: 1.4, size: 0.9 }
+    ];
+
+    KITES.forEach(function(k){
+      // string (polyline approximated as path with quadratic curve, reflecting wind sag)
+      k.string = document.createElementNS('http://www.w3.org/2000/svg','path');
+      k.string.setAttribute('stroke', '#3a4250');
+      k.string.setAttribute('stroke-width', '0.4');
+      k.string.setAttribute('fill', 'none');
+      k.string.setAttribute('opacity', '0.55');
+      g.appendChild(k.string);
+
+      // kite group
+      k.kite = document.createElementNS('http://www.w3.org/2000/svg','g');
+      // diamond kite body — path
+      var s = k.size;
+      var body = document.createElementNS('http://www.w3.org/2000/svg','path');
+      body.setAttribute('d','M 0,'+(-7*s)+' L '+(5*s)+',0 L 0,'+(7*s)+' L '+(-5*s)+',0 Z');
+      body.setAttribute('fill', k.hue);
+      body.setAttribute('stroke', '#1a1f28');
+      body.setAttribute('stroke-width', '0.4');
+      k.kite.appendChild(body);
+      // horizontal stripe
+      var stripe = document.createElementNS('http://www.w3.org/2000/svg','path');
+      stripe.setAttribute('d','M '+(-5*s)+',0 L '+(5*s)+',0');
+      stripe.setAttribute('stroke', k.stripe);
+      stripe.setAttribute('stroke-width', '0.6');
+      stripe.setAttribute('opacity', '0.85');
+      k.kite.appendChild(stripe);
+      // vertical spine
+      var spine = document.createElementNS('http://www.w3.org/2000/svg','path');
+      spine.setAttribute('d','M 0,'+(-7*s)+' L 0,'+(7*s));
+      spine.setAttribute('stroke', '#1a1f28');
+      spine.setAttribute('stroke-width', '0.3');
+      spine.setAttribute('opacity', '0.6');
+      k.kite.appendChild(spine);
+      // tail with three small bows
+      for (var i=0; i<3; i++) {
+        var bow = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        bow.setAttribute('x', -1.2);
+        bow.setAttribute('y', 7*s + 2 + i*3.4);
+        bow.setAttribute('width', 2.4);
+        bow.setAttribute('height', 1.2);
+        bow.setAttribute('fill', i%2 === 0 ? k.hue : k.stripe);
+        bow.setAttribute('opacity', '0.85');
+        k.kite.appendChild(bow);
+      }
+      g.appendChild(k.kite);
+    });
+
+    function frame(ts){
+      KITES.forEach(function(k){
+        var phx = (ts + k.phase*1000) / k.periodX;
+        var phy = (ts + k.phase*1000) / k.periodY;
+        var dx = Math.sin(phx * Math.PI * 2) * k.swayX;
+        var dy = Math.cos(phy * Math.PI * 2) * k.swayY;
+        var kx = k.baseX + dx;
+        var ky = k.baseY + dy;
+        // string with mid sag
+        var midX = (k.ax + kx)/2 + Math.sin(ts/2400 + k.phase) * 4;
+        var midY = (k.ay + ky)/2 + 18; // sag below the midpoint
+        k.string.setAttribute('d', 'M '+k.ax+','+k.ay+' Q '+midX+','+midY+' '+kx+','+ky);
+        // kite tilt — gentle rotation following sway derivative
+        var tilt = Math.cos(phx * Math.PI * 2) * 12; // degrees
+        k.kite.setAttribute('transform','translate('+kx+','+ky+') rotate('+tilt+')');
+      });
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    try { console.log('[harbor v0.5.271] festival kites armed (two small kites flown from the village hilltop, swaying on wind, tied by long thin strings to the hilltop)'); } catch(e){}
+  } catch(e){ try { console.warn('[harbor v0.5.271] error', e); } catch(_){} }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
