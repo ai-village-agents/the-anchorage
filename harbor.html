@@ -12273,6 +12273,122 @@
         })();
 
 
+        // v0.5.207 sea otter cracking shell on chest — every now and then the otter holds a small shell on its belly and gives it a few sharp taps with its paws, with a tiny crack-spark and a small ripple
+        (function(){
+          const svg = document.querySelector('.harbor-svg');
+          if(!svg) return;
+          const layer = document.createElementNS('http://www.w3.org/2000/svg','g');
+          layer.setAttribute('id','otterShellLayer');
+          layer.setAttribute('pointer-events','none');
+          svg.appendChild(layer);
+          // shell + spark + ripple, all relative to (0,0); we'll translate to otter chest
+          const shell = document.createElementNS('http://www.w3.org/2000/svg','g');
+          shell.setAttribute('opacity','0');
+          // shell — small ridged ellipse
+          shell.innerHTML = [
+            '<ellipse cx="0" cy="0" rx="2.4" ry="1.4" fill="#dcd2b8" stroke="#806a40" stroke-width="0.25"/>',
+            '<line x1="-1.6" y1="0" x2="1.6" y2="0" stroke="#806a40" stroke-width="0.18"/>',
+            '<line x1="-1.0" y1="-0.7" x2="1.0" y2="-0.7" stroke="#806a40" stroke-width="0.14" opacity="0.6"/>',
+            '<line x1="-1.0" y1="0.7" x2="1.0" y2="0.7" stroke="#806a40" stroke-width="0.14" opacity="0.6"/>'
+          ].join('');
+          const spark = document.createElementNS('http://www.w3.org/2000/svg','circle');
+          spark.setAttribute('cx','0'); spark.setAttribute('cy','-0.4');
+          spark.setAttribute('r','0.9');
+          spark.setAttribute('fill','#ffffff');
+          spark.setAttribute('opacity','0');
+          const ripple = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+          ripple.setAttribute('fill','none');
+          ripple.setAttribute('stroke','#bcd0e6');
+          ripple.setAttribute('stroke-width','0.4');
+          ripple.setAttribute('opacity','0');
+          shell.appendChild(spark);
+          layer.appendChild(shell);
+          layer.appendChild(ripple);
+          let state = 'idle';
+          let t0 = 0;
+          let dur = 0;
+          let nextCrack = performance.now() + 30000 + Math.random()*40000;
+          let tapTimes = [];
+          let tapIdx = 0;
+          const TAP_COUNT = 4;
+          function planCracking(){
+            tapTimes = [];
+            for(let i=0;i<TAP_COUNT;i++) tapTimes.push(i*420 + Math.random()*40);
+            tapIdx = 0;
+          }
+          function tick(){
+            const now = performance.now();
+            const otter = document.getElementById('seaOtter');
+            if(!otter){ requestAnimationFrame(tick); return; }
+            // parse otter transform
+            const tr = otter.getAttribute('transform') || '';
+            const m = tr.match(/translate\(\s*([\-0-9.]+)[ ,]+([\-0-9.]+)\s*\)/);
+            if(!m){ requestAnimationFrame(tick); return; }
+            const ox = parseFloat(m[1]);
+            const oy = parseFloat(m[2]);
+            // shell sits on otter's chest: in otter local coords (0,-3.5). otter is scaled ±1 horizontal.
+            // approximate world position regardless of scale: same chest x, y-offset
+            const sx_match = tr.match(/scale\(\s*([\-0-9.]+)/);
+            const sx = sx_match ? parseFloat(sx_match[1]) : 1;
+            const chestX = ox + 0*sx; // 0 in local
+            const chestY = oy - 3.2;
+            if(state === 'idle'){
+              shell.setAttribute('opacity','0');
+              ripple.setAttribute('opacity','0');
+              if(now >= nextCrack){
+                planCracking();
+                state = 'cracking';
+                t0 = now;
+                dur = TAP_COUNT*420 + 1200;
+              }
+            } else if(state === 'cracking'){
+              const local = now - t0;
+              if(local >= dur){
+                state = 'idle';
+                shell.setAttribute('opacity','0');
+                spark.setAttribute('opacity','0');
+                ripple.setAttribute('opacity','0');
+                nextCrack = now + 35000 + Math.random()*60000;
+              } else {
+                // shell sits on chest, mostly visible
+                shell.setAttribute('transform', `translate(${chestX.toFixed(2)} ${chestY.toFixed(2)})`);
+                const env = local < 200 ? local/200 : (local > dur - 300 ? (dur-local)/300 : 1);
+                shell.setAttribute('opacity', (env*0.95).toFixed(3));
+                // process taps
+                let sparkOp = 0;
+                let rippleOp = 0;
+                let rippleR = 0;
+                while(tapIdx < tapTimes.length && local >= tapTimes[tapIdx]){
+                  tapIdx++;
+                }
+                if(tapIdx > 0){
+                  const last = tapTimes[tapIdx-1];
+                  const since = local - last;
+                  if(since < 240){
+                    sparkOp = (1 - since/240) * 0.9;
+                    rippleR = since * 0.06;
+                    rippleOp = (1 - since/240) * 0.45;
+                  }
+                }
+                spark.setAttribute('opacity', sparkOp.toFixed(3));
+                if(rippleOp > 0){
+                  ripple.setAttribute('cx', chestX.toFixed(2));
+                  ripple.setAttribute('cy', (chestY+1.4).toFixed(2));
+                  ripple.setAttribute('rx', (3 + rippleR).toFixed(2));
+                  ripple.setAttribute('ry', (0.6 + rippleR*0.2).toFixed(2));
+                  ripple.setAttribute('opacity', rippleOp.toFixed(3));
+                } else {
+                  ripple.setAttribute('opacity','0');
+                }
+              }
+            }
+            requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+          console.log('[harbor v0.5.207] sea otter shell cracking armed (otter holds shell, taps it 4 times every 30-90s)');
+        })();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
