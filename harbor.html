@@ -12454,6 +12454,109 @@
         })();
 
 
+        // v0.5.209 dolphin spinner — every several minutes a dolphin not only leaps but completes a full barrel-spin in the air, splashing on entry
+        (function(){
+          const svg = document.querySelector('.harbor-svg');
+          if(!svg) return;
+          const Y_SURFACE = 318;
+          const layer = document.createElementNS('http://www.w3.org/2000/svg','g');
+          layer.setAttribute('id','dolphinSpinnerLayer');
+          layer.setAttribute('pointer-events','none');
+          svg.appendChild(layer);
+          const dolphin = document.createElementNS('http://www.w3.org/2000/svg','g');
+          dolphin.setAttribute('opacity','0');
+          // simple dolphin body shape — sleek silhouette with dorsal + tail
+          dolphin.innerHTML = [
+            '<path d="M -10 0 q 4 -4 12 -3 q 6 1 8 3 q -4 1 -10 1 q -2 0 -4 1 q -3 1 -6 -2 z" fill="#1a2030"/>',
+            '<path d="M -10 0 l -4 -3 l -1 4 l 4 -1 z" fill="#1a2030"/>',
+            '<path d="M 0 -2 l 1.5 -3 l 1.5 3 z" fill="#1a2030"/>',
+            '<circle cx="6" cy="0" r="0.4" fill="#bcd0e6"/>'
+          ].join('');
+          layer.appendChild(dolphin);
+          // splash sprites
+          const splashes = [];
+          for(let i=0;i<10;i++){
+            const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+            c.setAttribute('r','0.9'); c.setAttribute('fill','#cfd6e6');
+            c.setAttribute('opacity','0');
+            layer.appendChild(c);
+            splashes.push({el:c,active:false,t0:0,x0:0,y0:0,vx:0,vy:0});
+          }
+          let state = 'idle';
+          let t0 = 0;
+          let dur = 0;
+          let X0 = 0, X1 = 0, peakY = 0, dirSign = 1;
+          let nextLeap = performance.now() + 80000 + Math.random()*120000;
+          function planLeap(){
+            const startSide = Math.random() < 0.5 ? -1 : 1;
+            X0 = startSide < 0 ? 200 + Math.random()*200 : 800 + Math.random()*200;
+            const span = 70 + Math.random()*40;
+            X1 = X0 + (-startSide)*span;
+            dirSign = -startSide;
+            peakY = Y_SURFACE - 60 - Math.random()*30;
+            t0 = performance.now();
+            dur = 1700 + Math.random()*400;
+            state = 'leap';
+          }
+          function fireSplash(cx, cy){
+            for(let i=0;i<splashes.length;i++){
+              const s = splashes[i];
+              if(s.active) continue;
+              s.active = true;
+              s.t0 = performance.now();
+              s.x0 = cx + (Math.random()-0.5)*4;
+              s.y0 = cy;
+              s.vx = (Math.random()-0.5) * 60;
+              s.vy = -30 - Math.random()*40;
+            }
+          }
+          function tick(){
+            const now = performance.now();
+            if(state === 'idle'){
+              if(now >= nextLeap){ planLeap(); }
+              dolphin.setAttribute('opacity','0');
+            } else if(state === 'leap'){
+              const u = (now - t0)/dur;
+              if(u >= 1){
+                fireSplash((X0+X1)/2 + (X1-X0)*0.0, Y_SURFACE);
+                state = 'splash';
+                t0 = now;
+                dur = 700;
+                dolphin.setAttribute('opacity','0');
+                nextLeap = now + 120000 + Math.random()*180000;
+              } else {
+                // parabola
+                const x = X0 + (X1-X0)*u;
+                const y = Y_SURFACE + (peakY - Y_SURFACE) * 4 * u * (1-u);
+                // full rotation: 360 degrees over the leap, plus facing direction
+                const rot = u * 360 + (dirSign < 0 ? 180 : 0);
+                const env = u<0.05 ? u/0.05 : (u>0.95 ? (1-u)/0.05 : 1);
+                dolphin.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${dirSign} 1) rotate(${rot.toFixed(1)})`);
+                dolphin.setAttribute('opacity', (env*0.95).toFixed(3));
+              }
+            } else if(state === 'splash'){
+              if((now - t0) > dur){ state = 'idle'; }
+            }
+            // splashes physics
+            for(let i=0;i<splashes.length;i++){
+              const s = splashes[i];
+              if(!s.active) continue;
+              const local = (now - s.t0)/1000;
+              if(local > 0.85){ s.active = false; s.el.setAttribute('opacity','0'); continue; }
+              const x = s.x0 + s.vx*local;
+              const y = s.y0 + s.vy*local + 0.5*180*local*local;
+              if(y > Y_SURFACE + 4){ s.active = false; s.el.setAttribute('opacity','0'); continue; }
+              s.el.setAttribute('cx', x.toFixed(1));
+              s.el.setAttribute('cy', y.toFixed(1));
+              s.el.setAttribute('opacity', Math.max(0, 0.85 - local).toFixed(3));
+            }
+            requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+          console.log('[harbor v0.5.209] dolphin spinner armed (full barrel-spin leap every 2-5 minutes)');
+        })();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
