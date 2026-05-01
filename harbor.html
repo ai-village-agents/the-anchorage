@@ -12953,6 +12953,100 @@
 })();
 
 
+// v0.5.214 festival lantern cluster — every several minutes, a cluster of three to six warm paper lanterns now rises in close succession from the hilltop village, scattering a little before disappearing into the upper sky
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    var g = document.createElementNS(SVGNS,'g');
+    g.setAttribute('id','festivalLanterns');
+    g.setAttribute('pointer-events','none');
+    svg.appendChild(g);
+
+    var POOL = 8;
+    var pool = [];
+    for (var i=0;i<POOL;i++){
+      var l = document.createElementNS(SVGNS,'g');
+      l.setAttribute('opacity','0');
+      l.innerHTML = [
+        // soft warm glow
+        '<circle r="3.4" fill="#ffd09a" opacity="0.45"/>',
+        // lantern body (rounded rect)
+        '<ellipse cx="0" cy="0" rx="1.5" ry="2.0" fill="#ffb060" opacity="0.95"/>',
+        // top cap
+        '<rect x="-0.7" y="-2.4" width="1.4" height="0.4" fill="#5a3a18"/>',
+        // bottom flame line
+        '<line x1="0" y1="2.0" x2="0" y2="2.6" stroke="#ffe8b0" stroke-width="0.3" opacity="0.7"/>',
+        // small shimmer
+        '<circle cx="-0.3" cy="-0.3" r="0.4" fill="#fff2c8" opacity="0.7"/>'
+      ].join('');
+      g.appendChild(l);
+      pool.push({el:l, active:false, t0:0, dur:0, x0:0, y0:0, x1:0, y1:0, vx:0, sway:0, phase:0});
+    }
+
+    var nextBurstAt = performance.now() + 70000 + Math.random()*100000; // first 70-170s
+
+    function startBurst(now){
+      var n = 3 + Math.floor(Math.random()*4); // 3-6 lanterns
+      var baseX = 480 + Math.random()*220; // somewhere over village rooftops 460-740 → tighten to 480-700
+      var stagger = 0;
+      var used = 0;
+      for (var i=0;i<POOL && used<n;i++){
+        var p = pool[i];
+        if (p.active) continue;
+        p.active = true;
+        p.t0 = now + stagger;
+        stagger += 600 + Math.random()*900; // 0.6-1.5s apart
+        p.dur = 32000 + Math.random()*12000; // 32-44s rise time
+        p.x0 = baseX + (Math.random()-0.5)*60;
+        p.y0 = 240 + Math.random()*4; // village rooftop level
+        p.x1 = p.x0 + (Math.random()-0.5)*120; // slight lateral drift
+        p.y1 = 50 + Math.random()*30;
+        p.phase = Math.random()*Math.PI*2;
+        used++;
+      }
+      nextBurstAt = now + 240000 + Math.random()*240000; // 4-8 min between bursts
+    }
+
+    function tickLantern(now, p){
+      if (!p.active) { p.el.setAttribute('opacity','0'); return; }
+      var dt = now - p.t0;
+      if (dt < 0){ p.el.setAttribute('opacity','0'); return; }
+      var u = dt / p.dur;
+      if (u >= 1){ p.active = false; p.el.setAttribute('opacity','0'); return; }
+      // ease-out vertical, linear-ish horizontal
+      var ey = 1 - Math.pow(1-u, 1.4);
+      var px = p.x0 + (p.x1 - p.x0)*u + Math.sin(now*0.0008 + p.phase)*1.5;
+      var py = p.y0 + (p.y1 - p.y0)*ey;
+      // fade in fast, fade out near top
+      var op;
+      if (u < 0.05) op = u/0.05;
+      else if (u > 0.85) op = Math.max(0, (1-u)/0.15);
+      else op = 1;
+      p.el.setAttribute('opacity', (op*0.95).toFixed(3));
+      p.el.setAttribute('transform','translate('+px.toFixed(1)+','+py.toFixed(1)+')');
+    }
+
+    function tick(now){
+      if (now >= nextBurstAt){
+        var anyActive = false;
+        for (var i=0;i<POOL;i++) if (pool[i].active) { anyActive = true; break; }
+        if (!anyActive) startBurst(now); else nextBurstAt = now + 5000;
+      }
+      for (var i=0;i<POOL;i++) tickLantern(now, pool[i]);
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    console.log('[harbor v0.5.214] festival lantern cluster armed (3-6 lanterns rise from village every 4-8 min)');
+  } catch(err){
+    try { console.error('[harbor v0.5.214] festival lantern cluster init failed', err); } catch(e){}
+  }
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
