@@ -11752,6 +11752,95 @@
 })();
 
 
+        // v0.5.201 falling star shower — occasional cluster of 5-9 meteors streaks across the night sky in a brief volley
+        (function(){
+          const svg = document.querySelector('.harbor-svg');
+          if(!svg) return;
+          const layer = document.createElementNS('http://www.w3.org/2000/svg','g');
+          layer.setAttribute('id','starShowerLayer');
+          layer.setAttribute('pointer-events','none');
+          svg.appendChild(layer);
+          const POOL = 12;
+          const meteors = [];
+          for(let i=0;i<POOL;i++){
+            const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+            g.setAttribute('opacity','0');
+            const tail = document.createElementNS('http://www.w3.org/2000/svg','line');
+            tail.setAttribute('stroke','#ffffff');
+            tail.setAttribute('stroke-width','1.1');
+            tail.setAttribute('stroke-linecap','round');
+            tail.setAttribute('opacity','0.85');
+            const head = document.createElementNS('http://www.w3.org/2000/svg','circle');
+            head.setAttribute('r','1.4');
+            head.setAttribute('fill','#ffffff');
+            g.appendChild(tail); g.appendChild(head);
+            layer.appendChild(g);
+            meteors.push({g,tail,head,active:false,t:0,dur:0,x0:0,y0:0,x1:0,y1:0,delay:0});
+          }
+          let showerActive = false;
+          let showerStart = 0;
+          let nextShower = performance.now() + 90000 + Math.random()*180000;
+          function startShower(){
+            showerActive = true;
+            showerStart = performance.now();
+            const count = 5 + Math.floor(Math.random()*5);
+            // common direction across the cluster, with slight per-meteor jitter
+            const baseAngle = Math.PI * (1.05 + Math.random()*0.20); // diagonal down-left to down-right-ish
+            const baseLen = 110 + Math.random()*60;
+            for(let i=0;i<count && i<POOL;i++){
+              const m = meteors[i];
+              m.active = true;
+              m.t = 0;
+              m.dur = 1100 + Math.random()*900;
+              m.delay = i*180 + Math.random()*220;
+              m.x0 = 60 + Math.random()*1080;
+              m.y0 = 40 + Math.random()*120;
+              const ang = baseAngle + (Math.random()-0.5)*0.18;
+              const len = baseLen + (Math.random()-0.5)*40;
+              m.x1 = m.x0 + Math.cos(ang)*len;
+              m.y1 = m.y0 + Math.abs(Math.sin(ang))*len + 80;
+            }
+          }
+          function tick(){
+            const now = performance.now();
+            if(!showerActive && now >= nextShower){
+              startShower();
+            }
+            if(showerActive){
+              let anyActive = false;
+              for(let i=0;i<POOL;i++){
+                const m = meteors[i];
+                if(!m.active) continue;
+                const local = now - showerStart - m.delay;
+                if(local < 0){ m.g.setAttribute('opacity','0'); anyActive = true; continue; }
+                const u = local / m.dur;
+                if(u >= 1){ m.active = false; m.g.setAttribute('opacity','0'); continue; }
+                anyActive = true;
+                const env = u < 0.15 ? (u/0.15) : (u > 0.75 ? (1-u)/0.25 : 1);
+                const x = m.x0 + (m.x1-m.x0)*u;
+                const y = m.y0 + (m.y1-m.y0)*u;
+                const tx = m.x0 + (m.x1-m.x0)*Math.max(0,u-0.10);
+                const ty = m.y0 + (m.y1-m.y0)*Math.max(0,u-0.10);
+                m.tail.setAttribute('x1', tx.toFixed(1));
+                m.tail.setAttribute('y1', ty.toFixed(1));
+                m.tail.setAttribute('x2', x.toFixed(1));
+                m.tail.setAttribute('y2', y.toFixed(1));
+                m.head.setAttribute('cx', x.toFixed(1));
+                m.head.setAttribute('cy', y.toFixed(1));
+                m.g.setAttribute('opacity', (env*0.9).toFixed(3));
+              }
+              if(!anyActive){
+                showerActive = false;
+                nextShower = now + 120000 + Math.random()*240000;
+              }
+            }
+            requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+          console.log('[harbor v0.5.201] falling star shower armed (cluster of meteors every 2-6 minutes)');
+        })();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
