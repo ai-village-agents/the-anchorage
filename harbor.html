@@ -14036,6 +14036,82 @@
   console.log('[harbor v0.5.223] kelp paddy with crab passenger armed (fourth drifting kelp mat carries a small orange crab on top)');
 })();
 
+// v0.5.224 deep coelacanth — a slower, dimmer, deeper variant of the v0.5.46 living fossil drifting through fc-4
+(function(){
+  const NS='http://www.w3.org/2000/svg';
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','deepCoelacanth');
+  g.setAttribute('opacity','0.46'); // dimmer
+  g.setAttribute('pointer-events','none');
+  // body — slightly larger and a tinge bluer to read as deeper
+  const body = document.createElementNS(NS,'ellipse');
+  body.setAttribute('cx','0'); body.setAttribute('cy','0');
+  body.setAttribute('rx','30'); body.setAttribute('ry','9');
+  body.setAttribute('fill','#3a3848');
+  g.appendChild(body);
+  // dorsal hump
+  const hump = document.createElementNS(NS,'path');
+  hump.setAttribute('d','M -10,-8 Q 0,-13 10,-8 Z');
+  hump.setAttribute('fill','#4a4858');
+  g.appendChild(hump);
+  // pectoral fin lobed
+  const pec = document.createElementNS(NS,'g');
+  const pecStalk = document.createElementNS(NS,'path');
+  pecStalk.setAttribute('d','M -2,3 Q 0,9 7,12');
+  pecStalk.setAttribute('stroke','#22202a');
+  pecStalk.setAttribute('stroke-width','1.4');
+  pecStalk.setAttribute('fill','none');
+  pec.appendChild(pecStalk);
+  const pecBlade = document.createElementNS(NS,'ellipse');
+  pecBlade.setAttribute('cx','7'); pecBlade.setAttribute('cy','12');
+  pecBlade.setAttribute('rx','6'); pecBlade.setAttribute('ry','2.8');
+  pecBlade.setAttribute('fill','#322f3c');
+  pec.appendChild(pecBlade);
+  g.appendChild(pec);
+  // pelvic fin
+  const pelvic = document.createElementNS(NS,'ellipse');
+  pelvic.setAttribute('cx','9'); pelvic.setAttribute('cy','9');
+  pelvic.setAttribute('rx','3.5'); pelvic.setAttribute('ry','1.6');
+  pelvic.setAttribute('fill','#322f3c');
+  g.appendChild(pelvic);
+  // 3-lobed tail
+  const tail = document.createElementNS(NS,'path');
+  tail.setAttribute('d','M 26,-1 L 42,-8 L 35,0 L 42,8 L 26,1 Z');
+  tail.setAttribute('fill','#322f3c');
+  g.appendChild(tail);
+  // eye — small dim
+  const eye = document.createElementNS(NS,'circle');
+  eye.setAttribute('cx','-18'); eye.setAttribute('cy','-2.5');
+  eye.setAttribute('r','1.7'); eye.setAttribute('fill','#cfd8c0');
+  g.appendChild(eye);
+  const pupil = document.createElementNS(NS,'circle');
+  pupil.setAttribute('cx','-18'); pupil.setAttribute('cy','-2.5');
+  pupil.setAttribute('r','0.85'); pupil.setAttribute('fill','#0a0610');
+  g.appendChild(pupil);
+  svg.appendChild(g);
+
+  // motion: very slow loop across fc-4, period ~115s (slower than v0.5.46), deeper Y around 1960
+  const t0 = performance.now();
+  const period = 115000;
+  function tick(){
+    const now = performance.now();
+    const t = (now - t0) / period;
+    const phase = t - Math.floor(t);
+    const dir = (Math.floor(t) % 2) === 0 ? 1 : -1;
+    const u = phase;
+    const x = dir > 0 ? 80 + 1040*u : 1120 - 1040*u;
+    const y = 1820 + Math.sin(now*0.00028)*60 + Math.sin(now*0.0009)*10;
+    const fp = Math.sin(now*0.0014)*8;
+    pec.setAttribute('transform','rotate('+fp.toFixed(1)+' 7 12)');
+    g.setAttribute('transform','translate('+x.toFixed(1)+','+y.toFixed(1)+') scale('+dir+',1)');
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.224] deep coelacanth armed (a dimmer, slower, deeper variant of the living fossil drifting through fc-4 at y≈1820)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
