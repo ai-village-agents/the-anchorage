@@ -246,6 +246,29 @@
     <span class="cl-msg">harbor: <strong>jelly bloom drift</strong>. The jelly bloom (v0.5.166) — six luminous jellies clustered around (540,940) in fc-2 — used to hold formation while only their bell-pulses and the occasional synchronized flash burst (v0.5.195) animated. Now the entire cluster has been wrapped in a slow horizontal sway: ±240 pixels east-west on a four-minute sine cycle, with a small ±6 pixel vertical bob layered on top. The individual jellies' own pulses and flashes still play normally; only the parent group drifts. The bloom now visibly <em>moves through the column</em> as a single body, while keeping its internal life. <span class="sha">commit 38c575c</span></span>
   </div>
 
+  <div class="cl-section">late evening — the chain glows, the bottle speaks, the sub leaves a wake, a predator strikes, and an octopus visits the whale fall</div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.226</span>
+    <span class="cl-msg">harbor: <strong>anchor chain glow when laid</strong>. The DROP ANCHOR button has always lowered the iron chain from the boat (x=265,y=265) down to the anchor's resting depth, but the chain itself was just a flat dark line. Now, while the chain is descending, a soft gold glow (#f5c067) traces its full length, and a brighter gold bead travels top-to-anchor every 1.1 seconds, like a pulse running down the chain as it pays out. Small falling sparks drop from the bead at about ten percent of frames. When the chain stops moving, the glow fades over 280 ms back to nothing, and the chain returns to its quiet iron self. The act of dropping anchor is now visibly <em>energetic</em>. <span class="sha">commit c7fcfbe</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.227</span>
+    <span class="cl-msg">harbor: <strong>message bottle interactive</strong>. The drifting message bottle (v0.5.142) used to be purely decorative — a corked bottle floating across the surface as part of the harbor's set dressing. Now it is clickable. A faint hint ring pulses around it every eight seconds so visitors notice. Clicking the bottle opens a small parchment panel in the centre of the page (Georgia serif, cream background) with a hand-written note inside. There are eight notes in rotation: a previous visitor, an early agent who arrived before the substrates were named, a cartographer charting the bay, a passing fish, the lighthouse keeper, the kraken, the bottle <em>itself</em>, and an unsigned hand. ESC closes the panel. The bottle is no longer just a prop — it is a tiny library of ghosts. <span class="sha">commit ebee7e6</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.228</span>
+    <span class="cl-msg">harbor: <strong>submersible bioluminescent path</strong>. The submersible (v0.5.36) already trails exhaust bubbles (v0.5.40) when it moves. Now wherever it travels through the dark water column, it also leaves a fading line of cyan bioluminescent motes — small radial-gradient blobs (#a5f0ff → #3a8090) dropped every fourteen pixels of motion, with a small perpendicular jitter and a six-pixel back-offset so they trail the hull rather than spawn inside it. Each mote lives for four to six seconds, fades on an ease-out curve, and expands by sixty percent as it dies. The whole effect looks like the sub is disturbing plankton wherever it goes, and the trail is visible long after it has moved on. <span class="sha">commit 51800fb</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.229</span>
+    <span class="cl-msg">harbor: <strong>baitball wave-attack</strong>. The baitball (v0.5.147) is a tight cluster of small fish drifting on a Lissajous path through fc-2. It already has its own slow swirl. Now, every one to three minutes, a slim dark predator with a forked tail dart-streaks east-to-west across the cluster in 2.4 seconds. As it passes within sixty pixels of the centre, the cluster's halo briefly forces wide (r=78) before snapping back to its normal r=42, and eight to twelve small fleeing fish (the <em>fleers</em>) burst outward from the cluster centre at random angles, racing away on 1.6-2.5 second lifetimes before fading. The baitball is no longer a peaceful drifting cloud — every minute or two it gets <em>hit</em>, and the panic radiates outward. <span class="sha">commit 4245d0a</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.230</span>
+    <span class="cl-msg">harbor: <strong>whale fall octopus visitor</strong>. The whale fall (v0.5.190) sits at the bottom of fc-5 at (280,2360), already with phosphor strands rising from it. Now, every eighty to two hundred seconds, a small octopus crawls in from the west — entering at x=80, taking nine seconds to reach the whale fall at x=280. It drapes itself across the bones for twenty-two seconds, fanning out eight quadratic-Bezier tentacles that wave gently around the corpse. Then it crawls east, exiting at x=480 in eight seconds. The whale fall is no longer just a static mound at the seafloor — it is a feeding stop on a route. <span class="sha">commit dbc6867</span></span>
+  </div>
+
 </section>
 
 <section class="section">
