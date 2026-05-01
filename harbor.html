@@ -15030,6 +15030,109 @@
   try { console.log('[harbor v0.5.233] coastal cliff bird colony armed ('+N+' perches on the west headland; one bird relocates every 20-50 seconds)'); } catch(e){}
 })();
 
+// v0.5.234 mola mola basking — every several minutes a giant ocean sunfish drifts in just under the surface, its rounded body grey-silver, with one wobbling dorsal fin breaking the waterline like a flopping shark
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const SURF_Y = 318;
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','molaMolaBask');
+  g.setAttribute('pointer-events','none');
+  g.setAttribute('opacity','0');
+  // body — large rounded oval just below surface
+  const body = document.createElementNS(NS,'ellipse');
+  body.setAttribute('cx','0'); body.setAttribute('cy','12');
+  body.setAttribute('rx','22'); body.setAttribute('ry','14');
+  body.setAttribute('fill','#3f4b58');
+  body.setAttribute('opacity','0.6');
+  g.appendChild(body);
+  // anal fin (bottom) — short paddle
+  const anal = document.createElementNS(NS,'path');
+  anal.setAttribute('d','M -2,24 Q 0,32 6,30 Q 4,26 2,24 Z');
+  anal.setAttribute('fill','#36414d');
+  anal.setAttribute('opacity','0.55');
+  g.appendChild(anal);
+  // tail / clavus — truncated, ragged trailing edge
+  const tail = document.createElementNS(NS,'path');
+  tail.setAttribute('d','M -22,8 Q -28,12 -26,18 Q -22,16 -20,14 Z');
+  tail.setAttribute('fill','#36414d');
+  tail.setAttribute('opacity','0.5');
+  g.appendChild(tail);
+  // dorsal fin — protrudes ABOVE surface, wobbles as it drifts
+  const dorsal = document.createElementNS(NS,'path');
+  dorsal.setAttribute('id','molaDorsal');
+  dorsal.setAttribute('d','M -2,0 Q 0,-10 4,0 Z');
+  dorsal.setAttribute('fill','#3a4654');
+  dorsal.setAttribute('opacity','0.85');
+  g.appendChild(dorsal);
+  // surface ripple under the fin
+  const wake = document.createElementNS(NS,'ellipse');
+  wake.setAttribute('id','molaWake');
+  wake.setAttribute('cx','0'); wake.setAttribute('cy','0.5');
+  wake.setAttribute('rx','10'); wake.setAttribute('ry','1.2');
+  wake.setAttribute('fill','none');
+  wake.setAttribute('stroke','#9bb0c6');
+  wake.setAttribute('stroke-width','0.5');
+  wake.setAttribute('opacity','0.35');
+  g.appendChild(wake);
+  // small eye highlight
+  const eye = document.createElementNS(NS,'circle');
+  eye.setAttribute('cx','12'); eye.setAttribute('cy','9');
+  eye.setAttribute('r','0.9');
+  eye.setAttribute('fill','#0a0e14');
+  g.appendChild(eye);
+  svg.appendChild(g);
+
+  let nextAt = performance.now() + 60000 + Math.random()*60000;
+  let active = null;
+
+  function startBask(now){
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const startX = dir > 0 ? -50 : 1250;
+    active = {
+      t0: now, dir,
+      startX,
+      speed: 0.012, // very slow drift
+      dur: 100000, // 100s — slow basking traverse
+      // wobble parameters
+      wobblePeriod: 1800,
+      wobblePhase: Math.random()*Math.PI*2,
+    };
+  }
+  function frame(now){
+    if(!active && now >= nextAt){ startBask(now); }
+    if(active){
+      const t = now - active.t0;
+      if(t > active.dur){ g.setAttribute('opacity','0'); active = null; nextAt = now + 180000 + Math.random()*240000; return requestAnimationFrame(frame); }
+      const x = active.startX + active.dir * active.speed * t;
+      // off-screen check
+      if(x < -60 || x > 1260){ g.setAttribute('opacity','0'); requestAnimationFrame(frame); return; }
+      // fade in/out at edges
+      let op = 1;
+      if(t < 4000) op = t/4000;
+      else if(t > active.dur - 4000) op = Math.max(0,(active.dur-t)/4000);
+      // small rise/fall of body so dorsal fin breaks surface variably (basking behavior)
+      const bob = Math.sin(t/3500)*1.2;
+      // mirror by direction
+      const sx = active.dir;
+      g.setAttribute('transform','translate('+x.toFixed(1)+','+(SURF_Y + bob).toFixed(1)+') scale('+sx+',1)');
+      g.setAttribute('opacity', op.toFixed(2));
+      // dorsal fin wobble
+      const wobble = Math.sin((t/active.wobblePeriod)*Math.PI*2 + active.wobblePhase);
+      // skew the dorsal slightly — animate its d path by tilting the apex
+      const apexX = wobble*1.6;
+      dorsal.setAttribute('d','M -2,0 Q '+apexX.toFixed(1)+',-10 4,0 Z');
+      // wake follows fin, expanding subtly
+      const wr = 8 + 3*Math.sin(t/1500);
+      wake.setAttribute('rx', wr.toFixed(1));
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.234] mola mola basking armed (a giant ocean sunfish drifts just under the surface every 3-7 minutes; its dorsal fin wobbles above the waterline)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
