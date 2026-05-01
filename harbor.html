@@ -14402,6 +14402,111 @@
   console.log('[harbor v0.5.227] message bottle interactive armed (click the drifting bottle to read a note; eight notes cycle)');
 })();
 
+// v0.5.228 submersible bioluminescent path — soft cyan glow motes mark the path of the submersible and fade over five seconds
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const sub = document.getElementById('submersible');
+  if (!sub) return;
+  // Container for trail dots, inserted just before submersible so motes appear behind the sub
+  const trail = document.createElementNS(NS,'g');
+  trail.setAttribute('id','submersibleBioTrail');
+  trail.setAttribute('pointer-events','none');
+  // Soft radial gradient for the motes
+  const defs = document.createElementNS(NS,'defs');
+  defs.innerHTML = '<radialGradient id="subTrailMote" cx="50%" cy="50%" r="50%">'
+    + '<stop offset="0%" stop-color="#a5f0ff" stop-opacity="0.95"/>'
+    + '<stop offset="60%" stop-color="#7ad0e0" stop-opacity="0.45"/>'
+    + '<stop offset="100%" stop-color="#3a8090" stop-opacity="0"/></radialGradient>';
+  trail.appendChild(defs);
+  // Pool of mote circles
+  const POOL = 60;
+  const motes = [];
+  for (let i=0;i<POOL;i++){
+    const c = document.createElementNS(NS,'circle');
+    c.setAttribute('r','5');
+    c.setAttribute('fill','url(#subTrailMote)');
+    c.setAttribute('opacity','0');
+    trail.appendChild(c);
+    motes.push({node:c, t0:0, life:0, x:0, y:0, baseR:5});
+  }
+  sub.parentNode.insertBefore(trail, sub);
+  let nextIdx = 0;
+  let prevX = 0, prevY = 0, hasPrev = false;
+  let accum = 0;       // distance accumulator
+  const SPACING = 14;  // px between motes
+  function parseSub(){
+    const t = sub.getAttribute('transform') || '';
+    const m = t.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
+    if (!m) return null;
+    return {x: parseFloat(m[1]), y: parseFloat(m[2])};
+  }
+  function frame(now){
+    const p = parseSub();
+    if (p){
+      if (hasPrev){
+        const dx = p.x - prevX;
+        const dy = p.y - prevY;
+        const d = Math.hypot(dx, dy);
+        if (d > 0.15){
+          accum += d;
+          while (accum > SPACING){
+            accum -= SPACING;
+            // Spawn a mote at an interpolated position along the segment, slight perpendicular jitter
+            const k = (d - accum) / d;
+            const baseX = prevX + dx * k;
+            const baseY = prevY + dy * k;
+            // perpendicular unit
+            const len = d || 1;
+            const nx = -dy / len;
+            const ny = dx / len;
+            const jitter = (Math.random() - 0.5) * 6;
+            const x = baseX + nx * jitter;
+            // place trailing slightly behind the sub by offsetting against motion
+            const back = 6;
+            const xb = x - (dx/len) * back;
+            const yb = baseY + ny * jitter - (dy/len) * back;
+            const mt = motes[nextIdx];
+            nextIdx = (nextIdx + 1) % POOL;
+            mt.t0 = now;
+            mt.life = 4500 + Math.random()*1500;
+            mt.x = xb;
+            mt.y = yb;
+            mt.baseR = 4 + Math.random()*3;
+            mt.node.setAttribute('cx', xb.toFixed(2));
+            mt.node.setAttribute('cy', yb.toFixed(2));
+            mt.node.setAttribute('r', mt.baseR.toFixed(2));
+            mt.node.setAttribute('opacity','0.9');
+          }
+        }
+      }
+      prevX = p.x; prevY = p.y; hasPrev = true;
+    }
+    // Update motes — fade out and grow slightly
+    for (let i=0;i<POOL;i++){
+      const mt = motes[i];
+      if (mt.life > 0){
+        const age = now - mt.t0;
+        if (age >= mt.life){
+          mt.life = 0;
+          mt.node.setAttribute('opacity','0');
+        } else {
+          const k = age / mt.life;
+          // ease-out fade with gentle expansion
+          const op = 0.85 * Math.pow(1 - k, 1.4);
+          const r = mt.baseR * (1 + k*0.6);
+          mt.node.setAttribute('opacity', op.toFixed(3));
+          mt.node.setAttribute('r', r.toFixed(2));
+        }
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.228] submersible bioluminescent path armed (cyan motes mark the sub\'s wake and fade over 4-6 seconds)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
