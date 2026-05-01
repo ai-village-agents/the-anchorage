@@ -15549,6 +15549,85 @@
   try { console.log('[harbor v0.5.238] distant tern V-formation armed (9-bird V crosses the high sky every 2.5-6 min)'); } catch(e){}
 })();
 
+// v0.5.239 phantom drum echoes — three concentric ripples occasionally rise from the kraken zone like a slow drum strike from very deep
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','phantomDrumEchoes');
+  g.setAttribute('pointer-events','none');
+  const KX = 540, KY = 2120; // kraken zone
+  // three nested ellipses (deep ripple has wider horizontal stretch)
+  const RINGS = [];
+  for(let i=0;i<3;i++){
+    const e = document.createElementNS(NS,'ellipse');
+    e.setAttribute('cx', String(KX));
+    e.setAttribute('cy', String(KY));
+    e.setAttribute('rx', '0');
+    e.setAttribute('ry', '0');
+    e.setAttribute('fill','none');
+    e.setAttribute('stroke','#7e5e7a');
+    e.setAttribute('stroke-width','1.6');
+    e.setAttribute('opacity','0');
+    g.appendChild(e);
+    RINGS.push(e);
+  }
+  svg.appendChild(g);
+  // anchor before help overlay; rendered above kraken eyes etc — that's fine
+
+  let active = null;
+  let nextAt = performance.now() + 60000 + Math.random()*120000; // first: 1-3 min
+
+  function startBeat(now){
+    active = { t0: now, beats: [] };
+    // schedule three beats with slight irregularity
+    const dt0 = 0;
+    const dt1 = 1700 + Math.random()*400; // 1.7-2.1s after first
+    const dt2 = 3400 + Math.random()*500; // 3.4-3.9s
+    active.beats = [dt0, dt1, dt2].map(o => ({ start: o, fired: false }));
+  }
+
+  function frame(now){
+    if(!active){
+      if(now >= nextAt){ startBeat(now); }
+      requestAnimationFrame(frame);
+      return;
+    }
+    const t = now - active.t0;
+    // for each beat, propagate ripple
+    let allDone = true;
+    for(let i=0;i<3;i++){
+      const beat = active.beats[i];
+      const e = RINGS[i];
+      const local = t - beat.start;
+      if(local < 0){ allDone = false; e.setAttribute('opacity','0'); continue; }
+      const dur = 4500; // 4.5s long ripple
+      if(local > dur){ e.setAttribute('opacity','0'); continue; }
+      allDone = false;
+      const k = local / dur; // 0..1
+      // expand
+      const rx = 6 + 220 * k;
+      const ry = 3 + 70 * k;
+      e.setAttribute('rx', rx.toFixed(1));
+      e.setAttribute('ry', ry.toFixed(1));
+      // fade in fast, out slow
+      const op = (k < 0.18 ? k/0.18 : 1 - (k-0.18)/0.82) * 0.7;
+      e.setAttribute('opacity', Math.max(0, op).toFixed(2));
+      // slow color shift through beat sequence
+      const color = ['#7e5e7a','#65607a','#506578'][i];
+      e.setAttribute('stroke', color);
+    }
+    if(allDone){
+      active = null;
+      nextAt = now + 90000 + Math.random()*120000; // next: 1.5-3.5 min
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.239] phantom drum echoes armed (three slow ripples rise from the kraken zone every 1.5-3.5 min)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
