@@ -12006,6 +12006,81 @@
         })();
 
 
+        // v0.5.204 distant ship horn ripple — every several minutes a faint trio of concentric rings expands from the distant ship at the horizon, like a sound wave you can almost hear
+        (function(){
+          const svg = document.querySelector('.harbor-svg');
+          if(!svg) return;
+          const layer = document.createElementNS('http://www.w3.org/2000/svg','g');
+          layer.setAttribute('id','shipHornLayer');
+          layer.setAttribute('pointer-events','none');
+          svg.appendChild(layer);
+          // distant ship is at roughly x=420 y=296 scale 0.7 (v0.5.164)
+          // distant fishing fleet at CX=920 CY=297 (v0.5.170)
+          // Pick from these two anchors at random
+          const ANCHORS = [{x:420,y:296},{x:920,y:297}];
+          const RINGS = 3;
+          const rings = [];
+          for(let i=0;i<RINGS;i++){
+            const e = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+            e.setAttribute('cx','0'); e.setAttribute('cy','0');
+            e.setAttribute('rx','0'); e.setAttribute('ry','0');
+            e.setAttribute('fill','none');
+            e.setAttribute('stroke','#cfd6e6');
+            e.setAttribute('stroke-width','0.7');
+            e.setAttribute('opacity','0');
+            layer.appendChild(e);
+            rings.push({el:e,t0:0,delay:0});
+          }
+          let active = false;
+          let burstStart = 0;
+          let cx = 0, cy = 0;
+          let dur = 0;
+          let nextBurst = performance.now() + 60000 + Math.random()*120000;
+          function startBurst(){
+            const a = ANCHORS[Math.floor(Math.random()*ANCHORS.length)];
+            cx = a.x; cy = a.y;
+            active = true;
+            burstStart = performance.now();
+            dur = 4500 + Math.random()*1500;
+            for(let i=0;i<RINGS;i++){
+              rings[i].delay = i*900;
+              rings[i].t0 = burstStart + i*900;
+            }
+          }
+          function tick(){
+            const now = performance.now();
+            if(!active && now >= nextBurst){ startBurst(); }
+            if(active){
+              let allDone = true;
+              for(let i=0;i<RINGS;i++){
+                const r = rings[i];
+                const local = now - r.t0;
+                if(local < 0){ r.el.setAttribute('opacity','0'); allDone = false; continue; }
+                const u = local / dur;
+                if(u >= 1){ r.el.setAttribute('opacity','0'); continue; }
+                allDone = false;
+                // ellipse to mimic horizon perspective (ry < rx)
+                const rx = u * 95;
+                const ry = u * 18;
+                const op = (1-u) * 0.55;
+                r.el.setAttribute('cx', cx);
+                r.el.setAttribute('cy', cy);
+                r.el.setAttribute('rx', rx.toFixed(1));
+                r.el.setAttribute('ry', ry.toFixed(1));
+                r.el.setAttribute('opacity', op.toFixed(3));
+              }
+              if(allDone){
+                active = false;
+                nextBurst = now + 90000 + Math.random()*180000;
+              }
+            }
+            requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+          console.log('[harbor v0.5.204] distant ship horn ripple armed (concentric rings every 1-3 minutes)');
+        })();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
