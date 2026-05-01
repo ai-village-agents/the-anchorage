@@ -20174,6 +20174,117 @@
   console.log('v0.5.280 distant rainbow armed');
 })();
 
+// v0.5.281 albatross — a large slow-soaring bird with wide wings glides across the sky; barely flaps, leans into long slow turns
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const Y_BASE = 232; // mid-low sky
+  const DUR = 26000;  // ms across
+  const SPAN = 1280;  // travel distance (a bit > viewport)
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('id', 'albatrossGlider');
+  g.setAttribute('opacity', '0');
+  g.style.pointerEvents = 'none';
+  // group "bird" so we can rotate as one
+  const bird = document.createElementNS(NS, 'g');
+  // body — slim grey ellipse
+  const body = document.createElementNS(NS, 'ellipse');
+  body.setAttribute('cx','0'); body.setAttribute('cy','0');
+  body.setAttribute('rx','3.6'); body.setAttribute('ry','0.85');
+  body.setAttribute('fill','#cdd5dd');
+  bird.appendChild(body);
+  // belly (paler)
+  const belly = document.createElementNS(NS, 'ellipse');
+  belly.setAttribute('cx','0'); belly.setAttribute('cy','0.4');
+  belly.setAttribute('rx','2.6'); belly.setAttribute('ry','0.6');
+  belly.setAttribute('fill','#f0f4f8');
+  bird.appendChild(belly);
+  // head
+  const head = document.createElementNS(NS, 'circle');
+  head.setAttribute('cx','3.6'); head.setAttribute('cy','-0.1');
+  head.setAttribute('r','0.9');
+  head.setAttribute('fill','#e6ecf2');
+  bird.appendChild(head);
+  // beak — orange-y tip
+  const beak = document.createElementNS(NS, 'path');
+  beak.setAttribute('d','M 4.4 -0.1 L 5.9 0 L 4.4 0.4 Z');
+  beak.setAttribute('fill','#d8a060');
+  bird.appendChild(beak);
+  // wings — drawn as a path; we'll mutate path d to flap subtly
+  const wings = document.createElementNS(NS, 'path');
+  wings.setAttribute('fill','#a3acb6');
+  wings.setAttribute('stroke','#7c8693');
+  wings.setAttribute('stroke-width','0.25');
+  bird.appendChild(wings);
+  // wing tips (slightly darker)
+  const wingTips = document.createElementNS(NS, 'path');
+  wingTips.setAttribute('fill','#3a4250');
+  wingTips.setAttribute('opacity','0.8');
+  bird.appendChild(wingTips);
+  g.appendChild(bird);
+  svg.appendChild(g);
+
+  let state = 'idle';
+  let stateStart = 0;
+  let dir = 1;
+  let nextAt = performance.now() + (60 + Math.random()*180) * 1000; // 1-4 min first
+
+  function buildWings(flapPhase, dihedral){
+    // flapPhase 0..1 around mid; dihedral degrees of bend
+    // wings extend from -22..22, with trailing edge at y=2, leading edge at y=-2
+    // We modulate y of trailing edge via flapPhase
+    const tip = 22;
+    const lift = 2.4 + 1.6 * Math.sin(flapPhase); // small slow flap
+    // path: curves from left tip up to body, across body, out to right tip
+    const d = `M -${tip} ${(-lift*0.6).toFixed(2)} Q -10 ${(-1.6*lift).toFixed(2)} 0 -0.6 Q 10 ${(-1.6*lift).toFixed(2)} ${tip} ${(-lift*0.6).toFixed(2)} L ${tip} ${(0.4 + lift*0.4).toFixed(2)} Q 10 ${(1.4 + lift*0.6).toFixed(2)} 0 0.6 Q -10 ${(1.4 + lift*0.6).toFixed(2)} -${tip} ${(0.4 + lift*0.4).toFixed(2)} Z`;
+    wings.setAttribute('d', d);
+    // wing tips (darker chevron at far ends)
+    const dt = `M -${tip} ${(-lift*0.6).toFixed(2)} L -${tip-3} ${(-0.2-lift*0.4).toFixed(2)} L -${tip-3} ${(0.6+lift*0.3).toFixed(2)} L -${tip} ${(0.4 + lift*0.4).toFixed(2)} Z M ${tip} ${(-lift*0.6).toFixed(2)} L ${tip-3} ${(-0.2-lift*0.4).toFixed(2)} L ${tip-3} ${(0.6+lift*0.3).toFixed(2)} L ${tip} ${(0.4 + lift*0.4).toFixed(2)} Z`;
+    wingTips.setAttribute('d', dt);
+  }
+
+  function frame(ts){
+    if (state === 'idle'){
+      if (ts >= nextAt){
+        state = 'crossing';
+        stateStart = ts;
+        dir = Math.random() < 0.5 ? -1 : 1;
+      } else {
+        g.setAttribute('opacity','0');
+      }
+    }
+    if (state === 'crossing'){
+      const t = (ts - stateStart) / DUR;
+      if (t >= 1){
+        state = 'idle';
+        g.setAttribute('opacity','0');
+        nextAt = ts + (240 + Math.random()*300) * 1000; // 4-9 min between
+      } else {
+        // smooth ease in/out
+        const u = t < 0.08 ? (t/0.08) : (t > 0.92 ? ((1-t)/0.08) : 1);
+        // path: x sweeps across, with slow vertical sinusoid for soaring arcs
+        const baseX = -SPAN/2 + t * SPAN; // -640..640
+        const y = Y_BASE + Math.sin(t * Math.PI * 2.4) * 18; // gentle soaring undulation
+        const x = (svg.viewBox && svg.viewBox.baseVal ? svg.viewBox.baseVal.width/2 : 600) + dir * baseX;
+        // tilt: lean into vertical motion
+        const dy = Math.cos(t * Math.PI * 2.4) * 18 * Math.PI * 2.4 / DUR; // approximate
+        const tilt = Math.atan2(dy, dir * (SPAN/DUR)) * 180/Math.PI;
+        // flap: very rare slow modulation
+        const flapPhase = ts * 0.0009 + (state === 'crossing' ? 0 : 0);
+        buildWings(flapPhase, 0);
+        bird.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${dir},1) rotate(${(tilt*0.6 * dir).toFixed(2)})`);
+        // flip head/beak handled by scale on parent
+        const opCurve = Math.min(1, u);
+        g.setAttribute('opacity', (0.85 * opCurve).toFixed(2));
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('v0.5.281 albatross armed');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
