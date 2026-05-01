@@ -19588,6 +19588,186 @@
   } catch(e){ try { console.warn('[harbor v0.5.274] error', e); } catch(_){} }
 })();
 
+// v0.5.275 distant cargo freighter — every several minutes a long low cargo freighter with stacked shipping containers crosses the far horizon, with stacks of multi-color containers, a bridge tower at the stern, and small running lights
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('id','cargoFreighter');
+    g.setAttribute('opacity','0');
+    g.style.pointerEvents = 'none';
+    svg.appendChild(g);
+
+    var Y_HORIZON = 297; // farther/lower than trawler 392
+    var SCALE = 0.62;
+
+    // Hull — long low rectangle with subtle bow rake
+    var hull = document.createElementNS('http://www.w3.org/2000/svg','path');
+    hull.setAttribute('d', 'M -54,0 L 54,0 L 50,3.5 L -52,3.5 Z');
+    hull.setAttribute('fill', '#2a3340');
+    hull.setAttribute('stroke', '#1a2030');
+    hull.setAttribute('stroke-width', 0.3);
+    g.appendChild(hull);
+
+    // waterline strip
+    var line = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    line.setAttribute('x', -54);
+    line.setAttribute('y', 1.4);
+    line.setAttribute('width', 108);
+    line.setAttribute('height', 0.5);
+    line.setAttribute('fill', '#3a4a60');
+    g.appendChild(line);
+
+    // Stack containers — 24 small rects in two layers, varied colors
+    var palette = ['#a04040','#3a6090','#207050','#806020','#608030','#704080','#3a8a8a','#90705a'];
+    var rowsCount = 2;
+    for (var r=0; r<rowsCount; r++) {
+      for (var i=0; i<22; i++) {
+        var rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        rect.setAttribute('x', -42 + i*4);
+        rect.setAttribute('y', -1.6 - r*1.6);
+        rect.setAttribute('width', 3.6);
+        rect.setAttribute('height', 1.5);
+        rect.setAttribute('fill', palette[(i*7 + r*3) % palette.length]);
+        rect.setAttribute('opacity', 0.85);
+        g.appendChild(rect);
+      }
+    }
+
+    // Bridge tower at stern (left side)
+    var bridge = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    bridge.setAttribute('x', -52);
+    bridge.setAttribute('y', -7.4);
+    bridge.setAttribute('width', 5);
+    bridge.setAttribute('height', 7.4);
+    bridge.setAttribute('fill', '#22303d');
+    bridge.setAttribute('stroke', '#0a0e18');
+    bridge.setAttribute('stroke-width', 0.3);
+    g.appendChild(bridge);
+    // Bridge windows
+    for (var bi=0; bi<2; bi++) {
+      var win = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      win.setAttribute('x', -51.4);
+      win.setAttribute('y', -6.8 + bi*1.4);
+      win.setAttribute('width', 3.8);
+      win.setAttribute('height', 0.6);
+      win.setAttribute('fill', '#ffd58a');
+      win.setAttribute('opacity', 0.55);
+      g.appendChild(win);
+    }
+    // Funnel
+    var funnel = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    funnel.setAttribute('x', -49.4);
+    funnel.setAttribute('y', -9.4);
+    funnel.setAttribute('width', 1.6);
+    funnel.setAttribute('height', 2);
+    funnel.setAttribute('fill', '#1a1f28');
+    g.appendChild(funnel);
+    // Mast at bow
+    var mast = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    mast.setAttribute('x', 48);
+    mast.setAttribute('y', -6);
+    mast.setAttribute('width', 0.4);
+    mast.setAttribute('height', 6);
+    mast.setAttribute('fill', '#1a1f28');
+    g.appendChild(mast);
+
+    // Running lights (small dots)
+    var redLight = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    redLight.setAttribute('cx', -54); redLight.setAttribute('cy', -1.8); redLight.setAttribute('r', 0.5);
+    redLight.setAttribute('fill', '#ff5050'); redLight.setAttribute('opacity', 0.85);
+    g.appendChild(redLight);
+    var greenLight = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    greenLight.setAttribute('cx', 54); greenLight.setAttribute('cy', -1.8); greenLight.setAttribute('r', 0.5);
+    greenLight.setAttribute('fill', '#44ff80'); greenLight.setAttribute('opacity', 0.85);
+    g.appendChild(greenLight);
+    var topLight = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    topLight.setAttribute('cx', 48.2); topLight.setAttribute('cy', -6.4); topLight.setAttribute('r', 0.45);
+    topLight.setAttribute('fill', '#fff5e0'); topLight.setAttribute('opacity', 0.85);
+    g.appendChild(topLight);
+
+    // Smoke puff group
+    var smoke = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.appendChild(smoke);
+    var puffs = [];
+
+    var active = false;
+    var startTs = 0;
+    var DUR = 110000; // very slow ~110 s
+    var dir = 1;
+    var nextAt = performance.now() + (300 + Math.random()*420) * 1000;
+
+    function startCrossing(ts){
+      active = true;
+      startTs = ts;
+      dir = Math.random() < 0.5 ? -1 : 1;
+      // clear puffs
+      while (smoke.firstChild) smoke.removeChild(smoke.firstChild);
+      puffs.length = 0;
+      g.setAttribute('opacity','0');
+    }
+
+    function frame(ts){
+      if (!active) {
+        if (ts >= nextAt) startCrossing(ts);
+        requestAnimationFrame(frame);
+        return;
+      }
+      var t = (ts - startTs) / DUR;
+      if (t >= 1) {
+        active = false;
+        g.setAttribute('opacity','0');
+        nextAt = ts + (480 + Math.random()*540) * 1000;
+        requestAnimationFrame(frame);
+        return;
+      }
+      var startX = dir > 0 ? -120 : 1320;
+      var endX = dir > 0 ? 1320 : -120;
+      var x = startX + (endX - startX) * t;
+      var y = Y_HORIZON + Math.sin(ts/4500) * 0.5;
+      // edge fade
+      var fade = 1;
+      if (t < 0.06) fade = t / 0.06;
+      else if (t > 0.94) fade = (1 - t) / 0.06;
+      g.setAttribute('opacity', (0.78 * fade).toFixed(3));
+      g.setAttribute('transform','translate('+x.toFixed(2)+','+y.toFixed(2)+') scale('+(dir*SCALE)+','+SCALE+')');
+
+      // emit smoke puffs occasionally
+      if (Math.random() < 0.012 && puffs.length < 30) {
+        var p = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        p.setAttribute('cx', -49 + Math.random()*0.4);
+        p.setAttribute('cy', -10);
+        p.setAttribute('r', 0.6);
+        p.setAttribute('fill', '#5a6878');
+        p.setAttribute('opacity', 0.4);
+        smoke.appendChild(p);
+        puffs.push({el:p, born:ts, vy:-0.005-Math.random()*0.01, vx:dir*0.0015+(Math.random()-0.5)*0.005});
+      }
+      // animate puffs
+      for (var pi=puffs.length-1; pi>=0; pi--) {
+        var pf = puffs[pi];
+        var age = ts - pf.born;
+        if (age > 5000) {
+          smoke.removeChild(pf.el);
+          puffs.splice(pi, 1);
+          continue;
+        }
+        var cx = parseFloat(pf.el.getAttribute('cx')) + pf.vx * 16;
+        var cy = parseFloat(pf.el.getAttribute('cy')) + pf.vy * 16;
+        var r = 0.6 + (age/5000)*1.5;
+        pf.el.setAttribute('cx', cx);
+        pf.el.setAttribute('cy', cy);
+        pf.el.setAttribute('r', r);
+        pf.el.setAttribute('opacity', 0.4 * (1 - age/5000));
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    try { console.log('[harbor v0.5.275] cargo freighter armed (every several minutes a long cargo freighter with stacked containers crosses the far horizon, with running lights and a small smoke trail)'); } catch(e){}
+  } catch(e){ try { console.warn('[harbor v0.5.275] error', e); } catch(_){} }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
