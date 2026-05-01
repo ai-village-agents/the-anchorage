@@ -15304,6 +15304,65 @@
   try { console.log('[harbor v0.5.235] cuttlefish color display armed (fc-3 hover + 4 chromatophore patterns + jet escape; recurs every 2-5 minutes)'); } catch(e){}
 })();
 
+// v0.5.236 lighthouse moth swarm — small pale moths circle the west lighthouse lantern at (240,192), each on its own elliptical orbit with slight wobble
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','lighthouseMoths');
+  g.setAttribute('pointer-events','none');
+  const CX = 240, CY = 192;
+  const N = 7;
+  const MOTHS = [];
+  for(let i=0;i<N;i++){
+    const m = document.createElementNS(NS,'ellipse');
+    m.setAttribute('rx','0.9'); m.setAttribute('ry','0.6');
+    m.setAttribute('fill','#f0e0b5');
+    m.setAttribute('opacity','0.7');
+    g.appendChild(m);
+    MOTHS.push({
+      el: m,
+      a: 6 + Math.random()*5,   // semi-major axis
+      b: 4 + Math.random()*3,   // semi-minor axis
+      tilt: Math.random()*Math.PI*2,
+      period: 1800 + Math.random()*1800, // 1.8-3.6s per orbit
+      phase: Math.random()*Math.PI*2,
+      wobblePeriod: 600 + Math.random()*500,
+      wobbleAmp: 0.6 + Math.random()*0.7,
+      flickerPhase: Math.random()*Math.PI*2,
+    });
+  }
+  svg.appendChild(g);
+  const T0 = performance.now();
+  function frame(now){
+    const t = now - T0;
+    for(const m of MOTHS){
+      const theta = (t/m.period)*Math.PI*2 + m.phase;
+      // ellipse local
+      const lx = m.a * Math.cos(theta);
+      const ly = m.b * Math.sin(theta);
+      // rotate by tilt
+      const cs = Math.cos(m.tilt), sn = Math.sin(m.tilt);
+      const x = lx*cs - ly*sn;
+      const y = lx*sn + ly*cs;
+      // wobble
+      const wob = Math.sin((t/m.wobblePeriod)*Math.PI*2);
+      const wx = wob * m.wobbleAmp * 0.6;
+      const wy = wob * m.wobbleAmp * 0.4;
+      m.el.setAttribute('cx', (CX + x + wx).toFixed(1));
+      m.el.setAttribute('cy', (CY + y + wy).toFixed(1));
+      // flicker — beam-pass-by brightening when on lit side
+      const litFactor = 0.5 + 0.5*Math.cos(theta - m.tilt); // arbitrary phase
+      const fl = 0.55 + 0.4*litFactor + 0.1*Math.sin((t/280)*Math.PI*2 + m.flickerPhase);
+      m.el.setAttribute('opacity', Math.max(0.25, Math.min(1, fl)).toFixed(2));
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.236] lighthouse moth swarm armed ('+N+' pale moths circle the west lighthouse lantern on tilted elliptical orbits with wobble)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
