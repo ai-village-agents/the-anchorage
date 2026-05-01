@@ -331,6 +331,33 @@
     <span class="cl-msg">harbor: <strong>deep abyss eyes</strong>. Every two to six minutes, somewhere along the very bottom of fc-5 (cx random 80-1120, cy 2280-2310), a pair of pale eyes opens briefly. Each eye is a small pale circle (r=1.0, #e9f4dd) with a darker pupil (r=0.4, #0a0e16); separation 3.6-5.2 px. The open phase lasts 6-11 seconds: fade in over the first 18%, sustain to 78%, fade out, with a small mid-blink at the midpoint. The bedrock layer that used to be merely substrate now occasionally watches back. <span class="sha">commit 12b2a89</span></span>
   </div>
 
+  <div class="cl-section">pre-dawn — a fluke slams the surface, a comet jelly drifts through the deep, four porpoises leap as one, the bedrock blooms and watches, the keeper paces, and a sea slug crawls</div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.245</span>
+    <span class="cl-msg">harbor: <strong>distant whale fluke wave</strong>. Every two and a half to six and a half minutes, somewhere along the surface (cx random 220-980, Y_SURFACE=318), a humpback fluke breaks the water and slams back down. The fluke (path M0,20 L-2,2 Q-9,-3 -15,1 Q-8,4 -1,4 L0,20 L1,4 Q8,4 15,1 Q9,-3 2,2 Z, fill #2c3340) plays out a 5400 ms sequence: rise (0-20% to dy=-22), hang with small wobble (20-55%), slam down (55-65%), and finally two splash rings expand from the impact point (rx 4→64 / 4→84, ry 1.2→5.2 / 1.2→6.2, second ring delayed). A characteristic humpback fluke wave at the horizon. <span class="sha">commit 24570ea</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.246</span>
+    <span class="cl-msg">harbor: <strong>bioluminescent comet jelly</strong>. Every three to eight minutes, a single comet jelly drifts through the wayback layer (fc-4, y=1640-1880). A small bell (rx=5 ry=3.6, #cdf3ff) sits inside a soft halo (rx=9 ry=7), trailing a 14-segment luminous tail (ellipses fading rx 2.4→0.7) and three thread-thin tentacles of length 90/105/120. It moves at 0.014-0.022 px/ms in a random direction with a soft fade at the screen edges. A rare deep-water visitor, easy to miss. <span class="sha">commit 7c5e785</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.247</span>
+    <span class="cl-msg">harbor: <strong>porpoise pod tight formation</strong>. Every two to five minutes, a tight pod of four porpoises crosses the surface in synchronized low leaps. Bodies are small dark ellipses (rx=3.6 ry=1.4, #1f2a36) with triangular dorsal fins, spaced 9 px apart. The pod moves at 0.06-0.08 px/ms and each animal cycles in 1600 ms with a 90 ms phase offset, so leaps cascade through the formation. Each arc peaks 8 px above the surface (y=318), and a small splash ring (rx 1→5, ry 0.4→1.4) marks every landing. Direction is random; the crossing lasts 22-30 s. Tight pods feel different from solo bottlenose breaths. <span class="sha">commit 16ac789</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.248</span>
+    <span class="cl-msg">harbor: <strong>bedrock worm tubes</strong>. Six small Christmas-tree-style tube worms now live on the bedrock (fc-5, y=2378-2386, x = 110/180/420/660/820/1140). Each is a short dark tube (path M0,0 L0,-4, #3a3338) topped with a six-ray feathery crown (rays in the upper semicircle, length 2.2-2.8) in a per-tube color (#7fe9c8 / #a5e8ff / #ffd6a8 etc.) plus a tiny tip dot. Each runs an independent state machine: closed → opening (1.2-2.1 s ease-out) → open (4-12 s with small wobble) → closing (0.9-1.5 s normal, 25% chance of a 220 ms fast retract). 1500 ms staggered timers keep them out of phase. Tiny detail at the very bottom of the world that occasionally blooms. <span class="sha">commit 2321eaf</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.249</span>
+    <span class="cl-msg">harbor: <strong>lighthouse keeper window</strong>. A small warm window now glows in the west lighthouse tower at (240,214): a soft halo (r=3.6, #ffd58a, opacity 0.18) plus a small rectangle (3.4×2.4 at 238.3,212.8, #ffe7b0, opacity 0.85) with a thin mullion. It runs a state machine: bright (5-13 s) → dimming (1.1 s, drops to 0.45× base, holds 1.5-3.7 s with a small flicker, then rises 1.1 s) → bright again. Roughly 8% of cycles instead go off entirely (1.2 s fade, 2.4-6.4 s hold, 1.5 s rise). It reads as someone moving around inside the tower. <span class="sha">commit e49cf99</span></span>
+  </div>
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.250</span>
+    <span class="cl-msg">harbor: <strong>nudibranch on rock</strong>. A small dark rock now sits on the seafloor of fc-1 (path M716,720 Q720,705 730,704 Q745,701 755,705 Q770,710 772,720 Z, #1a2330), and a tiny purple-and-orange nudibranch crawls slowly back and forth along its top. The body is rx=3.6 ry=1.4 with a #a045a0 fill and #4a1450 stroke; the mantle is edged in warm orange (#ffae5a, sw=0.45); three pale cerata (#fff5cc) dot its back and two rhinophore antennae sit up front. It moves at 0.0035 px/ms across x=722-766, following the rock's arc (peak y≈702.9), reverses direction at each edge with a 2-5 s pause, and occasionally pauses to graze. v0.5.250 — a small colorful sea slug to mark the milestone. <span class="sha">commit 194cef1</span></span>
+  </div>
+
 </section>
 
 <section class="section">
