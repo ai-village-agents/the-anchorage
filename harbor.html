@@ -18789,6 +18789,118 @@
   } catch(e){ try { console.warn('[harbor v0.5.267] error', e); } catch(_){} }
 })();
 
+// v0.5.268 dock lantern — a small warm lantern hangs from a tall thin pole at the eastern dock end, swinging gently on a slow sine with a warm halo and occasional flicker
+(function(){
+  try {
+    const svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    const SVGNS = 'http://www.w3.org/2000/svg';
+    if (svg.querySelector('#dockLantern')) return;
+
+    // pole rooted on the easternmost dock piling at x=874, top y ~ 312
+    const POLE_X = 868;
+    const POLE_TOP_Y = 282;     // top of pole (lantern arm root)
+    const POLE_BOT_Y = 314;     // bottom of pole (on dock)
+    const ARM_X = POLE_X + 9;   // arm reaches east a bit
+    const HANG_Y = POLE_TOP_Y + 1; // pivot point for the lantern hanging chain
+    const LANT_LEN = 7.4;       // length of swing arm to lantern body
+
+    const g = document.createElementNS(SVGNS, 'g');
+    g.setAttribute('id', 'dockLantern');
+    g.setAttribute('opacity', '0.94');
+
+    // pole
+    const pole = document.createElementNS(SVGNS, 'line');
+    pole.setAttribute('x1', POLE_X); pole.setAttribute('y1', POLE_BOT_Y);
+    pole.setAttribute('x2', POLE_X); pole.setAttribute('y2', POLE_TOP_Y);
+    pole.setAttribute('stroke', '#2a2620');
+    pole.setAttribute('stroke-width', '0.55');
+    pole.setAttribute('stroke-linecap', 'round');
+    g.appendChild(pole);
+    // horizontal arm
+    const arm = document.createElementNS(SVGNS, 'line');
+    arm.setAttribute('x1', POLE_X); arm.setAttribute('y1', POLE_TOP_Y);
+    arm.setAttribute('x2', ARM_X); arm.setAttribute('y2', POLE_TOP_Y);
+    arm.setAttribute('stroke', '#2a2620');
+    arm.setAttribute('stroke-width', '0.45');
+    arm.setAttribute('stroke-linecap', 'round');
+    g.appendChild(arm);
+    // tip cap (small bracket)
+    const cap = document.createElementNS(SVGNS, 'circle');
+    cap.setAttribute('cx', ARM_X); cap.setAttribute('cy', POLE_TOP_Y);
+    cap.setAttribute('r', '0.55');
+    cap.setAttribute('fill', '#2a2620');
+    g.appendChild(cap);
+
+    // hanging lantern group — pivots at (ARM_X, POLE_TOP_Y)
+    const hang = document.createElementNS(SVGNS, 'g');
+    g.appendChild(hang);
+    // chain
+    const chain = document.createElementNS(SVGNS, 'line');
+    chain.setAttribute('x1', '0'); chain.setAttribute('y1', '0');
+    chain.setAttribute('x2', '0'); chain.setAttribute('y2', LANT_LEN);
+    chain.setAttribute('stroke', '#3a3328');
+    chain.setAttribute('stroke-width', '0.28');
+    hang.appendChild(chain);
+    // halo
+    const halo = document.createElementNS(SVGNS, 'circle');
+    halo.setAttribute('cx', '0'); halo.setAttribute('cy', LANT_LEN + 1.4);
+    halo.setAttribute('r', '4.0');
+    halo.setAttribute('fill', '#ffd58a');
+    halo.setAttribute('opacity', '0.20');
+    hang.appendChild(halo);
+    // lantern frame
+    const frame = document.createElementNS(SVGNS, 'rect');
+    frame.setAttribute('x', '-1.4'); frame.setAttribute('y', LANT_LEN);
+    frame.setAttribute('width', '2.8'); frame.setAttribute('height', '3.0');
+    frame.setAttribute('fill', '#2a2620');
+    frame.setAttribute('rx', '0.4');
+    hang.appendChild(frame);
+    // glow inside
+    const glow = document.createElementNS(SVGNS, 'rect');
+    glow.setAttribute('x', '-0.95'); glow.setAttribute('y', LANT_LEN + 0.35);
+    glow.setAttribute('width', '1.9'); glow.setAttribute('height', '2.3');
+    glow.setAttribute('fill', '#ffd58a');
+    glow.setAttribute('opacity', '0.85');
+    hang.appendChild(glow);
+    // top hat
+    const hat = document.createElementNS(SVGNS, 'rect');
+    hat.setAttribute('x', '-1.6'); hat.setAttribute('y', LANT_LEN - 0.45);
+    hat.setAttribute('width', '3.2'); hat.setAttribute('height', '0.5');
+    hat.setAttribute('fill', '#1d1a16');
+    hang.appendChild(hat);
+
+    svg.appendChild(g);
+
+    // animation: swing on slow sine + flicker
+    let lastTs = performance.now();
+    let nextFlickerAt = lastTs + (3200 + Math.random()*5400);
+    let flickerEnd = 0;
+    function frame(ts){
+      const dt = ts - lastTs; lastTs = ts;
+      // angle deg, ±4 over ~5.6s period, with a slow modulation
+      const angle = Math.sin(ts * 0.0011) * 4.2 + Math.sin(ts * 0.00037) * 0.6;
+      hang.setAttribute('transform', `translate(${ARM_X},${POLE_TOP_Y}) rotate(${angle})`);
+      // flicker
+      let glowOp = 0.85;
+      let haloOp = 0.20;
+      if (ts < flickerEnd) {
+        const f = (Math.sin(ts*0.06) + 1) * 0.5;
+        glowOp = 0.55 + f * 0.4;
+        haloOp = 0.12 + f * 0.16;
+      } else if (ts >= nextFlickerAt) {
+        flickerEnd = ts + 480 + Math.random()*620;
+        nextFlickerAt = flickerEnd + 3200 + Math.random()*7600;
+      }
+      glow.setAttribute('opacity', glowOp);
+      halo.setAttribute('opacity', haloOp);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    try { console.log('[harbor v0.5.268] dock lantern armed (warm lantern hanging on a pole at the eastern dock end, swinging on a slow sine with halo and occasional flicker)'); } catch(e){}
+  } catch(e){ try { console.warn('[harbor v0.5.268] error', e); } catch(_){} }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
