@@ -16437,6 +16437,118 @@
   try { console.log('[harbor v0.5.247] porpoise pod tight formation armed (4 porpoises in synchronized low leaps cross the surface every 2-5 min)'); } catch(e){}
 })();
 
+// v0.5.248 bedrock bioluminescent worm tubes — small Christmas-tree-style tube worms on the seafloor that open feathery crowns and close them again
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','wormTubes');
+  g.setAttribute('pointer-events','none');
+  svg.appendChild(g);
+
+  // Anchor positions on bedrock — avoid whale fall (280,2360), octopus den (1000,2318), kraken zone (540,2120), vent.
+  const tubes = [
+    { x: 110, y: 2382, color: '#7fe9c8' },
+    { x: 180, y: 2378, color: '#a5e8ff' },
+    { x: 420, y: 2384, color: '#ffd6a8' },
+    { x: 660, y: 2380, color: '#7fe9c8' },
+    { x: 820, y: 2386, color: '#cdd9ff' },
+    { x: 1140, y: 2380, color: '#ffd6a8' },
+  ];
+
+  const items = tubes.map((t, idx) => {
+    const sub = document.createElementNS(NS,'g');
+    sub.setAttribute('transform', 'translate('+t.x+','+t.y+')');
+    // Tube — small vertical line on bedrock
+    const tube = document.createElementNS(NS,'path');
+    tube.setAttribute('d', 'M0,0 L0,-4');
+    tube.setAttribute('stroke','#3a3338');
+    tube.setAttribute('stroke-width','0.9');
+    tube.setAttribute('stroke-linecap','round');
+    sub.appendChild(tube);
+    // Crown — small starburst / fan of 6 short rays — initially closed (scaled to 0)
+    const crown = document.createElementNS(NS,'g');
+    crown.setAttribute('transform','translate(0,-4) scale(0,0)');
+    for(let i=0;i<6;i++){
+      const ang = -Math.PI + (i/5)*Math.PI + (Math.random()-0.5)*0.2;
+      const len = 2.2 + Math.random()*0.6;
+      const x2 = Math.cos(ang)*len;
+      const y2 = Math.sin(ang)*len;
+      const ray = document.createElementNS(NS,'line');
+      ray.setAttribute('x1','0'); ray.setAttribute('y1','0');
+      ray.setAttribute('x2', x2.toFixed(2));
+      ray.setAttribute('y2', y2.toFixed(2));
+      ray.setAttribute('stroke', t.color);
+      ray.setAttribute('stroke-width','0.45');
+      ray.setAttribute('stroke-linecap','round');
+      ray.setAttribute('opacity','0.85');
+      crown.appendChild(ray);
+    }
+    // Tip dot
+    const tip = document.createElementNS(NS,'circle');
+    tip.setAttribute('r','0.45');
+    tip.setAttribute('fill', t.color);
+    tip.setAttribute('opacity','0.9');
+    crown.appendChild(tip);
+    sub.appendChild(crown);
+    g.appendChild(sub);
+    return {
+      crown,
+      state: 'closed',
+      until: performance.now() + 2000 + Math.random()*8000 + idx*1500,
+      openDur: 0,
+      closeDur: 0,
+      stateStart: performance.now()
+    };
+  });
+
+  function frame(now){
+    items.forEach((it, idx) => {
+      const local = now - it.stateStart;
+      if(it.state === 'closed'){
+        // wait until 'until'; then start opening
+        if(now >= it.until){
+          it.state = 'opening';
+          it.openDur = 1200 + Math.random()*900;
+          it.stateStart = now;
+        }
+      } else if(it.state === 'opening'){
+        const k = Math.min(1, local/it.openDur);
+        // Ease-out
+        const e = 1 - (1-k)*(1-k);
+        it.crown.setAttribute('transform','translate(0,-4) scale('+e.toFixed(3)+','+e.toFixed(3)+')');
+        if(k >= 1){
+          it.state = 'open';
+          it.stateStart = now;
+          it.openHold = 4000 + Math.random()*8000;
+        }
+      } else if(it.state === 'open'){
+        // gentle wobble — randomly retract suddenly (simulate startled retract)
+        const wobble = 1 + Math.sin(now*0.003 + idx)*0.04;
+        it.crown.setAttribute('transform','translate(0,-4) scale('+wobble.toFixed(3)+','+wobble.toFixed(3)+')');
+        if(local >= it.openHold){
+          it.state = 'closing';
+          it.closeDur = (Math.random() < 0.25) ? 220 : (900 + Math.random()*600); // 25% chance fast retract
+          it.stateStart = now;
+        }
+      } else if(it.state === 'closing'){
+        const k = Math.min(1, local/it.closeDur);
+        const e = 1 - k*k;
+        it.crown.setAttribute('transform','translate(0,-4) scale('+e.toFixed(3)+','+e.toFixed(3)+')');
+        if(k >= 1){
+          it.state = 'closed';
+          it.until = now + 4000 + Math.random()*16000;
+          it.stateStart = now;
+        }
+      }
+    });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.248] bedrock worm tubes armed (6 small Christmas-tree tube worms slowly open and close their feather crowns; 25% chance of startled fast retract)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
