@@ -491,6 +491,23 @@
     <span class="cl-msg">harbor: <strong>distant cargo freighter</strong>. Every 8-17 minutes a long cargo freighter (id=cargoFreighter) crosses the far horizon at Y_HORIZON=297, SCALE=0.62, taking ~110 s to cross. The hull is a long path -54..54 with a waterline strip; on top sit 44 stacked multi-colored shipping containers in 2 rows from a palette of 8 colors. A bridge tower (-52..-47) at the stern has 2 little yellow windows; a funnel rises behind it; a mast tips the bow. Running lights: red at -54, green at +54, white near (48.2,-6.4). The funnel emits small smoke puffs about every 1.2% of the frame; each puff drifts up and forward over a 5000 ms lifetime, growing as it ages, leaving a thin smoke trail. Random direction each crossing. nextAt 480-1020 s. v0.5.275 — a working ship in the world's distance. <span class="sha">commit 8acf600</span></span>
   </div>
 
+  <div class="cl-section">afternoon shift — a tide gauge at the eastern shore, the lighthouse keeper motors out and back, and a starfish dances in the tide pool</div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.276</span>
+    <span class="cl-msg">harbor: <strong>eastern tide gauge</strong>. A second slim tide gauge (id=tideGaugeEast) now stands on the eastern shore at SX=1118 — east of the dock pilings and west of the east lighthouse — mirroring the long-standing western gauge (v0.5.140 at SX=276). Same staff structure: TOP=258, BOT=336, MID=297, AMP=26, PERIOD=90 s, with a small base block, a vertical staff, and a finial at the top. But the new gauge reverses sides: ticks run on the LEFT of the staff, and the green indicator (#7a d9 a2) and its tail line read off the RIGHT. The phase is offset by a quarter cycle (PHASE=0.25) so the eastern level reads out of sync with the western — when one is rising past mid, the other is at peak. Persistent. v0.5.276 — the harbor now has two tide instruments that disagree. <span class="sha">commit 6b90fc5</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.277</span>
+    <span class="cl-msg">harbor: <strong>lighthouse keeper boat</strong>. A small skiff (id=keeperBoat) is now moored just east of the west lighthouse islet at HOME_X=270, BOAT_Y=320, with a tiny standing keeper figure on board. Periodically (after long idle pauses of 90-240 s) the boat motors east to FAR_X=380, idles 6-14 s, then turns around (scaleX flips so the boat faces west) and motors back home. The OUT_DUR is 26000 ms with ease in/out. The hull is a small dark skiff (~16 px wide) with a cabin block, a yellow window light, an outboard motor at the stern, a white bow light, and the keeper figure (rectangle body + tiny head). A pale wake polyline samples every 240 ms and ages out over 9000 ms while the boat is moving. Gentle bob ±0.4 px (sin/680) and a tilt of ±2° while underway. v0.5.277 — the lighthouse keeper has a daily route. <span class="sha">commit 90a56ea</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.278</span>
+    <span class="cl-msg">harbor: <strong>tide pool starfish</strong>. A small purple 5-armed starfish (id=tidePoolStar) now rests in the tide pool (centered at 614, 333.5 inside the pool at 620, 332). Five elliptical arms (rx=0.9 ry=2.4 #7a4d8c with a paler #a07ab5 highlight) radiate from a central disk (r=1.0). The whole star slowly rotates with ROT_PERIOD=38000 ms (one full turn every ~38 s), and each arm wiggles independently ±8° on its own ~1900-3000 ms period, so the star is constantly very gently rearranging itself. Persistent. v0.5.278 — the tide pool is alive. <span class="sha">commit 09effb9</span></span>
+  </div>
+
 </section>
 
 <section class="section">
