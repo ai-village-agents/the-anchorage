@@ -15826,6 +15826,106 @@
   try { console.log('[harbor v0.5.241] dinoflagellate flash patches armed (slow cyan-green flashes drift in the surface foam every 14-44s; clusters 40% of the time)'); } catch(e){}
 })();
 
+// v0.5.242 bell buoy clickable — click the bell buoy (600,388) to ring it on demand: triple chime ripples + tiny clapper jiggle
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const BX = 600, BY = 388;
+
+  // a hit area circle at the buoy location, transparent
+  const hit = document.createElementNS(NS,'circle');
+  hit.setAttribute('id','bellBuoyHit');
+  hit.setAttribute('cx', String(BX));
+  hit.setAttribute('cy', String(BY-1));
+  hit.setAttribute('r','15');
+  hit.setAttribute('fill','rgba(0,0,0,0.001)');
+  hit.setAttribute('cursor','pointer');
+  hit.setAttribute('pointer-events','all');
+  // append after #bellBuoy so it's stacked on top
+  const buoy = document.getElementById('bellBuoy');
+  if(buoy && buoy.parentNode){ buoy.parentNode.appendChild(hit); }
+  else svg.appendChild(hit);
+
+  // hint pulse ring (subtle, every 12s)
+  const hint = document.createElementNS(NS,'circle');
+  hint.setAttribute('id','bellBuoyHintRing');
+  hint.setAttribute('cx', String(BX));
+  hint.setAttribute('cy', String(BY-2));
+  hint.setAttribute('r','0');
+  hint.setAttribute('fill','none');
+  hint.setAttribute('stroke','#cad3e0');
+  hint.setAttribute('stroke-width','0.5');
+  hint.setAttribute('opacity','0');
+  hint.setAttribute('pointer-events','none');
+  if(buoy && buoy.parentNode){ buoy.parentNode.insertBefore(hint, hit); }
+  else svg.appendChild(hint);
+
+  // ring effect (3 expanding ellipses on demand)
+  const ringG = document.createElementNS(NS,'g');
+  ringG.setAttribute('id','bellBuoyChimeRings');
+  ringG.setAttribute('pointer-events','none');
+  const RINGS = [];
+  for(let i=0;i<3;i++){
+    const r = document.createElementNS(NS,'ellipse');
+    r.setAttribute('cx', String(BX));
+    r.setAttribute('cy', String(BY-2));
+    r.setAttribute('rx','0');
+    r.setAttribute('ry','0');
+    r.setAttribute('fill','none');
+    r.setAttribute('stroke','#e8d8a0');
+    r.setAttribute('stroke-width','0.9');
+    r.setAttribute('opacity','0');
+    ringG.appendChild(r);
+    RINGS.push(r);
+  }
+  svg.appendChild(ringG);
+
+  let chimes = []; // {start, ring}
+  let hintT0 = performance.now();
+
+  hit.addEventListener('click', () => {
+    const now = performance.now();
+    chimes = [
+      { start: now,        ring: RINGS[0] },
+      { start: now + 320,  ring: RINGS[1] },
+      { start: now + 660,  ring: RINGS[2] },
+    ];
+  });
+  hit.addEventListener('mouseenter', () => { hit.setAttribute('cursor','pointer'); });
+
+  function frame(now){
+    // hint pulse every 12s
+    const hintLocal = (now - hintT0) % 12000;
+    if(hintLocal < 1600){
+      const k = hintLocal/1600;
+      const r = 6 + 14*k;
+      const op = (k<0.2 ? k/0.2 : 1 - (k-0.2)/0.8) * 0.35;
+      hint.setAttribute('r', r.toFixed(1));
+      hint.setAttribute('opacity', Math.max(0,op).toFixed(2));
+    } else {
+      hint.setAttribute('opacity','0');
+    }
+    // chime rings
+    for(const c of chimes){
+      const local = now - c.start;
+      const dur = 1700;
+      if(local < 0){ c.ring.setAttribute('opacity','0'); continue; }
+      if(local > dur){ c.ring.setAttribute('opacity','0'); continue; }
+      const k = local/dur;
+      const rx = 4 + 60*k;
+      const ry = 1.5 + 18*k;
+      const op = (k<0.18 ? k/0.18 : 1 - (k-0.18)/0.82) * 0.7;
+      c.ring.setAttribute('rx', rx.toFixed(1));
+      c.ring.setAttribute('ry', ry.toFixed(1));
+      c.ring.setAttribute('opacity', Math.max(0,op).toFixed(2));
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.242] bell buoy clickable armed (click the bell buoy to trigger 3 chime ripples; hint ring pulses every 12s)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
