@@ -13744,6 +13744,148 @@
 })();
 
 
+// v0.5.221 walking shore heron — stilt-legged silhouette walks back and forth along east shore
+(function(){
+  const NS='http://www.w3.org/2000/svg';
+  const svg=document.querySelector('.harbor-svg');
+  if(!svg){return;}
+  const Y_BASE=318;
+  const X_MIN=880, X_MAX=1060;
+  const COLOR='#3a4659';
+  const g=document.createElementNS(NS,'g');
+  g.setAttribute('id','walkingHeron');
+  g.style.pointerEvents='none';
+  // body parts
+  // legs: two lines from torso bottom (cy=-11 — ry=3 below torso center -14) down to ground (y=0)
+  const leftLeg=document.createElementNS(NS,'line');
+  leftLeg.setAttribute('stroke',COLOR);
+  leftLeg.setAttribute('stroke-width','1.1');
+  leftLeg.setAttribute('stroke-linecap','round');
+  const rightLeg=document.createElementNS(NS,'line');
+  rightLeg.setAttribute('stroke',COLOR);
+  rightLeg.setAttribute('stroke-width','1.1');
+  rightLeg.setAttribute('stroke-linecap','round');
+  // torso
+  const torso=document.createElementNS(NS,'ellipse');
+  torso.setAttribute('cx','2');
+  torso.setAttribute('cy','-14');
+  torso.setAttribute('rx','5');
+  torso.setAttribute('ry','3');
+  torso.setAttribute('fill',COLOR);
+  // neck (path) — from torso (3,-16) curving up to head (8,-22)
+  const neck=document.createElementNS(NS,'path');
+  neck.setAttribute('stroke',COLOR);
+  neck.setAttribute('stroke-width','1.2');
+  neck.setAttribute('fill','none');
+  neck.setAttribute('stroke-linecap','round');
+  // head
+  const head=document.createElementNS(NS,'circle');
+  head.setAttribute('r','1.8');
+  head.setAttribute('fill',COLOR);
+  // beak (line from head)
+  const beak=document.createElementNS(NS,'line');
+  beak.setAttribute('stroke',COLOR);
+  beak.setAttribute('stroke-width','0.9');
+  beak.setAttribute('stroke-linecap','round');
+  g.appendChild(leftLeg);
+  g.appendChild(rightLeg);
+  g.appendChild(torso);
+  g.appendChild(neck);
+  g.appendChild(head);
+  g.appendChild(beak);
+  svg.appendChild(g);
+
+  // state
+  let x = X_MIN + Math.random()*(X_MAX-X_MIN);
+  let dir = Math.random()<0.5 ? 1 : -1;
+  const SPEED = 0.04; // px/ms
+  let t0 = performance.now();
+  let lastT = t0;
+  let strideStart = t0;
+  const STRIDE = 700;
+  // pauses for periscoping
+  let pauseUntil = 0;
+  let nextPauseAt = t0 + 6000 + Math.random()*9000;
+  let pauseStart = 0;
+  // reverse intervals
+  let nextReverseAt = t0 + 25000 + Math.random()*25000;
+
+  function tick(now){
+    const dt = now - lastT;
+    lastT = now;
+    const paused = now < pauseUntil;
+    if(!paused){
+      x += dir * SPEED * dt;
+      if(x < X_MIN){ x = X_MIN; dir = 1; nextReverseAt = now + 25000 + Math.random()*25000; }
+      if(x > X_MAX){ x = X_MAX; dir = -1; nextReverseAt = now + 25000 + Math.random()*25000; }
+      if(now >= nextReverseAt){ dir *= -1; nextReverseAt = now + 25000 + Math.random()*25000; }
+      if(now >= nextPauseAt){
+        pauseUntil = now + 1500 + Math.random()*1500;
+        pauseStart = now;
+        nextPauseAt = pauseUntil + 6000 + Math.random()*9000;
+      }
+    }
+    // direction sign for transform
+    const sx = dir;
+    g.setAttribute('transform','translate('+x.toFixed(2)+','+Y_BASE+') scale('+sx+',1)');
+
+    // legs animation — stride cycle
+    let lx=0, ly=0, rx=4, ry=0; // foot ground positions
+    let lLiftY = 0, rLiftY = 0;
+    if(!paused){
+      const phase = ((now - strideStart) % STRIDE) / STRIDE;
+      // first half: left foot planted, right swinging fwd
+      // second half: right foot planted, left swinging fwd
+      if(phase < 0.5){
+        const u = phase / 0.5;
+        // right swings: lifts off and moves from -2 to +6 relative to torso
+        rx = -2 + u*8;
+        rLiftY = -3 * Math.sin(u*Math.PI);
+        // left planted at +2
+        lx = 2;
+      } else {
+        const u = (phase - 0.5) / 0.5;
+        lx = -2 + u*8;
+        lLiftY = -3 * Math.sin(u*Math.PI);
+        rx = 6;
+      }
+    } else {
+      lx = 2; rx = 4;
+    }
+    // Legs from torso bottom (cy=-14, ry=3 → bottom at -11) — start (cx=2,-11), end (foot,0)
+    leftLeg.setAttribute('x1','2');
+    leftLeg.setAttribute('y1','-11');
+    leftLeg.setAttribute('x2', lx.toFixed(2));
+    leftLeg.setAttribute('y2', (lLiftY).toFixed(2));
+    rightLeg.setAttribute('x1','3');
+    rightLeg.setAttribute('y1','-11');
+    rightLeg.setAttribute('x2', rx.toFixed(2));
+    rightLeg.setAttribute('y2', (rLiftY).toFixed(2));
+
+    // neck — periscope during pause first 60% then settle
+    let neckCurve = 0;
+    if(paused){
+      const u = Math.min(1, (now - pauseStart) / (pauseUntil - pauseStart));
+      // S-curve: bobs through 0..1..0..1..0
+      neckCurve = Math.sin(u * Math.PI * 2.0) * 1.6;
+    }
+    // base neck path: from (3,-16) up to head (8,-22)
+    const ctrlX = 5 + neckCurve;
+    const ctrlY = -19;
+    neck.setAttribute('d', 'M 3 -16 Q '+ctrlX.toFixed(2)+' '+ctrlY+' 8 -22');
+    head.setAttribute('cx','8');
+    head.setAttribute('cy','-22');
+    beak.setAttribute('x1','9.5');
+    beak.setAttribute('y1','-22');
+    beak.setAttribute('x2','15');
+    beak.setAttribute('y2','-21.5');
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.221] walking shore heron armed (stilt-legged silhouette walks the east shore between '+X_MIN+' and '+X_MAX+', pauses to periscope, reverses direction occasionally)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
