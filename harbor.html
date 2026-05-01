@@ -19956,6 +19956,151 @@
   console.log('[harbor v0.5.278] tide pool starfish armed (small purple star slowly rotating in the tide pool with arm wiggles)');
 })();
 
+// v0.5.279 kraken's outstretched tentacle — a single long tentacle uncoils upward from the kraken zone, curls at its tip, holds, and retreats; very rare
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const KX = 540, KY = 2120;
+  const PEAK_Y_MIN = 1480, PEAK_Y_MAX = 1560; // top of reach (just into fc-3)
+  const SEG = 28; // path resolution
+  const EMERGE = 2600, HOLD = 2200, RETREAT = 2400;
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('id', 'krakenTentacle');
+  g.setAttribute('opacity', '0');
+  g.style.pointerEvents = 'none';
+  // arm path (under sucker overlay)
+  const arm = document.createElementNS(NS, 'path');
+  arm.setAttribute('fill', 'none');
+  arm.setAttribute('stroke', '#1a1422');
+  arm.setAttribute('stroke-width', '7');
+  arm.setAttribute('stroke-linecap', 'round');
+  arm.setAttribute('stroke-linejoin', 'round');
+  g.appendChild(arm);
+  // inner highlight
+  const armHi = document.createElementNS(NS, 'path');
+  armHi.setAttribute('fill', 'none');
+  armHi.setAttribute('stroke', '#2a2030');
+  armHi.setAttribute('stroke-width', '3.2');
+  armHi.setAttribute('stroke-linecap', 'round');
+  armHi.setAttribute('stroke-linejoin', 'round');
+  armHi.setAttribute('opacity', '0.7');
+  g.appendChild(armHi);
+  // sucker dots group
+  const suckers = document.createElementNS(NS, 'g');
+  suckers.setAttribute('fill', '#3a2a44');
+  g.appendChild(suckers);
+  for (let i=0; i<14; i++){
+    const c = document.createElementNS(NS,'circle');
+    c.setAttribute('r','1.0');
+    suckers.appendChild(c);
+  }
+  // anchor at the kraken zone (drawn over existing kraken)
+  svg.appendChild(g);
+
+  let state = 'idle';
+  let stateStart = 0;
+  let nextAt = performance.now() + (90 + Math.random()*120) * 1000; // first appearance 1.5-3.5min
+  let peakY = PEAK_Y_MIN;
+  let lateralPhase = 0;
+  let curlDir = 1;
+
+  function buildPath(extend, t){
+    // extend in [0,1] — how far up the tentacle reaches
+    // t — current time ms for shimmer
+    const peakReach = KY - (KY - peakY) * extend;
+    const points = [];
+    for (let i=0; i<=SEG; i++){
+      const u = i / SEG;
+      const y = KY + (peakReach - KY) * u;
+      // sinuous lateral curve, more curve near tip
+      const sway = Math.sin(u*3.4 + lateralPhase + t*0.0007) * 12 * u;
+      const curl = (u > 0.7) ? curlDir * Math.sin((u-0.7)*Math.PI/0.3) * 26 : 0;
+      const x = KX + sway + curl;
+      points.push([x,y,u]);
+    }
+    return points;
+  }
+
+  function pointsToPath(pts){
+    let d = '';
+    for (let i=0; i<pts.length; i++){
+      d += (i===0?'M':'L') + pts[i][0].toFixed(1) + ',' + pts[i][1].toFixed(1) + ' ';
+    }
+    return d;
+  }
+
+  function placeSuckers(pts){
+    const kids = suckers.children;
+    for (let i=0; i<kids.length; i++){
+      const u = 0.18 + i * 0.06; // along tentacle
+      // find segment
+      const idx = Math.min(pts.length-1, Math.floor(u * pts.length));
+      const p = pts[idx];
+      // perpendicular offset alternating
+      const side = (i % 2 === 0) ? 1 : -1;
+      kids[i].setAttribute('cx', (p[0] + side*2.4).toFixed(1));
+      kids[i].setAttribute('cy', p[1].toFixed(1));
+      kids[i].setAttribute('opacity', (0.55 + 0.25*Math.sin(i*0.7)).toFixed(2));
+    }
+  }
+
+  function frame(ts){
+    if (state === 'idle'){
+      if (ts >= nextAt){
+        state = 'emerging';
+        stateStart = ts;
+        peakY = PEAK_Y_MIN + Math.random()*(PEAK_Y_MAX - PEAK_Y_MIN);
+        lateralPhase = Math.random() * Math.PI * 2;
+        curlDir = Math.random() < 0.5 ? -1 : 1;
+      } else {
+        g.setAttribute('opacity','0');
+      }
+    }
+    if (state === 'emerging'){
+      const t = (ts - stateStart) / EMERGE;
+      const e = t<1 ? t : 1;
+      // ease out
+      const ext = 1 - Math.pow(1-e, 2.4);
+      const pts = buildPath(ext, ts);
+      const d = pointsToPath(pts);
+      arm.setAttribute('d', d);
+      armHi.setAttribute('d', d);
+      placeSuckers(pts);
+      g.setAttribute('opacity', (0.55*Math.min(1, e*1.4)).toFixed(2));
+      if (t >= 1){ state = 'holding'; stateStart = ts; }
+    } else if (state === 'holding'){
+      const t = (ts - stateStart) / HOLD;
+      const pts = buildPath(1, ts);
+      const d = pointsToPath(pts);
+      arm.setAttribute('d', d);
+      armHi.setAttribute('d', d);
+      placeSuckers(pts);
+      g.setAttribute('opacity', '0.55');
+      if (t >= 1){ state = 'retreating'; stateStart = ts; }
+    } else if (state === 'retreating'){
+      const t = (ts - stateStart) / RETREAT;
+      const e = t<1 ? t : 1;
+      // ease in
+      const ext = 1 - Math.pow(e, 2.0);
+      const pts = buildPath(ext, ts);
+      const d = pointsToPath(pts);
+      arm.setAttribute('d', d);
+      armHi.setAttribute('d', d);
+      placeSuckers(pts);
+      g.setAttribute('opacity', (0.55 * (1 - Math.pow(t, 1.6))).toFixed(2));
+      if (t >= 1){
+        state = 'idle';
+        g.setAttribute('opacity','0');
+        nextAt = ts + (480 + Math.random()*720) * 1000; // 8-20 min
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('v0.5.279 kraken tentacle armed');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
