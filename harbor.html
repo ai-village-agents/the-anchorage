@@ -15363,6 +15363,113 @@
   try { console.log('[harbor v0.5.236] lighthouse moth swarm armed ('+N+' pale moths circle the west lighthouse lantern on tilted elliptical orbits with wobble)'); } catch(e){}
 })();
 
+// v0.5.237 far-shore ferry — large slow cargo/ferry silhouette traverses the deep horizon every several minutes, lit cabin windows
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','farShoreFerry');
+  g.setAttribute('pointer-events','none');
+  g.setAttribute('opacity','0');
+  // hull silhouette + superstructure + 2 stacks + 6 lit windows + 1 funnel light
+  // Body anchored at (0,0) — center bottom
+  const HULL_COLOR = '#2a3445';
+  const SUPER_COLOR = '#3a4456';
+  const WIN_COLOR = '#ffd58a';
+  const STACK_COLOR = '#262d3c';
+  const parts = [];
+  // hull (long flat trapezoid)
+  const hull = document.createElementNS(NS,'path');
+  hull.setAttribute('d','M -36 0 L 36 0 L 32 -3 L -32 -3 Z');
+  hull.setAttribute('fill', HULL_COLOR);
+  g.appendChild(hull);
+  // superstructure (longer narrow box)
+  const sup = document.createElementNS(NS,'rect');
+  sup.setAttribute('x','-22'); sup.setAttribute('y','-7'); sup.setAttribute('width','44'); sup.setAttribute('height','4');
+  sup.setAttribute('fill', SUPER_COLOR);
+  g.appendChild(sup);
+  // upper bridge
+  const bridge = document.createElementNS(NS,'rect');
+  bridge.setAttribute('x','-6'); bridge.setAttribute('y','-10'); bridge.setAttribute('width','12'); bridge.setAttribute('height','3');
+  bridge.setAttribute('fill', SUPER_COLOR);
+  g.appendChild(bridge);
+  // 2 stacks
+  const s1 = document.createElementNS(NS,'rect');
+  s1.setAttribute('x','10'); s1.setAttribute('y','-10'); s1.setAttribute('width','3'); s1.setAttribute('height','3');
+  s1.setAttribute('fill', STACK_COLOR);
+  g.appendChild(s1);
+  const s2 = document.createElementNS(NS,'rect');
+  s2.setAttribute('x','16'); s2.setAttribute('y','-10'); s2.setAttribute('width','3'); s2.setAttribute('height','3');
+  s2.setAttribute('fill', STACK_COLOR);
+  g.appendChild(s2);
+  // 8 lit cabin windows along superstructure
+  for(let i=0;i<8;i++){
+    const w = document.createElementNS(NS,'rect');
+    w.setAttribute('x', String(-20 + i*5.4));
+    w.setAttribute('y', '-6');
+    w.setAttribute('width','1.4'); w.setAttribute('height','1.6');
+    w.setAttribute('fill', WIN_COLOR);
+    w.setAttribute('opacity', String(0.55 + Math.random()*0.4));
+    g.appendChild(w);
+    parts.push({el:w, baseOp: parseFloat(w.getAttribute('opacity')), phase: Math.random()*Math.PI*2, period: 2400+Math.random()*1800});
+  }
+  // bridge light
+  const bl = document.createElementNS(NS,'circle');
+  bl.setAttribute('r','0.7'); bl.setAttribute('cx','0'); bl.setAttribute('cy','-9.2');
+  bl.setAttribute('fill','#ffe7b0');
+  bl.setAttribute('opacity','0.85');
+  g.appendChild(bl);
+  // tiny wake line beneath hull
+  const wake = document.createElementNS(NS,'rect');
+  wake.setAttribute('x','-32'); wake.setAttribute('y','0.3'); wake.setAttribute('width','64'); wake.setAttribute('height','0.5');
+  wake.setAttribute('fill','#566374'); wake.setAttribute('opacity','0.55');
+  g.appendChild(wake);
+  svg.appendChild(g);
+
+  let active = null;
+  let nextAt = performance.now() + 60000 + Math.random()*120000; // first appearance: 1-3 min
+  const Y_HORIZON = 290; // far horizon line band
+  const SPEED = 0.022; // px/ms — slow
+  function startTraverse(now){
+    const dir = Math.random() < 0.5 ? 1 : -1; // randomized
+    const startX = dir > 0 ? -60 : 1260;
+    const endX   = dir > 0 ? 1260 : -60;
+    active = { dir, startX, endX, t0: now };
+    g.setAttribute('opacity','0.78');
+  }
+  const T0 = performance.now();
+  function frame(now){
+    if(!active){
+      if(now >= nextAt){ startTraverse(now); }
+    } else {
+      const dt = now - active.t0;
+      const x = active.startX + active.dir * SPEED * dt;
+      // soft fade in at edges
+      let op = 0.78;
+      const edgeFadeIn = active.dir > 0 ? Math.min(1, (x + 60)/40) : Math.min(1, (1260 - x)/40);
+      const edgeFadeOut = active.dir > 0 ? Math.min(1, (1260 - x)/40) : Math.min(1, (x + 60)/40);
+      op = 0.78 * Math.max(0, Math.min(edgeFadeIn, edgeFadeOut));
+      // tiny vertical bob
+      const yb = Math.sin(dt/2400)*0.4;
+      g.setAttribute('transform','translate('+x.toFixed(1)+','+(Y_HORIZON+yb).toFixed(2)+') scale('+(active.dir)+',1)');
+      g.setAttribute('opacity', op.toFixed(2));
+      // window flicker
+      for(const p of parts){
+        const fl = p.baseOp * (0.85 + 0.15*Math.sin(now/p.period*Math.PI*2 + p.phase));
+        p.el.setAttribute('opacity', fl.toFixed(2));
+      }
+      if((active.dir>0 && x>1260) || (active.dir<0 && x<-60)){
+        active = null; g.setAttribute('opacity','0');
+        nextAt = now + 180000 + Math.random()*240000; // next: 3-7 min
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.237] far-shore ferry armed (slow lit cargo/ferry silhouette traverses horizon every 3-7 min)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
