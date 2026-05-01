@@ -13479,6 +13479,163 @@
 })();
 
 
+// v0.5.219 kingfisher dive — every minute or two a small dark bird drops from the sky on a steep parabola, splashes into the open water, and emerges a moment later climbing back up with a tiny fish in its beak
+(function(){
+  try {
+    const svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    const SY = 318;     // surface line
+    const SKY_Y = 178;  // launch / climb-out altitude
+    const layer = document.createElementNS('http://www.w3.org/2000/svg','g');
+    layer.setAttribute('id','kingfisher');
+    layer.setAttribute('pointer-events','none');
+    svg.appendChild(layer);
+    // bird: tiny dart-shaped body (path) + wings
+    const bird = document.createElementNS('http://www.w3.org/2000/svg','g');
+    bird.setAttribute('opacity','0');
+    const body = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    body.setAttribute('cx','0'); body.setAttribute('cy','0');
+    body.setAttribute('rx','3.6'); body.setAttribute('ry','1.5');
+    body.setAttribute('fill','#1c2840');
+    bird.appendChild(body);
+    const beak = document.createElementNS('http://www.w3.org/2000/svg','line');
+    beak.setAttribute('x1','3.4'); beak.setAttribute('y1','0');
+    beak.setAttribute('x2','6'); beak.setAttribute('y2','0');
+    beak.setAttribute('stroke','#1c2840'); beak.setAttribute('stroke-width','0.7');
+    bird.appendChild(beak);
+    // wings: a single line segment that flips with sin
+    const wing = document.createElementNS('http://www.w3.org/2000/svg','path');
+    wing.setAttribute('stroke','#1c2840');
+    wing.setAttribute('stroke-width','0.9');
+    wing.setAttribute('fill','none');
+    wing.setAttribute('stroke-linecap','round');
+    bird.appendChild(wing);
+    // tiny fish in beak (only visible during climb-out)
+    const fish = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    fish.setAttribute('cx','7'); fish.setAttribute('cy','0');
+    fish.setAttribute('rx','1.6'); fish.setAttribute('ry','0.7');
+    fish.setAttribute('fill','#9aa6b8');
+    fish.setAttribute('opacity','0');
+    bird.appendChild(fish);
+    layer.appendChild(bird);
+    // splash: 6 droplets spawned at impact
+    const DROPS = 6;
+    const drops = [];
+    for(let i=0;i<DROPS;i++){
+      const d = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      d.setAttribute('r','1.1');
+      d.setAttribute('fill','#cfe6ff');
+      d.setAttribute('opacity','0');
+      layer.appendChild(d);
+      drops.push(d);
+    }
+    // splash ring
+    const ring = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    ring.setAttribute('rx','0'); ring.setAttribute('ry','0');
+    ring.setAttribute('fill','none');
+    ring.setAttribute('stroke','#cfe6ff');
+    ring.setAttribute('stroke-width','0.7');
+    ring.setAttribute('opacity','0');
+    layer.appendChild(ring);
+
+    let state = 'idle';        // idle, dive, splash, submerged, climb
+    let t0 = 0;
+    let dur = 0;
+    let impactX = 0;
+    let nextDive = performance.now() + 30000 + Math.random()*60000;
+    function setBirdAt(x, y, ang){
+      bird.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${ang.toFixed(1)})`);
+    }
+    function tick(){
+      const now = performance.now();
+      if(state === 'idle'){
+        if(now >= nextDive){
+          impactX = 220 + Math.random()*780;
+          state = 'dive';
+          t0 = now;
+          dur = 700 + Math.random()*250;
+          fish.setAttribute('opacity','0');
+        }
+      } else if(state === 'dive'){
+        const u = Math.min(1, (now - t0)/dur);
+        const startX = impactX - 30;  // slight horizontal carry
+        const x = startX + (impactX-startX) * u;
+        const y = SKY_Y + (SY - SKY_Y) * (u*u);   // accelerating fall
+        // angle: tilts steeper as it dives
+        const ang = 30 + 50*u;
+        setBirdAt(x, y, ang);
+        // wing flap
+        const flap = Math.sin(now*0.04);
+        wing.setAttribute('d', `M -2 0 L -5 ${(flap*2).toFixed(2)}`);
+        bird.setAttribute('opacity','1');
+        if(u >= 1){
+          // splash
+          state = 'splash';
+          t0 = now; dur = 360;
+          ring.setAttribute('cx', impactX.toFixed(1));
+          ring.setAttribute('cy', SY.toFixed(1));
+          for(const d of drops){
+            d._ang = (Math.random()*Math.PI - Math.PI*1.2);  // upward fan
+            d._sp = 0.06 + Math.random()*0.05;
+            d._x0 = impactX;
+            d._y0 = SY;
+            d.setAttribute('opacity','1');
+          }
+          bird.setAttribute('opacity','0');
+        }
+      } else if(state === 'splash'){
+        const u = (now - t0)/dur;
+        if(u >= 1){
+          for(const d of drops) d.setAttribute('opacity','0');
+          ring.setAttribute('opacity','0');
+          state = 'submerged';
+          t0 = now; dur = 700 + Math.random()*400;
+        } else {
+          ring.setAttribute('rx', (u*14).toFixed(1));
+          ring.setAttribute('ry', (u*4).toFixed(2));
+          ring.setAttribute('opacity', ((1-u)*0.7).toFixed(3));
+          for(const d of drops){
+            const tt = u*420;
+            const dx = Math.cos(d._ang) * d._sp * tt;
+            const dy = Math.sin(d._ang) * d._sp * tt + 0.0007 * tt * tt;  // gravity
+            d.setAttribute('cx', (d._x0 + dx).toFixed(2));
+            d.setAttribute('cy', (d._y0 + dy).toFixed(2));
+            d.setAttribute('opacity', ((1-u)*0.9).toFixed(3));
+          }
+        }
+      } else if(state === 'submerged'){
+        if((now - t0) >= dur){
+          state = 'climb';
+          t0 = now; dur = 800 + Math.random()*250;
+        }
+      } else if(state === 'climb'){
+        const u = Math.min(1, (now - t0)/dur);
+        const endX = impactX + 30;
+        const x = impactX + (endX-impactX) * u;
+        const y = SY + (SKY_Y - SY) * Math.pow(u, 0.55);  // decelerating climb
+        const ang = -45 + 30*u;
+        setBirdAt(x, y, ang);
+        const flap = Math.sin(now*0.05);
+        wing.setAttribute('d', `M -2 0 L -5 ${(flap*2.5).toFixed(2)}`);
+        fish.setAttribute('opacity', '0.9');
+        bird.setAttribute('opacity', (1 - 0.4*u).toFixed(3));
+        if(u >= 1){
+          bird.setAttribute('opacity','0');
+          fish.setAttribute('opacity','0');
+          state = 'idle';
+          nextDive = now + 60000 + Math.random()*120000;
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    console.log('[harbor v0.5.219] kingfisher dive armed (bird drops, splashes, emerges with a fish — every 1-3 min)');
+  } catch(err){
+    try { console.error('[harbor v0.5.219] kingfisher init failed', err); } catch(e){}
+  }
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
