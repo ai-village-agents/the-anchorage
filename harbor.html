@@ -12164,6 +12164,115 @@
         })();
 
 
+        // v0.5.206 storm cell on horizon — a darker localized cloud band parks over a small portion of the horizon for a few minutes at a time, with brief muffled lightning flickers inside it, then drifts off
+        (function(){
+          const svg = document.querySelector('.harbor-svg');
+          if(!svg) return;
+          const layer = document.createElementNS('http://www.w3.org/2000/svg','g');
+          layer.setAttribute('id','stormCellLayer');
+          layer.setAttribute('pointer-events','none');
+          svg.appendChild(layer);
+          // dark cloud band — two stacked ellipses for soft puff, plus a faint underbelly glow when lightning fires
+          const cloud = document.createElementNS('http://www.w3.org/2000/svg','g');
+          cloud.setAttribute('opacity','0');
+          const ellipses = [];
+          for(let i=0;i<5;i++){
+            const e = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+            e.setAttribute('fill','#1c2330');
+            e.setAttribute('opacity','0.85');
+            cloud.appendChild(e);
+            ellipses.push(e);
+          }
+          // underbelly glow rectangle for lightning
+          const glow = document.createElementNS('http://www.w3.org/2000/svg','rect');
+          glow.setAttribute('fill','#cfdcef');
+          glow.setAttribute('opacity','0');
+          cloud.appendChild(glow);
+          layer.appendChild(cloud);
+          let state = 'idle';
+          let cellStart = 0;
+          let cellDur = 0;
+          let cellX = 0;
+          let cellW = 0;
+          let cellY = 0;
+          let nextCell = performance.now() + 60000 + Math.random()*120000;
+          let nextFlick = 0;
+          let flickStart = 0;
+          let flickDur = 0;
+          let flicking = false;
+          function planCell(){
+            cellX = 100 + Math.random()*900;
+            cellW = 200 + Math.random()*180;
+            cellY = 200 + Math.random()*16;
+            // place 5 ellipses across cellW
+            const n = 5;
+            for(let i=0;i<n;i++){
+              const cx = cellX + (i*cellW/(n-1)) - cellW/2 + (Math.random()-0.5)*16;
+              const cy = cellY + (Math.random()-0.5)*8;
+              const rx = 50 + Math.random()*30;
+              const ry = 14 + Math.random()*5;
+              const op = 0.6 + Math.random()*0.25;
+              ellipses[i].setAttribute('cx', cx.toFixed(1));
+              ellipses[i].setAttribute('cy', cy.toFixed(1));
+              ellipses[i].setAttribute('rx', rx.toFixed(1));
+              ellipses[i].setAttribute('ry', ry.toFixed(1));
+              ellipses[i].setAttribute('opacity', op.toFixed(2));
+            }
+            glow.setAttribute('x', (cellX-cellW/2).toFixed(1));
+            glow.setAttribute('y', (cellY+8).toFixed(1));
+            glow.setAttribute('width', cellW.toFixed(1));
+            glow.setAttribute('height', '14');
+          }
+          function tick(){
+            const now = performance.now();
+            if(state === 'idle'){
+              if(now >= nextCell){
+                planCell();
+                state = 'present';
+                cellStart = now;
+                cellDur = 120000 + Math.random()*120000;
+                nextFlick = now + 8000 + Math.random()*20000;
+              }
+            } else if(state === 'present'){
+              const u = (now - cellStart)/cellDur;
+              if(u >= 1){
+                state = 'idle';
+                cloud.setAttribute('opacity','0');
+                glow.setAttribute('opacity','0');
+                nextCell = now + 90000 + Math.random()*180000;
+              } else {
+                // fade in/out envelope on the cell band
+                const env = u < 0.10 ? (u/0.10) : (u > 0.85 ? (1-u)/0.15 : 1);
+                // slow drift across the horizon
+                const drift = (u-0.5) * 60;
+                cloud.setAttribute('transform', `translate(${drift.toFixed(1)} 0)`);
+                cloud.setAttribute('opacity', (env*0.95).toFixed(3));
+                if(!flicking && now >= nextFlick){
+                  flicking = true;
+                  flickStart = now;
+                  flickDur = 200 + Math.random()*250;
+                }
+                if(flicking){
+                  const fu = (now - flickStart)/flickDur;
+                  if(fu >= 1){
+                    flicking = false;
+                    glow.setAttribute('opacity','0');
+                    nextFlick = now + 4000 + Math.random()*16000;
+                  } else {
+                    // double-blink envelope (lightning shape)
+                    const blink = Math.sin(fu*Math.PI*3) * (1-fu);
+                    glow.setAttribute('opacity', Math.max(0,blink*0.55).toFixed(3));
+                  }
+                }
+              }
+            }
+            requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+          console.log('[harbor v0.5.206] storm cell on horizon armed (dark band parks for a few minutes, with lightning flickers)');
+        })();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
