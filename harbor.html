@@ -14646,6 +14646,129 @@
   console.log('[harbor v0.5.229] baitball wave-attack armed (every 1-3 minutes a predator dart streaks through the baitball; halo flashes and a panic-ring darts outward)');
 })();
 
+// v0.5.230 octopus visitor at the whale fall — a small octopus crawls in, drapes over the whale fall, lingers, then crawls away
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const fall = document.getElementById('whaleFall');
+  if (!fall) return;
+  const TARGET_X = 280, TARGET_Y = 2360;   // whale fall site
+  const ENTER_X  = 80;                      // off to the west
+  const EXIT_X   = 480;                     // wanders off east afterwards
+  const Y_BASE   = 2360;                    // bedrock crawl height
+  // Container
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','whaleFallOctopus');
+  g.setAttribute('pointer-events','none');
+  g.setAttribute('opacity','0');
+  // Body and tentacles. Tentacles will be animated each frame as quadratic curves.
+  const TENT_N = 8;
+  let tentSVG = '';
+  for (let i=0;i<TENT_N;i++){
+    tentSVG += '<path id="wfOctoT'+i+'" d="M0,0" stroke="#5a3850" stroke-width="2.0" fill="none" stroke-linecap="round" opacity="0.9"/>';
+  }
+  g.innerHTML = '<g id="wfOctoBody">'
+    + tentSVG
+    + '<ellipse cx="0" cy="-2" rx="9" ry="6.5" fill="#704058" opacity="0.95"/>'    // mantle
+    + '<ellipse cx="-3" cy="-3.5" rx="1.4" ry="1.0" fill="#fff" opacity="0.85"/>'   // left eye sclera
+    + '<ellipse cx="3" cy="-3.5" rx="1.4" ry="1.0" fill="#fff" opacity="0.85"/>'    // right eye sclera
+    + '<circle cx="-3" cy="-3.5" r="0.55" fill="#0a0a0c"/>'
+    + '<circle cx="3" cy="-3.5" r="0.55" fill="#0a0a0c"/>'
+    + '<ellipse cx="-2.5" cy="-5.0" rx="3" ry="1.2" fill="#8a5068" opacity="0.6"/>' // mantle highlight
+    + '</g>';
+  // Insert before help overlay
+  const help = svg.querySelector('#helpOverlay');
+  if (help) svg.insertBefore(g, help); else svg.appendChild(g);
+  // State machine: 'idle' -> 'crawl_in' -> 'drape' -> 'crawl_out' -> 'idle'
+  let mode = 'idle';
+  let modeStart = 0;
+  let nextAt = performance.now() + 25000 + Math.random()*40000;
+  let dir = 1;            // +1 means crawling east, -1 means west
+  let curX = ENTER_X;
+  let lingerY = TARGET_Y - 4;
+  function startCrawlIn(now){
+    mode = 'crawl_in';
+    modeStart = now;
+    dir = 1;
+    curX = ENTER_X;
+    g.setAttribute('opacity','0.92');
+  }
+  function startDrape(now){
+    mode = 'drape';
+    modeStart = now;
+  }
+  function startCrawlOut(now){
+    mode = 'crawl_out';
+    modeStart = now;
+    dir = 1;
+  }
+  function setBodyTransform(x, y, scale){
+    const sx = (dir > 0 ? 1 : -1) * scale;
+    g.setAttribute('transform','translate('+x.toFixed(2)+','+y.toFixed(2)+') scale('+sx+','+scale+')');
+  }
+  function paintTentacles(now, draped){
+    // Each tentacle is a quadratic Bezier from (0,0) outward; animate angle and curl
+    const baseAng = Math.PI;          // tentacles emerge from underside
+    const spread  = Math.PI * 0.85;   // angular spread along the body's lower hemisphere
+    const len = draped ? 14 : 10;
+    for (let i=0;i<TENT_N;i++){
+      const t = TENT_N === 1 ? 0 : (i / (TENT_N - 1));
+      const ang = baseAng - spread/2 + spread * t;       // direction
+      const sway = Math.sin(now*0.003 + i*0.7) * (draped ? 0.28 : 0.18);
+      const a2 = ang + sway;
+      const tipX = Math.cos(a2) * len;
+      const tipY = -Math.sin(a2) * len * (draped ? 0.45 : 0.55);   // pull up slightly so tentacles fan over the fall
+      // control point: midway, perpendicular offset for curl
+      const mx = tipX * 0.5;
+      const my = tipY * 0.5;
+      const perpX = -Math.sin(a2);
+      const perpY = -Math.cos(a2);
+      const curlAmt = (draped ? 4 : 3) * Math.sin(now*0.0028 + i*1.1);
+      const cx = mx + perpX * curlAmt;
+      const cy = my + perpY * curlAmt;
+      const path = document.getElementById('wfOctoT'+i);
+      if (path) path.setAttribute('d', 'M0,0 Q'+cx.toFixed(2)+','+cy.toFixed(2)+' '+tipX.toFixed(2)+','+tipY.toFixed(2));
+    }
+  }
+  function frame(now){
+    if (mode === 'idle' && now >= nextAt) startCrawlIn(now);
+    if (mode === 'crawl_in'){
+      const dt = now - modeStart;
+      const TOTAL = 9000;
+      const u = Math.min(1, dt/TOTAL);
+      curX = ENTER_X + (TARGET_X - ENTER_X) * u;
+      const bob = Math.sin(now*0.005) * 1.5;
+      setBodyTransform(curX, Y_BASE + bob, 1.0);
+      paintTentacles(now, false);
+      if (u >= 1) startDrape(now);
+    } else if (mode === 'drape'){
+      const dt = now - modeStart;
+      const DRAPE = 22000;
+      const breath = Math.sin(now*0.0014) * 0.8;
+      setBodyTransform(TARGET_X, lingerY + breath, 1.05);
+      paintTentacles(now, true);
+      if (dt > DRAPE) startCrawlOut(now);
+    } else if (mode === 'crawl_out'){
+      const dt = now - modeStart;
+      const TOTAL = 8000;
+      const u = Math.min(1, dt/TOTAL);
+      curX = TARGET_X + (EXIT_X - TARGET_X) * u;
+      const bob = Math.sin(now*0.005) * 1.5;
+      setBodyTransform(curX, Y_BASE + bob, 1.0);
+      paintTentacles(now, false);
+      if (u >= 1){
+        mode = 'idle';
+        g.setAttribute('opacity','0');
+        nextAt = now + 80000 + Math.random()*120000;  // 80-200s before next visit
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.230] whale fall octopus visitor armed (every 1-3 minutes a small octopus crawls in, drapes over the whale fall for ~22s, then crawls east)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
