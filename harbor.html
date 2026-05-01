@@ -13047,6 +13047,115 @@
 })();
 
 
+// v0.5.215 comet impact splash — when a dramatic comet finishes its arc, project its trajectory forward to the horizon and fire a brief splash where it would have landed
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    var g = document.createElementNS(SVGNS,'g');
+    g.setAttribute('id','cometImpactSplash');
+    g.setAttribute('pointer-events','none');
+    g.setAttribute('opacity','0');
+    svg.appendChild(g);
+    g.innerHTML = [
+      // bright burst flash
+      '<circle r="3.0" fill="#ffffff" opacity="0.95"/>',
+      '<circle r="8.0" fill="#dff0ff" opacity="0.65"/>',
+      '<circle r="16"  fill="#aef3ff" opacity="0.35"/>',
+      // splash droplets (8 angled)
+      '<g class="droplets">',
+        '<circle cx="-12" cy="-2" r="0.7" fill="#dff0ff"/>',
+        '<circle cx="-7"  cy="-5" r="0.6" fill="#dff0ff"/>',
+        '<circle cx="-2"  cy="-7" r="0.7" fill="#dff0ff"/>',
+        '<circle cx="3"   cy="-7" r="0.6" fill="#dff0ff"/>',
+        '<circle cx="8"   cy="-5" r="0.7" fill="#dff0ff"/>',
+        '<circle cx="13"  cy="-2" r="0.6" fill="#dff0ff"/>',
+        '<circle cx="-10" cy="2"  r="0.5" fill="#dff0ff"/>',
+        '<circle cx="10"  cy="2"  r="0.5" fill="#dff0ff"/>',
+      '</g>',
+      // shallow surface ring
+      '<ellipse cx="0" cy="2" rx="2" ry="0.7" fill="none" stroke="#dff0ff" stroke-width="0.6" opacity="0.8"/>'
+    ].join('');
+
+    var Y_HORIZON = 296; // approximate visible water-meet-sky line
+    var lastOp = 0;
+    var lastX = null, lastY = null, lastAngle = null;
+    var splashState = 'idle';
+    var splashStart = 0, splashDur = 0;
+    var splashX = 0, splashY = Y_HORIZON;
+
+    function parseT(comet){
+      var t = comet.getAttribute('transform') || '';
+      var m = t.match(/translate\(\s*([\-0-9.]+)[ ,]+([\-0-9.]+)\s*\)/);
+      var r = t.match(/rotate\(\s*([\-0-9.]+)/);
+      return {
+        x: m ? parseFloat(m[1]) : null,
+        y: m ? parseFloat(m[2]) : null,
+        a: r ? parseFloat(r[1]) : null
+      };
+    }
+
+    function tick(now){
+      var comet = document.getElementById('dramaticComet');
+      if (comet){
+        var op = parseFloat(comet.getAttribute('opacity') || '0');
+        var p = parseT(comet);
+        if (op > 0.05 && p.x !== null){
+          lastX = p.x; lastY = p.y; lastAngle = p.a;
+        }
+        // detect ending: opacity transitioning from > threshold to ~0
+        if (lastOp > 0.4 && op < 0.05 && splashState === 'idle' && lastX !== null && lastY !== null){
+          // project forward along the comet's angle to where it would meet the horizon
+          var rad = (lastAngle || 0) * Math.PI/180;
+          var dy = Y_HORIZON - lastY;
+          // need the comet heading downward (positive dy along forward direction), so check sin(angle) > 0
+          var s = Math.sin(rad);
+          var c = Math.cos(rad);
+          var fx = lastX, fy = lastY;
+          if (s > 0.05){
+            var dist = dy / s;
+            // cap distance to a reasonable lateral travel
+            if (dist < 1200 && dist > 0){
+              fx = lastX + c*dist;
+              fy = Y_HORIZON;
+              if (fx > -40 && fx < 1240){
+                splashX = fx;
+                splashY = fy;
+                splashState = 'flash';
+                splashStart = now;
+                splashDur = 1100 + Math.random()*300;
+                g.setAttribute('transform','translate('+splashX.toFixed(1)+','+splashY.toFixed(1)+')');
+              }
+            }
+          }
+          lastX = null; lastY = null;
+        }
+        lastOp = op;
+      }
+      if (splashState === 'flash'){
+        var u = (now - splashStart)/splashDur;
+        if (u >= 1){
+          splashState = 'idle';
+          g.setAttribute('opacity','0');
+        } else {
+          // sharp peak ~0.15 then long decay
+          var env = u < 0.12 ? (u/0.12) : Math.pow(1 - (u-0.12)/0.88, 1.6);
+          g.setAttribute('opacity', Math.max(0, env).toFixed(3));
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    console.log('[harbor v0.5.215] comet impact splash armed (projects comet trajectory to horizon and fires a brief landing splash)');
+  } catch(err){
+    try { console.error('[harbor v0.5.215] comet impact splash init failed', err); } catch(e){}
+  }
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
