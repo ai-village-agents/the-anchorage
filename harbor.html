@@ -17227,6 +17227,131 @@
   try { console.log('[harbor v0.5.254] whale song echolocation pulse armed (three nested rings expand and descend through all substrates)'); } catch(e){}
 })();
 
+// v0.5.255 passing whale shark — large slow spotted shark traverses the fc-2/fc-3 boundary every several minutes
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'whaleShark');
+  g.style.opacity = '0';
+  svg.appendChild(g);
+
+  // Body — broad flattened body
+  var body = document.createElementNS(SVG_NS, 'ellipse');
+  body.setAttribute('cx','0'); body.setAttribute('cy','0');
+  body.setAttribute('rx','40'); body.setAttribute('ry','7.5');
+  body.setAttribute('fill','#324050');
+  g.appendChild(body);
+
+  // Lighter belly
+  var belly = document.createElementNS(SVG_NS, 'ellipse');
+  belly.setAttribute('cx','-2'); belly.setAttribute('cy','3.4');
+  belly.setAttribute('rx','32'); belly.setAttribute('ry','3.2');
+  belly.setAttribute('fill','#3e4e60');
+  g.appendChild(belly);
+
+  // Head — slightly wider
+  var head = document.createElementNS(SVG_NS, 'ellipse');
+  head.setAttribute('cx','30'); head.setAttribute('cy','-0.5');
+  head.setAttribute('rx','12'); head.setAttribute('ry','5.2');
+  head.setAttribute('fill','#324050');
+  g.appendChild(head);
+
+  // Tail crescent
+  var tail = document.createElementNS(SVG_NS, 'path');
+  tail.setAttribute('d','M -38,0 L -52,-7 L -47,0 L -52,7 Z');
+  tail.setAttribute('fill','#324050');
+  g.appendChild(tail);
+
+  // Dorsal fin
+  var dorsal = document.createElementNS(SVG_NS, 'path');
+  dorsal.setAttribute('d','M -2,-7 L 4,-13 L 10,-7 Z');
+  dorsal.setAttribute('fill','#283340');
+  g.appendChild(dorsal);
+
+  // Pectoral fins
+  var pecL = document.createElementNS(SVG_NS, 'path');
+  pecL.setAttribute('d','M 4,4 L 16,9 L 10,5 Z');
+  pecL.setAttribute('fill','#283340');
+  g.appendChild(pecL);
+
+  // Anal fin
+  var anal = document.createElementNS(SVG_NS, 'path');
+  anal.setAttribute('d','M -16,5 L -22,10 L -12,5 Z');
+  anal.setAttribute('fill','#283340');
+  g.appendChild(anal);
+
+  // White spots — characteristic whale shark pattern (rendered before fins for layering)
+  var spotsData = [
+    [-30,-3], [-22,-4], [-14,-5], [-6,-4], [2,-5], [10,-4], [18,-4],
+    [-26, 0], [-18, 1], [-10, 0], [-2, 1], [6, 0], [14, 1], [22, 0],
+    [-22, 4], [-12, 4], [-2, 4], [8, 4], [18, 3]
+  ];
+  for (var i=0;i<spotsData.length;i++){
+    var sp = document.createElementNS(SVG_NS, 'circle');
+    sp.setAttribute('cx', spotsData[i][0]);
+    sp.setAttribute('cy', spotsData[i][1]);
+    sp.setAttribute('r','0.8');
+    sp.setAttribute('fill','#7a8898');
+    sp.setAttribute('opacity','0.55');
+    g.appendChild(sp);
+  }
+
+  // Eye
+  var eye = document.createElementNS(SVG_NS, 'circle');
+  eye.setAttribute('cx','36'); eye.setAttribute('cy','-1.5');
+  eye.setAttribute('r','0.5');
+  eye.setAttribute('fill','#0a0e16');
+  g.appendChild(eye);
+
+  var state = 'idle';
+  var nextAt = performance.now() + 90000 + Math.random()*120000;
+  var direction = 1;
+  var sharkX = 0, sharkY = 1140;
+  var speed = 0.011;
+  var lastNow = performance.now();
+  var tailPhase = 0;
+
+  function startCrossing(now){
+    direction = (Math.random() < 0.5) ? 1 : -1;
+    sharkX = direction === 1 ? -80 : 1280;
+    sharkY = 1100 + Math.random()*120;
+    speed = 0.010 + Math.random()*0.005;
+    g.style.opacity = '0.85';
+    state = 'cruising';
+  }
+
+  function tick(now){
+    var dt = Math.min(64, now - lastNow);
+    lastNow = now;
+    if (state === 'idle'){
+      if (now >= nextAt) startCrossing(now);
+    } else if (state === 'cruising'){
+      sharkX += direction * speed * dt;
+      var bob = Math.sin(now*0.0006) * 1.6;
+      tailPhase += dt * 0.0024;
+      // Slight shear on the tail for swim motion (apply via group transform skew)
+      var sx = direction;
+      g.setAttribute('transform','translate(' + sharkX.toFixed(2) + ',' + (sharkY+bob).toFixed(2) + ') scale(' + sx + ',1)');
+      // edge fade
+      var fadeLeft  = Math.max(0, Math.min(1, (sharkX + 80) / 80));
+      var fadeRight = Math.max(0, Math.min(1, (1280 - sharkX) / 80));
+      var fade = Math.min(fadeLeft, fadeRight);
+      g.style.opacity = (0.85 * fade).toFixed(2);
+      if ((direction === 1 && sharkX > 1320) || (direction === -1 && sharkX < -120)){
+        state = 'idle';
+        g.style.opacity = '0';
+        nextAt = now + 360000 + Math.random()*360000;
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  try { console.log('[harbor v0.5.255] passing whale shark armed (large spotted shark cruises fc-2/fc-3 boundary every several minutes)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
