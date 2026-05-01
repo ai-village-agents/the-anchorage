@@ -11918,6 +11918,94 @@
         })();
 
 
+        // v0.5.203 whale spy hop — every several minutes a humpback's head rises slowly out of the water, looks around, and sinks back
+        (function(){
+          const svg = document.querySelector('.harbor-svg');
+          if(!svg) return;
+          const Y_SURFACE = 318;
+          const layer = document.createElementNS('http://www.w3.org/2000/svg','g');
+          layer.setAttribute('id','spyHopLayer');
+          layer.setAttribute('pointer-events','none');
+          svg.appendChild(layer);
+          // build a head silhouette: rounded rostrum tilted slightly
+          const head = document.createElementNS('http://www.w3.org/2000/svg','g');
+          head.setAttribute('opacity','0');
+          // body chunk (ellipse pinched into a rostrum)
+          const body = document.createElementNS('http://www.w3.org/2000/svg','path');
+          // rounded rostrum head — narrow at top, wider near the surface
+          body.setAttribute('d','M 0 -36 Q 14 -32 18 -16 Q 22 0 14 18 L -14 18 Q -22 0 -18 -16 Q -14 -32 0 -36 Z');
+          body.setAttribute('fill','#1a2233');
+          body.setAttribute('opacity','0.85');
+          // eye glint
+          const eye = document.createElementNS('http://www.w3.org/2000/svg','circle');
+          eye.setAttribute('cx','7');
+          eye.setAttribute('cy','-6');
+          eye.setAttribute('r','0.9');
+          eye.setAttribute('fill','#bcd0e6');
+          eye.setAttribute('opacity','0.85');
+          // water-line wash (white waterline at base where head meets surface)
+          const wash = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+          wash.setAttribute('cx','0'); wash.setAttribute('cy','18');
+          wash.setAttribute('rx','22'); wash.setAttribute('ry','2.4');
+          wash.setAttribute('fill','#bcd0e6'); wash.setAttribute('opacity','0.55');
+          head.appendChild(wash);
+          head.appendChild(body);
+          head.appendChild(eye);
+          layer.appendChild(head);
+          let state = 'idle';
+          let t0 = 0;
+          let dur = 0;
+          let X = 0;
+          let nextHop = performance.now() + 90000 + Math.random()*150000;
+          function startHop(){
+            X = 360 + Math.random()*420;
+            state = 'rise';
+            t0 = performance.now();
+            dur = 1800 + Math.random()*600;
+          }
+          function tick(){
+            const now = performance.now();
+            if(state === 'idle'){
+              if(now >= nextHop){ startHop(); }
+              requestAnimationFrame(tick);
+              return;
+            }
+            const u = (now - t0) / dur;
+            let yOff = 0, opacity = 0, tilt = 0;
+            if(state === 'rise'){
+              // ease out, head emerges from -36..18 above surface
+              const e = 1 - Math.pow(1-Math.min(1,u),2);
+              yOff = -e*40; // rise up to 40px above the surface anchor
+              opacity = Math.min(1, e*1.1) * 0.95;
+              tilt = -8 + e*4; // slight bow
+              if(u >= 1){ state = 'look'; t0 = now; dur = 2600 + Math.random()*1400; }
+            } else if(state === 'look'){
+              yOff = -40 + Math.sin(u*Math.PI*2)*1.2;
+              opacity = 0.95;
+              tilt = -4 + Math.sin(u*Math.PI*2.0)*5; // slowly turn left/right
+              if(u >= 1){ state = 'fall'; t0 = now; dur = 1500 + Math.random()*500; }
+            } else if(state === 'fall'){
+              const e = u*u; // ease in
+              yOff = -40 + e*40;
+              opacity = (1 - u) * 0.95;
+              tilt = -4 + e*8;
+              if(u >= 1){
+                state = 'idle';
+                head.setAttribute('opacity','0');
+                nextHop = now + 180000 + Math.random()*300000;
+                requestAnimationFrame(tick);
+                return;
+              }
+            }
+            head.setAttribute('transform', `translate(${X.toFixed(1)} ${(Y_SURFACE+yOff).toFixed(1)}) rotate(${tilt.toFixed(2)})`);
+            head.setAttribute('opacity', opacity.toFixed(3));
+            requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+          console.log('[harbor v0.5.203] whale spy hop armed (humpback head rises and looks around every few minutes)');
+        })();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
