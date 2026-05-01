@@ -14934,6 +14934,102 @@
   try { console.log('[harbor v0.5.232] distant orca sighting armed (a tall straight dorsal fin glides past the distant surface, surfacing three times before disappearing; recurs every 1.5-4.5 minutes)'); } catch(e){}
 })();
 
+// v0.5.233 coastal cliff bird colony — a small flock of pale specks roosts on the west headland; every 20-50 seconds one or two lift off in a short loop and resettle on a different perch
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','cliffBirdColony');
+  g.setAttribute('pointer-events','none');
+  // west headland ridge runs from (0,250) to (440,228), peak around (180,232)
+  // perches scattered along upper ridge — y in 232-244
+  const PERCHES = [];
+  const N = 11;
+  for(let i=0;i<N;i++){
+    const x = 70 + Math.random()*270;
+    // approx ridge y at given x along the path
+    let ry;
+    if(x < 80) ry = 250 - (x/80)*15; // 250 down to 235
+    else if(x < 180) ry = 235 - ((x-80)/100)*3; // 235 to 232
+    else if(x < 240) ry = 232 - 6*Math.sin(((x-180)/60)*Math.PI*0.5); // dip
+    else if(x < 300) ry = 226 - 1*Math.cos(((x-240)/60)*Math.PI); // 226-228
+    else ry = 232 - ((440-x)/200)*4;
+    ry = ry + 1 + Math.random()*4; // perch sits slightly below ridge edge
+    const c = document.createElementNS(NS,'circle');
+    c.setAttribute('cx', x.toFixed(1));
+    c.setAttribute('cy', ry.toFixed(1));
+    c.setAttribute('r','0.9');
+    c.setAttribute('fill','#cdd4dc');
+    c.setAttribute('opacity', (0.55 + Math.random()*0.25).toFixed(2));
+    g.appendChild(c);
+    PERCHES.push({el:c, x, y:ry, occupied:true});
+  }
+  // flier — a small bird in flight
+  const flier = document.createElementNS(NS,'g');
+  flier.setAttribute('id','cliffColonyFlier');
+  flier.setAttribute('opacity','0');
+  // simple gull silhouette (M-shape wing) — 4 px wide
+  const wing = document.createElementNS(NS,'path');
+  wing.setAttribute('d','M -3,0 Q -1.5,-1.4 0,0 Q 1.5,-1.4 3,0');
+  wing.setAttribute('fill','none');
+  wing.setAttribute('stroke','#cdd4dc');
+  wing.setAttribute('stroke-width','0.7');
+  wing.setAttribute('stroke-linecap','round');
+  flier.appendChild(wing);
+  g.appendChild(flier);
+  svg.appendChild(g);
+
+  let nextAt = performance.now() + 8000 + Math.random()*8000;
+  let active = null;
+  function startFlight(now){
+    // pick one occupied perch as origin, another (different) as target
+    const occ = PERCHES.map((p,i)=>({p,i})).filter(o=>o.p.occupied);
+    if(occ.length < 2) return;
+    const a = occ[Math.floor(Math.random()*occ.length)];
+    let b = a;
+    while(b===a) b = occ[Math.floor(Math.random()*occ.length)];
+    a.p.occupied = false;
+    a.p.el.setAttribute('opacity','0');
+    active = {
+      t0: now, dur: 4000 + Math.random()*2500,
+      x0: a.p.x, y0: a.p.y,
+      x1: b.p.x, y1: b.p.y,
+      // arc apex above
+      apexY: Math.min(a.p.y, b.p.y) - (12 + Math.random()*10),
+      target: b
+    };
+  }
+  function frame(now){
+    if(!active && now >= nextAt){ startFlight(now); }
+    if(active){
+      const t = (now - active.t0)/active.dur;
+      if(t >= 1){
+        // land
+        active.target.occupied = true;
+        active.target.el.setAttribute('opacity', (0.55 + Math.random()*0.25).toFixed(2));
+        flier.setAttribute('opacity','0');
+        active = null;
+        nextAt = now + 20000 + Math.random()*30000;
+      } else {
+        // quadratic bezier x(t), y(t)
+        const ot = 1-t;
+        const xMid = (active.x0 + active.x1)/2;
+        const x = ot*ot*active.x0 + 2*ot*t*xMid + t*t*active.x1;
+        const y = ot*ot*active.y0 + 2*ot*t*active.apexY + t*t*active.y1;
+        // wing flap with frequency ~6 Hz, scale 0.6-1.0
+        const flap = 0.6 + 0.4*Math.abs(Math.sin(t*active.dur*0.012));
+        const dirX = (active.x1 - active.x0) >= 0 ? 1 : -1;
+        flier.setAttribute('transform','translate('+x.toFixed(1)+','+y.toFixed(1)+') scale('+(dirX).toFixed(2)+',1) scale(1,'+flap.toFixed(2)+')');
+        flier.setAttribute('opacity', t < 0.05 ? (t/0.05).toFixed(2) : (t > 0.95 ? ((1-t)/0.05).toFixed(2) : '1'));
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.233] coastal cliff bird colony armed ('+N+' perches on the west headland; one bird relocates every 20-50 seconds)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
