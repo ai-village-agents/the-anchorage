@@ -14507,6 +14507,145 @@
   console.log('[harbor v0.5.228] submersible bioluminescent path armed (cyan motes mark the sub\'s wake and fade over 4-6 seconds)');
 })();
 
+// v0.5.229 baitball wave-attack — a barracuda-like predator dart sweeps across the baitball; the halo flashes and a panic-ring of fish darts outward
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const baitball = document.getElementById('baitball');
+  const halo = document.getElementById('baitballGlow');
+  if (!baitball || !halo) return;
+  // Container, inserted before help overlay
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','baitballAttack');
+  g.setAttribute('pointer-events','none');
+  // Predator: a slim dark dart with a forked tail. Created once and re-used.
+  const pred = document.createElementNS(NS,'g');
+  pred.setAttribute('id','baitballPredator');
+  pred.setAttribute('opacity','0');
+  pred.innerHTML = '<g>'
+    + '<ellipse cx="0" cy="0" rx="14" ry="2.2" fill="#1a2030" opacity="0.92"/>'
+    + '<polygon points="-14,-3 -22,-1 -22,1 -14,3" fill="#1a2030" opacity="0.92"/>'  // forked tail
+    + '<polygon points="0,-2.2 8,-5 12,-2 8,-1.8" fill="#1a2030" opacity="0.85"/>'   // dorsal
+    + '<polygon points="-2,2.2 4,5 6,3" fill="#1a2030" opacity="0.85"/>'              // ventral
+    + '<circle cx="11" cy="-0.4" r="0.55" fill="#fff" opacity="0.85"/>'                // eye
+    + '</g>';
+  g.appendChild(pred);
+  // Pool of "fleeing" fish that appear during a panic burst. Tiny silver flecks.
+  const FLEE_POOL = 14;
+  const fleers = [];
+  for (let i=0;i<FLEE_POOL;i++){
+    const f = document.createElementNS(NS,'ellipse');
+    f.setAttribute('rx','1.6');
+    f.setAttribute('ry','0.7');
+    f.setAttribute('fill','#cfd8dc');
+    f.setAttribute('opacity','0');
+    g.appendChild(f);
+    fleers.push({node:f, t0:0, life:0, x0:0, y0:0, vx:0, vy:0, ang:0});
+  }
+  const help = svg.querySelector('#helpOverlay');
+  if (help) svg.insertBefore(g, help); else svg.appendChild(g);
+  // Get current cluster center from the halo's transform (set by v0.5.147 each frame)
+  function clusterCenter(){
+    const t = halo.getAttribute('transform') || '';
+    const m = t.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
+    if (!m) return {x:800, y:920};
+    return {x: parseFloat(m[1]), y: parseFloat(m[2])};
+  }
+  // Attack state machine
+  let mode = 'idle';     // 'idle' | 'approach' | 'panic' | 'cooldown'
+  let nextAt = performance.now() + 18000 + Math.random()*30000;
+  let attackStart = 0;
+  let attackDir = 1;
+  let attackY = 920;
+  let panicEnd = 0;
+  let nextFleeIdx = 0;
+  function startAttack(now){
+    mode = 'approach';
+    attackStart = now;
+    attackDir = Math.random() < 0.5 ? 1 : -1;
+    const c = clusterCenter();
+    attackY = c.y + (Math.random()-0.5)*40;
+    pred.setAttribute('opacity','0.75');
+  }
+  function spawnFleeBurst(now, cx, cy){
+    const N = 8 + Math.floor(Math.random()*5);
+    for (let i=0;i<N;i++){
+      const f = fleers[nextFleeIdx];
+      nextFleeIdx = (nextFleeIdx + 1) % FLEE_POOL;
+      const ang = Math.random() * Math.PI * 2;
+      const speed = 0.10 + Math.random()*0.10;
+      f.t0 = now;
+      f.life = 1600 + Math.random()*900;
+      f.x0 = cx + Math.cos(ang)*8;
+      f.y0 = cy + Math.sin(ang)*5;
+      f.vx = Math.cos(ang) * speed;
+      f.vy = Math.sin(ang) * speed * 0.7;  // flatter vertical
+      f.ang = ang * 180/Math.PI;
+      f.node.setAttribute('opacity','0.85');
+    }
+  }
+  function frame(now){
+    if (mode === 'idle' && now >= nextAt) startAttack(now);
+    if (mode === 'approach'){
+      // Predator streaks horizontally across the cluster height
+      const dt = now - attackStart;
+      const TOTAL = 2400;     // sweep duration
+      const u = dt / TOTAL;
+      // Start off-screen on attackDir side, end off-screen on the other
+      const startX = attackDir > 0 ? -50 : 1250;
+      const endX   = attackDir > 0 ? 1250 : -50;
+      const x = startX + (endX - startX) * u;
+      const y = attackY + Math.sin(dt*0.005) * 4;
+      pred.setAttribute('transform','translate('+x.toFixed(2)+','+y.toFixed(2)+') scale('+(attackDir>0?1:-1)+',1)');
+      // Slight fade-in at start, fade-out at end
+      let op = 0.82;
+      if (u < 0.1) op = u/0.1 * 0.82;
+      else if (u > 0.9) op = (1-u)/0.1 * 0.82;
+      pred.setAttribute('opacity', op.toFixed(3));
+      // Trigger panic when predator is near cluster center
+      const c = clusterCenter();
+      if (Math.abs(x - c.x) < 60 && mode === 'approach' && !pred._panicked){
+        pred._panicked = true;
+        spawnFleeBurst(now, c.x, c.y);
+        // Halo flash
+        halo.setAttribute('r','78');
+        halo.style.transition = 'r 0.6s ease-out';
+      }
+      if (u >= 1){
+        mode = 'cooldown';
+        pred._panicked = false;
+        pred.setAttribute('opacity','0');
+        halo.setAttribute('r','42');
+        nextAt = now + 60000 + Math.random()*120000;
+      }
+    }
+    // Update fleers
+    for (let i=0;i<FLEE_POOL;i++){
+      const f = fleers[i];
+      if (f.life > 0){
+        const age = now - f.t0;
+        if (age >= f.life){
+          f.life = 0;
+          f.node.setAttribute('opacity','0');
+        } else {
+          const k = age / f.life;
+          const x = f.x0 + f.vx * age;
+          const y = f.y0 + f.vy * age;
+          f.node.setAttribute('cx', x.toFixed(2));
+          f.node.setAttribute('cy', y.toFixed(2));
+          f.node.setAttribute('transform','rotate('+f.ang.toFixed(1)+','+x.toFixed(2)+','+y.toFixed(2)+')');
+          f.node.setAttribute('opacity', (0.85 * (1 - k)).toFixed(3));
+        }
+      }
+    }
+    if (mode === 'cooldown' && now >= nextAt) mode = 'idle';
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.229] baitball wave-attack armed (every 1-3 minutes a predator dart streaks through the baitball; halo flashes and a panic-ring darts outward)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
