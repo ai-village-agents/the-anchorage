@@ -16950,6 +16950,71 @@
   try { console.log('[harbor v0.5.251] surface-skimming pelican armed (glides low, dips beak, sometimes catches fish)'); } catch(e){}
 })();
 
+// v0.5.252 bioluminescent amphipod swarm — tiny pale crustaceans orbit and drift around the hydrothermal vent
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var VX = 320, VY = 2340;
+  var COUNT = 16;
+
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'ventAmphipods');
+  svg.appendChild(g);
+
+  var pool = [];
+  for (var i=0;i<COUNT;i++){
+    var el = document.createElementNS(SVG_NS, 'ellipse');
+    el.setAttribute('rx','0.7');
+    el.setAttribute('ry','0.4');
+    el.setAttribute('fill','#d6f5ff');
+    el.setAttribute('opacity','0.85');
+    g.appendChild(el);
+    pool.push({
+      el: el,
+      r:   18 + Math.random()*30,
+      ang: Math.random()*Math.PI*2,
+      av:  (Math.random() < 0.5 ? -1 : 1) * (0.0006 + Math.random()*0.0009),
+      yOff: -Math.random()*16,
+      wobAmp: 1.4 + Math.random()*2.6,
+      wobPhase: Math.random()*Math.PI*2,
+      wobFreq: 0.0014 + Math.random()*0.0014,
+      flickAt: performance.now() + Math.random()*4000,
+      flickEnd: 0,
+      baseOpac: 0.55 + Math.random()*0.32
+    });
+  }
+
+  function tick(now){
+    for (var i=0;i<pool.length;i++){
+      var a = pool[i];
+      a.ang += a.av * 16;
+      var rNow = a.r + Math.sin(a.wobPhase + now*a.wobFreq) * a.wobAmp;
+      var x = VX + Math.cos(a.ang) * rNow;
+      var y = VY + a.yOff + Math.sin(a.ang) * (rNow*0.55);
+      a.el.setAttribute('cx', x.toFixed(2));
+      a.el.setAttribute('cy', y.toFixed(2));
+      var op = a.baseOpac;
+      if (now > a.flickAt && a.flickEnd === 0){
+        a.flickEnd = now + 320 + Math.random()*220;
+      }
+      if (a.flickEnd > 0){
+        if (now > a.flickEnd){
+          a.flickEnd = 0;
+          a.flickAt = now + 1800 + Math.random()*3600;
+        } else {
+          var k = (a.flickEnd - now) / 540;
+          op = a.baseOpac + 0.35 * Math.max(0, Math.min(1, k));
+        }
+      }
+      a.el.setAttribute('opacity', op.toFixed(2));
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  try { console.log('[harbor v0.5.252] vent amphipod swarm armed (16 tiny pale crustaceans orbit hydrothermal vent at (320,2340))'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
