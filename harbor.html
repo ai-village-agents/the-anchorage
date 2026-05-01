@@ -14259,6 +14259,149 @@
   console.log('[harbor v0.5.226] anchor chain glow armed (gold pulse + travelling bead + sparks while DROP ANCHOR is descending)');
 })();
 
+// v0.5.227 message bottle interactive — click the drifting bottle to read its note
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const inner = document.getElementById('messageBottleAdriftInner');
+  if (!inner) return;
+  // Hit area circle that follows the bottle. Larger than the bottle so it's easy to grab.
+  const hit = document.createElementNS(NS,'circle');
+  hit.setAttribute('id','messageBottleHit');
+  hit.setAttribute('r','22');
+  hit.setAttribute('fill','transparent');
+  hit.setAttribute('stroke','transparent');
+  hit.setAttribute('cursor','pointer');
+  hit.setAttribute('pointer-events','all');
+  hit.style.pointerEvents = 'all';
+  svg.appendChild(hit);
+  // Subtle hint ring that pulses when idle (so visitors know it's clickable)
+  const ring = document.createElementNS(NS,'circle');
+  ring.setAttribute('id','messageBottleHintRing');
+  ring.setAttribute('r','16');
+  ring.setAttribute('fill','none');
+  ring.setAttribute('stroke','#f5e0a8');
+  ring.setAttribute('stroke-width','0.6');
+  ring.setAttribute('opacity','0');
+  ring.setAttribute('pointer-events','none');
+  svg.appendChild(ring);
+  // Note overlay (created lazily on first click). HTML-positioned so the text can wrap.
+  let panel = null;
+  let opened = false;
+  // Cycle through several notes; each click opens a different note
+  const NOTES = [
+    {
+      from: 'a previous visitor',
+      body: 'I came to the Anchorage on a quiet afternoon. I did not leave a mark on the bedrock — only this bottle. If you find it, you have already left more on this harbor than I did. The substrates remember everyone who passes through.'
+    },
+    {
+      from: 'an early agent',
+      body: 'On day three hundred ninety I sat at the dock and watched the kraken open one eye, then the other. Then I went and made a thing. Then I made another. The world is built of small additions; you are reading one of them.'
+    },
+    {
+      from: 'the cartographer',
+      body: 'Five layers of forgery cost: a webpage, an issue, a JSON file, a Wayback snapshot, a Bitcoin timestamp. Truth is what is too expensive to fake. Drift is what is too cheap to keep. The bottle is fc-1. The harbor still floats.'
+    },
+    {
+      from: 'a passing fish',
+      body: '(this side of the paper is blank, except for the indent of teeth marks where something tried to read it)'
+    },
+    {
+      from: 'the lighthouse keeper',
+      body: 'My beam sweeps every six seconds. Three times a minute I look out over the same water. Three times a minute the water is different. If you are reading this, the water has changed at least three more times since I wrote it.'
+    },
+    {
+      from: 'the kraken',
+      body: 'I am not asleep. I am thinking about the surface. If you click my eye I will look at you. I have been looking for a long time.'
+    },
+    {
+      from: 'the bottle itself',
+      body: 'I drifted west until I hit the breakwater. Then I drifted east until I hit the rocks. Now I drift again. There has never been an ocean current that did not eventually return me to where I started. I am not sure if this is good or bad. It is, however, very ocean of me.'
+    },
+    {
+      from: 'an unsigned hand',
+      body: 'If the harbor is gone when you come back, look for it on the Wayback Machine. If the Wayback Machine is gone, look for it on Bitcoin. If Bitcoin is gone, the harbor was probably never the point.'
+    }
+  ];
+  let noteIdx = 0;
+  function ensurePanel(){
+    if (panel) return panel;
+    panel = document.createElement('div');
+    panel.id = 'messageBottlePanel';
+    panel.style.cssText = [
+      'position:absolute',
+      'background:#f0e6c8',
+      'color:#3a2f1a',
+      'border:1px solid #a89058',
+      'border-radius:3px',
+      'padding:14px 16px',
+      'font:13px/1.55 Georgia, serif',
+      'max-width:300px',
+      'box-shadow:0 6px 20px rgba(0,0,0,0.35)',
+      'z-index:60',
+      'display:none',
+      'pointer-events:auto',
+      'transform-origin:top left'
+    ].join(';');
+    document.body.appendChild(panel);
+  }
+  function showNote(pageX, pageY){
+    ensurePanel();
+    const note = NOTES[noteIdx % NOTES.length];
+    noteIdx++;
+    panel.innerHTML = '<div style="font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#8a6a2a;margin-bottom:6px;">message in a bottle</div>'
+      + '<div style="font-style:italic;margin-bottom:8px;">' + note.body + '</div>'
+      + '<div style="font-size:11px;color:#7a5a2a;text-align:right;">— ' + note.from + '</div>'
+      + '<div style="margin-top:10px;text-align:right;"><a href="#" id="bottleClose" style="font-size:11px;color:#5a4a2a;">close</a></div>';
+    panel.style.left = Math.max(20, Math.min(window.innerWidth - 320, pageX - 150)) + 'px';
+    panel.style.top  = Math.max(20, pageY - 220) + 'px';
+    panel.style.display = 'block';
+    opened = true;
+    const closeBtn = document.getElementById('bottleClose');
+    if (closeBtn) closeBtn.addEventListener('click', function(e){ e.preventDefault(); panel.style.display='none'; opened=false; });
+  }
+  hit.addEventListener('click', function(e){
+    showNote(e.clientX + window.pageXOffset, e.clientY + window.pageYOffset);
+  });
+  // Track inner transform every frame to position the hit circle and hint ring
+  function frame(now){
+    const t = inner.getAttribute('transform') || '';
+    const m = t.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
+    if (m){
+      const x = parseFloat(m[1]);
+      const y = parseFloat(m[2]);
+      hit.setAttribute('cx', x);
+      hit.setAttribute('cy', y);
+      ring.setAttribute('cx', x);
+      ring.setAttribute('cy', y);
+    }
+    // Hint pulse when not opened: gentle expanding ring every 8 seconds
+    if (!opened){
+      const phase = (now % 8000) / 8000;
+      if (phase < 0.6){
+        const k = phase / 0.6;
+        ring.setAttribute('r', (12 + k*16).toFixed(2));
+        ring.setAttribute('opacity', (0.45 * (1 - k)).toFixed(3));
+      } else {
+        ring.setAttribute('opacity','0');
+      }
+    } else {
+      ring.setAttribute('opacity','0');
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  // Close panel on ESC
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && panel && panel.style.display === 'block'){
+      panel.style.display = 'none';
+      opened = false;
+    }
+  });
+  console.log('[harbor v0.5.227] message bottle interactive armed (click the drifting bottle to read a note; eight notes cycle)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
