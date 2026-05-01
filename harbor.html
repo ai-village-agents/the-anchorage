@@ -18351,6 +18351,112 @@
   try { console.log('[harbor v0.5.264] snow flurry armed (rare drift of fine snow falls through upper sky for ~2 minutes)'); } catch(e){}
 })();
 
+// v0.5.265 siren on a far rock — a slim mermaid silhouette appears on a small rock far out, flicks her tail, and slides back into the water
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var ROCK_X = 380, ROCK_Y = 326;
+  var Y_SURFACE = 318;
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'sirenRock');
+  g.setAttribute('pointer-events', 'none');
+  g.setAttribute('transform', 'translate(' + ROCK_X + ',' + ROCK_Y + ')');
+  g.setAttribute('opacity', '0');
+  svg.appendChild(g);
+
+  // small rock just breaking the surface
+  var rock = document.createElementNS(SVG_NS, 'path');
+  rock.setAttribute('d', 'M -10,4 Q -10,-2 -4,-3 Q 2,-4 6,-2 Q 10,0 10,4 Z');
+  rock.setAttribute('fill', '#1a2230'); rock.setAttribute('stroke', '#0e141d'); rock.setAttribute('stroke-width', '0.4');
+  g.appendChild(rock);
+  // a wash ring at base
+  var wash = document.createElementNS(SVG_NS, 'path');
+  wash.setAttribute('d', 'M -10,4 Q 0,3.4 10,4');
+  wash.setAttribute('stroke', '#7ea4c0'); wash.setAttribute('stroke-width', '0.4'); wash.setAttribute('fill', 'none'); wash.setAttribute('opacity', '0.55');
+  g.appendChild(wash);
+
+  // siren — slim silhouette: torso seated, hair, tail curved
+  var siren = document.createElementNS(SVG_NS, 'g');
+  siren.setAttribute('id', 'sirenBody');
+  siren.setAttribute('transform', 'translate(0,-3)');
+  // tail — curving down from hips
+  var tail = document.createElementNS(SVG_NS, 'path');
+  tail.setAttribute('id', 'sirenTail');
+  tail.setAttribute('d', 'M 0,1 Q 4,4 6,7 Q 8,10 10,9 Q 12,8 11,7 Q 9.5,7 8.5,5 Q 7.5,3 5.5,1 Z');
+  tail.setAttribute('fill', '#2a3640'); tail.setAttribute('stroke', '#0e141d'); tail.setAttribute('stroke-width', '0.3');
+  siren.appendChild(tail);
+  // torso
+  var torso = document.createElementNS(SVG_NS, 'path');
+  torso.setAttribute('d', 'M -1.4,1.2 Q -1.6,-2.0 -0.6,-3.2 Q 0.6,-4.0 1.4,-3.0 Q 1.8,-1.2 1.4,1.2 Z');
+  torso.setAttribute('fill', '#1f2530'); torso.setAttribute('stroke', '#0e141d'); torso.setAttribute('stroke-width', '0.3');
+  siren.appendChild(torso);
+  // head
+  var head = document.createElementNS(SVG_NS, 'circle');
+  head.setAttribute('cx', '0.4'); head.setAttribute('cy', '-4.3');
+  head.setAttribute('r', '0.95'); head.setAttribute('fill', '#1f2530'); head.setAttribute('stroke', '#0e141d'); head.setAttribute('stroke-width', '0.25');
+  siren.appendChild(head);
+  // hair flowing back
+  var hair = document.createElementNS(SVG_NS, 'path');
+  hair.setAttribute('d', 'M -0.4,-4.6 Q -2.4,-3.6 -3.6,-1.8 Q -2.6,-2.4 -1.6,-3.4 Z');
+  hair.setAttribute('fill', '#0e141d');
+  siren.appendChild(hair);
+  // arm reaching up — a small arc
+  var arm = document.createElementNS(SVG_NS, 'path');
+  arm.setAttribute('id', 'sirenArm');
+  arm.setAttribute('d', 'M 1,-2.2 Q 3,-3.8 4.4,-3.0');
+  arm.setAttribute('stroke', '#1f2530'); arm.setAttribute('stroke-width', '0.5'); arm.setAttribute('fill', 'none');
+  siren.appendChild(arm);
+  g.appendChild(siren);
+
+  var sirenEl = document.getElementById('sirenBody');
+  var tailEl = document.getElementById('sirenTail');
+  var armEl = document.getElementById('sirenArm');
+
+  var state = 'idle';
+  var stateStart = 0;
+  var nextAt = performance.now() + (260 + Math.random() * 320) * 1000;
+
+  function tick(now){
+    if (state === 'idle') {
+      if (now >= nextAt) { state = 'appearing'; stateStart = now; }
+    } else if (state === 'appearing') {
+      var t = (now - stateStart) / 1500;
+      if (t >= 1) { state = 'visible'; stateStart = now; }
+      else g.setAttribute('opacity', (0.78 * t).toFixed(2));
+    } else if (state === 'visible') {
+      var elapsed = now - stateStart;
+      var dur = 7500;
+      if (elapsed >= dur) { state = 'sinking'; stateStart = now; }
+      else {
+        // tail flick — a slow rotation of the tail every 2.4s
+        var tailRot = Math.sin(elapsed * 0.0024) * 14;
+        tailEl.setAttribute('transform', 'rotate(' + tailRot.toFixed(2) + ',0,1)');
+        // arm gesture
+        var armRot = Math.sin(elapsed * 0.0011) * 10;
+        armEl.setAttribute('transform', 'rotate(' + armRot.toFixed(2) + ',1,-2.2)');
+        // gentle torso bob
+        sirenEl.setAttribute('transform', 'translate(0,' + (-3 + Math.sin(elapsed*0.0018)*0.3).toFixed(2) + ')');
+      }
+    } else if (state === 'sinking') {
+      var t = (now - stateStart) / 1500;
+      if (t >= 1) {
+        state = 'idle';
+        g.setAttribute('opacity', '0');
+        sirenEl.setAttribute('transform', 'translate(0,-3)');
+        nextAt = now + (260 + Math.random() * 320) * 1000;
+      } else {
+        // siren slides downward as she fades
+        sirenEl.setAttribute('transform', 'translate(0,' + (-3 + t * 4).toFixed(2) + ')');
+        g.setAttribute('opacity', (0.78 * (1 - t)).toFixed(2));
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  try { console.log('[harbor v0.5.265] siren on a far rock armed (slim mermaid silhouette appears, flicks her tail, slides back into the water)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
