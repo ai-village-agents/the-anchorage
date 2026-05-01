@@ -17781,6 +17781,171 @@
   try { console.log('[harbor v0.5.259] sea lion on rocks armed (rests on east-shore rock cluster, periodically throws head back and barks)'); } catch(e){}
 })();
 
+// v0.5.260 cleaner-fish station — a slow large grouper hovers at fc-2 while four small cleaner wrasses pick at it
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var STATION_X = 480, STATION_Y = 940; // fc-2
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'cleanerStation');
+  g.setAttribute('pointer-events', 'none');
+  g.setAttribute('opacity', '0');
+  svg.appendChild(g);
+
+  // grouper — large stocky fish facing right, dark olive
+  var grouper = document.createElementNS(SVG_NS, 'g');
+  grouper.setAttribute('id', 'cleanerGrouper');
+  var body = document.createElementNS(SVG_NS, 'ellipse');
+  body.setAttribute('cx', '0'); body.setAttribute('cy', '0');
+  body.setAttribute('rx', '14'); body.setAttribute('ry', '5.4');
+  body.setAttribute('fill', '#2c3a30'); body.setAttribute('stroke', '#16201a'); body.setAttribute('stroke-width', '0.4');
+  grouper.appendChild(body);
+  // belly
+  var belly = document.createElementNS(SVG_NS, 'ellipse');
+  belly.setAttribute('cx', '-1'); belly.setAttribute('cy', '2.4'); belly.setAttribute('rx', '11'); belly.setAttribute('ry', '2.6');
+  belly.setAttribute('fill', '#3a4a40'); belly.setAttribute('opacity', '0.7');
+  grouper.appendChild(belly);
+  // tail
+  var tail = document.createElementNS(SVG_NS, 'path');
+  tail.setAttribute('d', 'M -13,-1 L -20,-4 L -19,0 L -20,4 L -13,1 Z');
+  tail.setAttribute('fill', '#22302a'); tail.setAttribute('stroke', '#16201a'); tail.setAttribute('stroke-width', '0.3');
+  grouper.appendChild(tail);
+  // head ridge & gill plate
+  var gill = document.createElementNS(SVG_NS, 'path');
+  gill.setAttribute('d', 'M 8,-3 Q 7,0 8,3');
+  gill.setAttribute('stroke', '#16201a'); gill.setAttribute('stroke-width', '0.4'); gill.setAttribute('fill', 'none');
+  grouper.appendChild(gill);
+  // dorsal fin
+  var dor = document.createElementNS(SVG_NS, 'path');
+  dor.setAttribute('d', 'M -8,-5 Q -2,-9 6,-5 Z');
+  dor.setAttribute('fill', '#22302a'); dor.setAttribute('stroke', '#16201a'); dor.setAttribute('stroke-width', '0.3');
+  grouper.appendChild(dor);
+  // pectoral
+  var pec = document.createElementNS(SVG_NS, 'path');
+  pec.setAttribute('d', 'M 4,2 Q 7,5.6 9,3.6 Z');
+  pec.setAttribute('fill', '#22302a'); pec.setAttribute('stroke', '#16201a'); pec.setAttribute('stroke-width', '0.3');
+  grouper.appendChild(pec);
+  // mouth slightly open
+  var mouth = document.createElementNS(SVG_NS, 'path');
+  mouth.setAttribute('d', 'M 12.6,1.4 Q 13.6,1.8 13.4,2.2 L 12.4,2 Z');
+  mouth.setAttribute('fill', '#0c1410');
+  grouper.appendChild(mouth);
+  // eye
+  var eye = document.createElementNS(SVG_NS, 'circle');
+  eye.setAttribute('cx', '10'); eye.setAttribute('cy', '-1.6'); eye.setAttribute('r', '0.6'); eye.setAttribute('fill', '#fff5cc');
+  grouper.appendChild(eye);
+  var pupil = document.createElementNS(SVG_NS, 'circle');
+  pupil.setAttribute('cx', '10.2'); pupil.setAttribute('cy', '-1.6'); pupil.setAttribute('r', '0.3'); pupil.setAttribute('fill', '#0a0608');
+  grouper.appendChild(pupil);
+  // dark mottling
+  for (var m=0; m<7; m++) {
+    var mx = -10 + Math.random() * 20, my = -3 + Math.random() * 6;
+    var sp = document.createElementNS(SVG_NS, 'circle');
+    sp.setAttribute('cx', mx.toFixed(2)); sp.setAttribute('cy', my.toFixed(2));
+    sp.setAttribute('r', (0.5 + Math.random() * 0.6).toFixed(2));
+    sp.setAttribute('fill', '#1a261e'); sp.setAttribute('opacity', '0.6');
+    grouper.appendChild(sp);
+  }
+  g.appendChild(grouper);
+
+  // four cleaner wrasses — small, with a horizontal blue/yellow stripe
+  var wrasses = [];
+  for (var i=0; i<4; i++) {
+    var w = document.createElementNS(SVG_NS, 'g');
+    var wb = document.createElementNS(SVG_NS, 'ellipse');
+    wb.setAttribute('cx', '0'); wb.setAttribute('cy', '0');
+    wb.setAttribute('rx', '1.6'); wb.setAttribute('ry', '0.55');
+    wb.setAttribute('fill', '#3a5a78');
+    w.appendChild(wb);
+    var stripe = document.createElementNS(SVG_NS, 'rect');
+    stripe.setAttribute('x', '-1.5'); stripe.setAttribute('y', '-0.18');
+    stripe.setAttribute('width', '3'); stripe.setAttribute('height', '0.18');
+    stripe.setAttribute('fill', '#ffd56a');
+    w.appendChild(stripe);
+    var wt = document.createElementNS(SVG_NS, 'path');
+    wt.setAttribute('d', 'M -1.6,0 L -2.4,-0.5 L -2.4,0.5 Z');
+    wt.setAttribute('fill', '#3a5a78');
+    w.appendChild(wt);
+    g.appendChild(w);
+    wrasses.push({el: w, t: Math.random() * 1000, speed: 0.0008 + Math.random() * 0.0008,
+                  ax: 6 + Math.random() * 8, ay: 3 + Math.random() * 3,
+                  ox: -2 + Math.random() * 4, oy: -1 + Math.random() * 2});
+  }
+
+  // tiny sparkle puffs when a wrasse "pecks" at the grouper
+  function pecPuff(x, y){
+    var p = document.createElementNS(SVG_NS, 'circle');
+    p.setAttribute('cx', x); p.setAttribute('cy', y); p.setAttribute('r', '0.6');
+    p.setAttribute('fill', '#dde6f5'); p.setAttribute('opacity', '0.75');
+    g.appendChild(p);
+    var t0 = performance.now();
+    function fade(now){
+      var t = (now - t0) / 600;
+      if (t >= 1) { try { g.removeChild(p); } catch(e){} return; }
+      p.setAttribute('r', (0.6 + t * 1.4).toFixed(2));
+      p.setAttribute('opacity', (0.75 * (1 - t)).toFixed(2));
+      requestAnimationFrame(fade);
+    }
+    requestAnimationFrame(fade);
+  }
+
+  var state = 'idle';
+  var stationStart = 0, STATION_DURATION = 35000;
+  var nextAt = performance.now() + (220 + Math.random() * 240) * 1000;
+
+  function spawn(now){
+    state = 'visiting';
+    stationStart = now;
+    g.setAttribute('opacity', '0');
+    g.setAttribute('transform', 'translate(' + STATION_X + ',' + STATION_Y + ')');
+  }
+
+  var lastPec = 0;
+
+  function tick(now){
+    if (state === 'idle') {
+      if (now >= nextAt) spawn(now);
+    } else if (state === 'visiting') {
+      var t = now - stationStart;
+      var fade = 1;
+      if (t < 1500) fade = t / 1500;
+      else if (t > STATION_DURATION - 2000) fade = Math.max(0, (STATION_DURATION - t) / 2000);
+      g.setAttribute('opacity', (0.9 * fade).toFixed(2));
+      // grouper sways gently up/down
+      var sway = Math.sin(now * 0.0009) * 1.4;
+      grouper.setAttribute('transform', 'translate(0,' + sway.toFixed(2) + ')');
+      // wrasses orbit grouper on small ellipses
+      for (var i=0; i<wrasses.length; i++) {
+        var w = wrasses[i];
+        w.t += 16.7;
+        var ph = w.t * w.speed;
+        var wx = w.ox + Math.cos(ph) * w.ax;
+        var wy = w.oy + Math.sin(ph * 1.4) * w.ay + sway * 0.6;
+        var rot = Math.cos(ph) > 0 ? 0 : 180;
+        w.el.setAttribute('transform', 'translate(' + wx.toFixed(2) + ',' + wy.toFixed(2) + ') rotate(' + rot + ')');
+      }
+      // occasional pec puff at random wrasse position
+      if (now - lastPec > 700 + Math.random() * 1200) {
+        var w0 = wrasses[Math.floor(Math.random() * wrasses.length)];
+        var ph0 = w0.t * w0.speed;
+        var wx0 = w0.ox + Math.cos(ph0) * w0.ax;
+        var wy0 = w0.oy + Math.sin(ph0 * 1.4) * w0.ay + sway * 0.6;
+        pecPuff(wx0, wy0);
+        lastPec = now;
+      }
+      if (t > STATION_DURATION) {
+        state = 'idle';
+        g.setAttribute('opacity', '0');
+        nextAt = now + (220 + Math.random() * 240) * 1000;
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  try { console.log('[harbor v0.5.260] cleaner-fish station armed (large grouper hovers at fc-2 while 4 cleaner wrasses pick at it)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
