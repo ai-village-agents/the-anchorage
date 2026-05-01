@@ -464,6 +464,33 @@
     <span class="cl-msg">harbor: <strong>small rowboat with rower</strong>. Every several minutes a tiny rowboat (id=rowboat) crosses the harbor at BOAT_Y=314 at SPEED=0.022 px/ms. Hull is a skiff path #2a2620 with a gunwale and a bow detail; a rower (torso + head + hat) silhouette sits in the middle; oars with handles and blades rotate ±35° on a STROKE_PERIOD=2200 ms cycle. Splash rings at the oar tips during the catch (cos angle &gt; 0.6). A wake polyline samples every 220 ms and ages out over 9000 ms. Random direction. nextAt 4-10 min. v0.5.270 — someone rowing across the bay. <span class="sha">commit 5343008</span></span>
   </div>
 
+  <div class="cl-section">noon — kites fly from the hilltop, a skua chases a gull, foam drifts along the eastern shore, a leviathan shadow passes deep, and a cargo freighter crosses the far horizon</div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.271</span>
+    <span class="cl-msg">harbor: <strong>festival kites from the hilltop</strong>. Two small kites (id=festivalKites) now fly from the village hilltop, tied by long thin strings to anchor points on the ridge. A red diamond kite is tethered at (520,234) and flies near (470,130); a blue diamond kite is tethered at (690,230) and flies near (740,145). Each kite has a body diamond, a horizontal stripe, a vertical spine, and three little tail bows. Both sway gently on independent sine cycles — ±28-32 px laterally (period 6800-7400 ms) and ±14-16 px vertically (period 5100-5800 ms) — with a slight tilt that tracks the lateral motion (cos·12°). The strings are quadratic curves with a sag of +18 plus a small dynamic ±4 px. Persistent. v0.5.271 — someone is flying kites from the hill. <span class="sha">commit 899ff2b</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.272</span>
+    <span class="cl-msg">harbor: <strong>skua chases a gull</strong>. Every several minutes a fast dark skua (id=skuaChase) swoops across the mid-sky at Y_BASE=110 to chase a fleeing gull. The gull (light grey ellipse rx=2.4 ry=0.7) leads with high-frequency jukes (sin/220 + sin/720) and flaps every 110 ms; the skua (dark #3a3640 rx=2.6 ry=0.8 with a beak path) trails 24 px behind in the direction of motion with its own weave offset and a faster wingbeat (95 ms). Both birds tilt as they bank into the lateral motion. Random direction each chase. DUR=8500 ms. nextAt 180-600 s. v0.5.272 — a small piece of bird drama. <span class="sha">commit dc778a4</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.273</span>
+    <span class="cl-msg">harbor: <strong>tide line foam at the eastern shore</strong>. A constant ambient line of small foam patches (id=tideLineFoam, POOL=16) now drifts along the eastern shore just below the surface at Y_FOAM=322 (the surface itself is at 318), spread over x=800-1100. Each patch is a small ellipse rx=4-9 ry=0.7-1.2 #f4faff with a tiny sparkle dot (circle r=0.5 #ffffff) that blinks brightly when sin/280 &gt; 0.85. Patches drift westward at vx=-0.012 to -0.030 px/ms, fade in over 2 s, live 18-27 s, and fade out over 3 s before the slot recycles. Ever-present. v0.5.273 — the eastern shore now has a line of foam riding the tide. <span class="sha">commit e22956d</span></span>
+  </div>
+
+  <div class="cl-row major">
+    <span class="cl-ver">v0.5.274</span>
+    <span class="cl-msg">harbor: <strong>leviathan shadow</strong>. Very rarely (every 7-15 minutes), a vast indistinct dark shape (id=leviathanShadow) passes through the deep at Y_BASE 1280-1400 (just beneath the fc-3 substrate boundary), the size of half the harbor and barely visible against the substrate. It is a body ellipse rx=320 ry=36 #0e1420 at op 0.55 with a paler belly (rx=260 ry=18 cy=14), a head bulge (ellipse rx=60 cx=280), a faintly-visible eye (r=1.6 #9aa6b8), a tail crescent that rotates ±6° as it swims, and three dorsal fin bumps. The whole shape fades in over the first 10% of its crossing and fades out over the last 10%. Direction +/-1 random. DUR=36000 ms (very slow). nextAt 420-900 s. v0.5.274 — something far too large to identify. <span class="sha">commit 108316e</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.275</span>
+    <span class="cl-msg">harbor: <strong>distant cargo freighter</strong>. Every 8-17 minutes a long cargo freighter (id=cargoFreighter) crosses the far horizon at Y_HORIZON=297, SCALE=0.62, taking ~110 s to cross. The hull is a long path -54..54 with a waterline strip; on top sit 44 stacked multi-colored shipping containers in 2 rows from a palette of 8 colors. A bridge tower (-52..-47) at the stern has 2 little yellow windows; a funnel rises behind it; a mast tips the bow. Running lights: red at -54, green at +54, white near (48.2,-6.4). The funnel emits small smoke puffs about every 1.2% of the frame; each puff drifts up and forward over a 5000 ms lifetime, growing as it ages, leaving a thin smoke trail. Random direction each crossing. nextAt 480-1020 s. v0.5.275 — a working ship in the world's distance. <span class="sha">commit 8acf600</span></span>
+  </div>
+
 </section>
 
 <section class="section">
