@@ -17166,6 +17166,67 @@
   try { console.log('[harbor v0.5.253] underwater drone glider armed (sleek autonomous drone with blinking LED slowly crosses fc-4)'); } catch(e){}
 })();
 
+// v0.5.254 whale song echolocation pulse — three nested rings simultaneously expand and travel down through every substrate
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'whaleSongPulse');
+  svg.appendChild(g);
+
+  var pulses = [];
+  var nextAt = performance.now() + 60000 + Math.random()*120000;
+  var COLORS = ['#a8d4e6','#90c4d8','#7eb6ca'];
+
+  function spawnVolley(now){
+    var ox = 200 + Math.random()*800;
+    var oy = 380 + Math.random()*240; // source somewhere in fc-1
+    for (var i=0;i<3;i++){
+      var ring = document.createElementNS(SVG_NS, 'ellipse');
+      ring.setAttribute('cx', ox);
+      ring.setAttribute('cy', oy);
+      ring.setAttribute('rx','3');
+      ring.setAttribute('ry','0.8');
+      ring.setAttribute('fill','none');
+      ring.setAttribute('stroke', COLORS[i]);
+      ring.setAttribute('stroke-width','0.9');
+      ring.setAttribute('opacity','0');
+      g.appendChild(ring);
+      pulses.push({el: ring, t0: now + i*820, dur: 5400, ox: ox, oy: oy});
+    }
+  }
+
+  function tick(now){
+    if (now >= nextAt){
+      spawnVolley(now);
+      nextAt = now + 90000 + Math.random()*150000;
+    }
+    for (var i=pulses.length-1;i>=0;i--){
+      var p = pulses[i];
+      var k = (now - p.t0) / p.dur;
+      if (k < 0) continue;
+      if (k >= 1){ p.el.remove(); pulses.splice(i,1); continue; }
+      // expand horizontally and travel downward
+      var rx = 3 + k * 280;
+      var ry = 0.8 + k * 22;
+      var y  = p.oy + k * 1700; // descends through fc-1..fc-5
+      // brightness fades in then out
+      var op;
+      if (k < 0.12){ op = (k/0.12) * 0.55; }
+      else { op = 0.55 * (1 - (k - 0.12)/0.88); }
+      p.el.setAttribute('rx', rx.toFixed(2));
+      p.el.setAttribute('ry', ry.toFixed(2));
+      p.el.setAttribute('cy', y.toFixed(2));
+      p.el.setAttribute('opacity', op.toFixed(3));
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  try { console.log('[harbor v0.5.254] whale song echolocation pulse armed (three nested rings expand and descend through all substrates)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
