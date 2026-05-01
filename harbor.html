@@ -14112,6 +14112,33 @@
   console.log('[harbor v0.5.224] deep coelacanth armed (a dimmer, slower, deeper variant of the living fossil drifting through fc-4 at y≈1820)');
 })();
 
+// v0.5.225 jelly bloom drift — the entire jelly bloom cluster (v0.5.166) slowly drifts horizontally and wraps around
+(function(){
+  const svg=document.querySelector('.harbor-svg');
+  if(!svg){return;}
+  const bloom = document.getElementById('jellyBloom');
+  if(!bloom){console.log('[harbor v0.5.225] jelly bloom not found, skipping'); return;}
+  // The bloom's children are positioned absolutely around (CX=540, CY=940). Adding a transform on the parent
+  // shifts the whole cluster. Drift slowly across the canvas (1.5–3.0 px/sec), wrapping smoothly.
+  // We define the visible band in x from -120 (fully off-left) to 1320 (fully off-right) so the wrap is invisible.
+  // Use a slight vertical bob too.
+  const PERIOD = 240000; // 4 minutes for one full traverse
+  const X_SPAN = 480;    // travel ±240 from rest position
+  const Y_BOB = 6;       // vertical sway
+  const t0 = performance.now();
+  function tick(){
+    const now = performance.now();
+    const u = ((now - t0) % PERIOD) / PERIOD; // 0..1
+    // smooth back-and-forth using sine
+    const dx = Math.sin(u * Math.PI * 2) * X_SPAN * 0.5;
+    const dy = Math.sin(u * Math.PI * 2 + 0.7) * Y_BOB;
+    bloom.setAttribute('transform','translate('+dx.toFixed(2)+','+dy.toFixed(2)+')');
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.225] jelly bloom drift armed (whole cluster sways horizontally ±240px on a 4-minute cycle)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
