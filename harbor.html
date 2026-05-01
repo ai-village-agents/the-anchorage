@@ -16187,6 +16187,125 @@
   try { console.log('[harbor v0.5.245] distant whale fluke wave armed (every 2.5-6.5 min a fluke rises, hangs, and slams back with a splash)'); } catch(e){}
 })();
 
+// v0.5.246 bioluminescent comet jelly — rare slow drifter through fc-4 with a long luminous trailing veil
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','cometJelly');
+  g.setAttribute('pointer-events','none');
+  g.setAttribute('opacity','0');
+  // Bell — small translucent dome
+  const bell = document.createElementNS(NS,'ellipse');
+  bell.setAttribute('rx','5'); bell.setAttribute('ry','3.6');
+  bell.setAttribute('fill','#cdf3ff'); bell.setAttribute('opacity','0.55');
+  g.appendChild(bell);
+  // Inner halo around bell
+  const halo = document.createElementNS(NS,'ellipse');
+  halo.setAttribute('rx','9'); halo.setAttribute('ry','7');
+  halo.setAttribute('fill','none'); halo.setAttribute('stroke','#7fe9ff');
+  halo.setAttribute('stroke-width','0.5'); halo.setAttribute('opacity','0.35');
+  g.appendChild(halo);
+  // Long luminous tail — chain of 14 small ellipses behind, fading and drifting
+  const tail = [];
+  const TAIL = 14;
+  for(let i=0;i<TAIL;i++){
+    const e = document.createElementNS(NS,'ellipse');
+    const t = i/(TAIL-1);
+    e.setAttribute('rx', String(2.4*(1-t*0.7)));
+    e.setAttribute('ry', String(1.2*(1-t*0.7)));
+    e.setAttribute('fill', '#a5f0ff');
+    e.setAttribute('opacity', String(0.55*(1-t)));
+    g.appendChild(e);
+    tail.push(e);
+  }
+  // tentacle threads (2-3 long thin) hanging from bell
+  const threads = [];
+  for(let i=0;i<3;i++){
+    const path = document.createElementNS(NS,'path');
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke','#cdf3ff');
+    path.setAttribute('stroke-width','0.35');
+    path.setAttribute('opacity','0.5');
+    g.appendChild(path);
+    threads.push(path);
+  }
+  svg.appendChild(g);
+
+  let active = null;
+  let nextAt = performance.now() + 120000 + Math.random()*240000; // first 2-6 min
+
+  function startDrift(now){
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const x0 = dir > 0 ? -40 : 1240;
+    // fc-4 y band 1560-1920
+    const y = 1640 + Math.random()*240;
+    const speed = (0.014 + Math.random()*0.008) * dir;
+    active = { t0: now, x: x0, y: y, speed: speed, dir: dir, vy: (Math.random()-0.5)*0.004 };
+  }
+
+  function frame(now){
+    if(!active){
+      if(now >= nextAt){ startDrift(now); }
+      requestAnimationFrame(frame);
+      return;
+    }
+    const dt = 16; // approx
+    active.x += active.speed * dt * 60/1000 * (1000/60); // simpler: speed*16
+    // Simpler: position from elapsed
+    const elapsed = now - active.t0;
+    const x = (active.dir > 0 ? -40 : 1240) + active.speed * elapsed;
+    const y = active.y + Math.sin(elapsed*0.0007)*4;
+    if(x > 1260 || x < -60){
+      g.setAttribute('opacity','0');
+      active = null;
+      nextAt = now + 180000 + Math.random()*300000; // 3-8 min
+      requestAnimationFrame(frame);
+      return;
+    }
+    // Place bell at (x,y); tail behind based on direction
+    bell.setAttribute('cx', x.toFixed(2));
+    bell.setAttribute('cy', y.toFixed(2));
+    halo.setAttribute('cx', x.toFixed(2));
+    halo.setAttribute('cy', y.toFixed(2));
+    // Tail extends opposite to direction
+    for(let i=0;i<TAIL;i++){
+      const off = (i+1)*8;
+      const tx = x - active.dir*off;
+      const ty = y + Math.sin((elapsed*0.001) + i*0.6)*1.2;
+      tail[i].setAttribute('cx', tx.toFixed(2));
+      tail[i].setAttribute('cy', ty.toFixed(2));
+    }
+    // tentacle threads — sinuous lines from bell going further back
+    for(let i=0;i<3;i++){
+      const phase = elapsed*0.0012 + i*1.3;
+      const len = 90 + i*15;
+      const dx = -active.dir;
+      const x1 = x + dx*4;
+      const y1 = y + 2;
+      const cpx = x1 + dx*len*0.4;
+      const cpy = y1 + Math.sin(phase)*8;
+      const x2 = x1 + dx*len;
+      const y2 = y1 + Math.sin(phase+0.6)*4;
+      threads[i].setAttribute('d', 'M'+x1.toFixed(1)+','+y1.toFixed(1)+' Q'+cpx.toFixed(1)+','+cpy.toFixed(1)+' '+x2.toFixed(1)+','+y2.toFixed(1));
+    }
+    // Edge fade
+    let op = 1;
+    if(active.dir > 0){
+      if(x < 60) op = (x+40)/100;
+      else if(x > 1140) op = (1240-x)/100;
+    } else {
+      if(x > 1140) op = (1240-x)/100;
+      else if(x < 60) op = (x+40)/100;
+    }
+    g.setAttribute('opacity', Math.max(0,Math.min(1,op*0.85)).toFixed(2));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.246] bioluminescent comet jelly armed (rare slow drifter through fc-4 with luminous trailing veil; every 3-8 min)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
