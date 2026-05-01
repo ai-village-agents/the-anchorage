@@ -17352,6 +17352,123 @@
   try { console.log('[harbor v0.5.255] passing whale shark armed (large spotted shark cruises fc-2/fc-3 boundary every several minutes)'); } catch(e){}
 })();
 
+// v0.5.256 ghost tall ship — faint three-masted silhouette occasionally crosses the far horizon and fades again
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'ghostShip');
+  g.style.opacity = '0';
+  svg.appendChild(g);
+
+  // Hull — narrow with curved keel
+  var hull = document.createElementNS(SVG_NS, 'path');
+  hull.setAttribute('d','M -22,0 Q -18,4 0,4 Q 18,4 22,0 L 18,-2 L -18,-2 Z');
+  hull.setAttribute('fill','#3a4a5e');
+  g.appendChild(hull);
+
+  // Three masts
+  var masts = [-12, 0, 12];
+  for (var i=0;i<masts.length;i++){
+    var mast = document.createElementNS(SVG_NS, 'line');
+    mast.setAttribute('x1', masts[i]); mast.setAttribute('y1','-2');
+    mast.setAttribute('x2', masts[i]); mast.setAttribute('y2','-22');
+    mast.setAttribute('stroke','#3a4a5e');
+    mast.setAttribute('stroke-width','0.6');
+    g.appendChild(mast);
+  }
+
+  // Sails — square sails, two per mast (upper, lower)
+  var sailsData = [
+    {mx:-12, y:-7,  w:8,  h:5},
+    {mx:-12, y:-15, w:6,  h:6},
+    {mx:  0, y:-7,  w:9,  h:6},
+    {mx:  0, y:-16, w:7,  h:6},
+    {mx: 12, y:-7,  w:8,  h:5},
+    {mx: 12, y:-15, w:6,  h:6}
+  ];
+  for (var j=0;j<sailsData.length;j++){
+    var sd = sailsData[j];
+    var sail = document.createElementNS(SVG_NS, 'rect');
+    sail.setAttribute('x', sd.mx - sd.w/2);
+    sail.setAttribute('y', sd.y);
+    sail.setAttribute('width', sd.w);
+    sail.setAttribute('height', sd.h);
+    sail.setAttribute('fill','#52647a');
+    sail.setAttribute('opacity','0.7');
+    g.appendChild(sail);
+  }
+
+  // Bowsprit
+  var bow = document.createElementNS(SVG_NS, 'line');
+  bow.setAttribute('x1','22'); bow.setAttribute('y1','-1');
+  bow.setAttribute('x2','29'); bow.setAttribute('y2','-3.5');
+  bow.setAttribute('stroke','#3a4a5e');
+  bow.setAttribute('stroke-width','0.5');
+  g.appendChild(bow);
+
+  // Faint stern lantern
+  var lant = document.createElementNS(SVG_NS, 'circle');
+  lant.setAttribute('cx','-21'); lant.setAttribute('cy','-3');
+  lant.setAttribute('r','0.7');
+  lant.setAttribute('fill','#ffd58a');
+  lant.setAttribute('opacity','0.55');
+  g.appendChild(lant);
+
+  var Y_HORIZON = 292;
+  var state = 'idle';
+  var nextAt = performance.now() + 240000 + Math.random()*240000;
+  var direction = 1;
+  var shipX = 0, shipY = Y_HORIZON;
+  var speed = 0.009;
+  var lastNow = performance.now();
+  var phaseStart = 0;
+
+  function startCrossing(now){
+    direction = (Math.random() < 0.5) ? 1 : -1;
+    shipX = direction === 1 ? -40 : 1240;
+    shipY = Y_HORIZON + (Math.random()-0.5)*4;
+    speed = 0.0065 + Math.random()*0.005;
+    state = 'cruising';
+    g.style.opacity = '0';
+    phaseStart = now;
+  }
+
+  function tick(now){
+    var dt = Math.min(64, now - lastNow);
+    lastNow = now;
+    if (state === 'idle'){
+      if (now >= nextAt) startCrossing(now);
+    } else if (state === 'cruising'){
+      shipX += direction * speed * dt;
+      var sx = direction;
+      g.setAttribute('transform','translate(' + shipX.toFixed(2) + ',' + shipY.toFixed(2) + ') scale(' + sx + ',1)');
+      // Fade in at start, fade out near far edge
+      var fadeIn  = Math.min(1, (shipX + 40) / 200);
+      if (direction === -1) fadeIn = Math.min(1, (1240 - shipX) / 200);
+      var fadeOut = 1;
+      if (direction === 1)  fadeOut = Math.min(1, (1280 - shipX) / 220);
+      else                  fadeOut = Math.min(1, (shipX + 80) / 220);
+      var fade = Math.max(0, Math.min(fadeIn, fadeOut));
+      // base opacity is faint — it's a ghost
+      g.style.opacity = (0.42 * fade).toFixed(2);
+      // Slight bob
+      var bob = Math.sin(now*0.0008) * 0.6;
+      g.setAttribute('transform','translate(' + shipX.toFixed(2) + ',' + (shipY+bob).toFixed(2) + ') scale(' + sx + ',1)');
+      if ((direction === 1 && shipX > 1290) || (direction === -1 && shipX < -90)){
+        state = 'idle';
+        g.style.opacity = '0';
+        nextAt = now + 480000 + Math.random()*420000;
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  try { console.log('[harbor v0.5.256] ghost tall ship armed (faint three-masted silhouette occasionally crosses far horizon)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
