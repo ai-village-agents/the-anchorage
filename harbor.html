@@ -17469,6 +17469,98 @@
   try { console.log('[harbor v0.5.256] ghost tall ship armed (faint three-masted silhouette occasionally crosses far horizon)'); } catch(e){}
 })();
 
+// v0.5.257 vertical-drift moon jelly — a single moon jelly slowly descends from fc-1 down through every substrate over many minutes, then resets at the surface
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'descendingJelly');
+  g.setAttribute('pointer-events', 'none');
+  // bell — translucent dome
+  var bell = document.createElementNS(SVG_NS, 'ellipse');
+  bell.setAttribute('cx', '0'); bell.setAttribute('cy', '0');
+  bell.setAttribute('rx', '5.4'); bell.setAttribute('ry', '3.6');
+  bell.setAttribute('fill', '#c8d8e8'); bell.setAttribute('opacity', '0.42');
+  bell.setAttribute('stroke', '#dde6f5'); bell.setAttribute('stroke-width', '0.4');
+  g.appendChild(bell);
+  // four ring marks inside the bell (the gonads)
+  var rings = document.createElementNS(SVG_NS, 'g');
+  for (var i=0; i<4; i++) {
+    var ang = i * Math.PI/2;
+    var rx = Math.cos(ang)*1.7, ry = Math.sin(ang)*1.0;
+    var c = document.createElementNS(SVG_NS, 'circle');
+    c.setAttribute('cx', rx.toFixed(2)); c.setAttribute('cy', (ry-0.2).toFixed(2));
+    c.setAttribute('r', '0.6'); c.setAttribute('fill', 'none');
+    c.setAttribute('stroke', '#aac0d4'); c.setAttribute('stroke-width', '0.35');
+    c.setAttribute('opacity', '0.7');
+    rings.appendChild(c);
+  }
+  g.appendChild(rings);
+  // tentacle frill — short curtain of lines
+  var frill = document.createElementNS(SVG_NS, 'g');
+  frill.setAttribute('stroke', '#c8d8e8'); frill.setAttribute('stroke-width', '0.3');
+  frill.setAttribute('opacity', '0.5'); frill.setAttribute('fill', 'none');
+  for (var k=0; k<11; k++) {
+    var fx = -4.6 + k * 0.92;
+    var p = document.createElementNS(SVG_NS, 'path');
+    p.setAttribute('d', 'M ' + fx.toFixed(2) + ',2.6 q 0.4,1.6 -0.2,3.2');
+    frill.appendChild(p);
+  }
+  g.appendChild(frill);
+  // four long oral arms
+  var arms = document.createElementNS(SVG_NS, 'g');
+  arms.setAttribute('stroke', '#b8c8d8'); arms.setAttribute('stroke-width', '0.5');
+  arms.setAttribute('opacity', '0.55'); arms.setAttribute('fill', 'none');
+  var armPaths = [];
+  for (var a=0; a<4; a++) {
+    var ax = -2.4 + a*1.6;
+    var p2 = document.createElementNS(SVG_NS, 'path');
+    armPaths.push(p2); arms.appendChild(p2);
+  }
+  g.appendChild(arms);
+  svg.appendChild(g);
+
+  var X = 360 + Math.random() * 480;       // somewhere across the harbor
+  var Y_TOP = 380, Y_BOT = 2280;            // surface band to near the bedrock
+  var DURATION = 9 * 60 * 1000;             // 9 minutes per descent
+  var t0 = performance.now() - Math.random() * DURATION * 0.4; // start mid-descent on first run
+  var start = performance.now();
+
+  function tick(now){
+    var elapsed = (now - t0) % DURATION;
+    var k = elapsed / DURATION;             // 0..1
+    var y = Y_TOP + k * (Y_BOT - Y_TOP);
+    // very slow horizontal sway with column drift
+    var swayX = Math.sin(now * 0.00018) * 28;
+    var x = X + swayX;
+    // pulse contraction every 4.5 s
+    var pulsePhase = (now * 0.000222) % 1; // 4.5s
+    // contraction curve: brief squeeze then expand
+    var sq = pulsePhase < 0.18 ? Math.sin(pulsePhase / 0.18 * Math.PI) : 0;
+    var rxk = 1 - 0.18 * sq;
+    var ryk = 1 + 0.22 * sq;
+    bell.setAttribute('rx', (5.4 * rxk).toFixed(2));
+    bell.setAttribute('ry', (3.6 * ryk).toFixed(2));
+    // arms trail upward as it descends and sway slowly
+    for (var a=0; a<4; a++) {
+      var ax = -2.4 + a*1.6;
+      var sw = Math.sin(now * 0.0006 + a * 0.7) * 2.2;
+      var d = 'M ' + ax.toFixed(2) + ',3 Q ' + (ax + sw*0.4).toFixed(2) + ',' + (10 + sw*0.3).toFixed(2) + ' ' + (ax + sw*0.7).toFixed(2) + ',' + (18 + sw*0.5).toFixed(2);
+      armPaths[a].setAttribute('d', d);
+    }
+    // edge-fade near very top and very bottom
+    var fade = 1;
+    if (k < 0.04) fade = k / 0.04;
+    else if (k > 0.96) fade = (1 - k) / 0.04;
+    g.setAttribute('opacity', (0.85 * fade).toFixed(2));
+    g.setAttribute('transform', 'translate(' + x.toFixed(2) + ',' + y.toFixed(2) + ')');
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  try { console.log('[harbor v0.5.257] vertical-drift moon jelly armed (slow descent through every substrate, ~9 min cycle)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
