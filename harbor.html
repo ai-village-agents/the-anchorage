@@ -16306,6 +16306,137 @@
   try { console.log('[harbor v0.5.246] bioluminescent comet jelly armed (rare slow drifter through fc-4 with luminous trailing veil; every 3-8 min)'); } catch(e){}
 })();
 
+// v0.5.247 porpoise pod tight formation — every few minutes a tight pod of four small porpoises crosses the surface in synchronized low leaps
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const Y_SURFACE = 318;
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','porpoisePod');
+  g.setAttribute('pointer-events','none');
+  g.setAttribute('opacity','0');
+  // 4 porpoises in tight line. Each ~7px long with small triangular dorsal fin.
+  const N = 4;
+  const porps = [];
+  for(let i=0;i<N;i++){
+    const sub = document.createElementNS(NS,'g');
+    // Body — dark rounded ellipse
+    const body = document.createElementNS(NS,'ellipse');
+    body.setAttribute('rx','3.6'); body.setAttribute('ry','1.4');
+    body.setAttribute('fill','#1f2a36');
+    sub.appendChild(body);
+    // Dorsal fin — small triangular
+    const fin = document.createElementNS(NS,'path');
+    fin.setAttribute('d','M0,-1.3 L1.0,-3.6 L1.6,-1.0 Z');
+    fin.setAttribute('fill','#1f2a36');
+    sub.appendChild(fin);
+    g.appendChild(sub);
+    porps.push(sub);
+  }
+  // Splash ring placeholder (one per porpoise)
+  const splashes = [];
+  for(let i=0;i<N;i++){
+    const sp = document.createElementNS(NS,'ellipse');
+    sp.setAttribute('rx','1'); sp.setAttribute('ry','0.4');
+    sp.setAttribute('fill','none');
+    sp.setAttribute('stroke','#cfd9e2');
+    sp.setAttribute('stroke-width','0.4');
+    sp.setAttribute('opacity','0');
+    g.appendChild(sp);
+    splashes.push(sp);
+  }
+  svg.appendChild(g);
+
+  let active = null;
+  let nextAt = performance.now() + 80000 + Math.random()*120000; // 1.3-3.3 min
+
+  function startPod(now){
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const x0 = dir > 0 ? -40 : 1240;
+    const speed = (0.06 + Math.random()*0.02) * dir; // 60-80 px/sec
+    active = { t0: now, dir: dir, x0: x0, speed: speed, dur: 22000 + Math.random()*8000 };
+  }
+
+  function frame(now){
+    if(!active){
+      if(now >= nextAt){ startPod(now); }
+      requestAnimationFrame(frame);
+      return;
+    }
+    const elapsed = now - active.t0;
+    if(elapsed > active.dur){
+      g.setAttribute('opacity','0');
+      active = null;
+      nextAt = now + 130000 + Math.random()*180000; // 2.2-5.2 min
+      requestAnimationFrame(frame);
+      return;
+    }
+    g.setAttribute('opacity','1');
+    const headX = active.x0 + active.speed * elapsed;
+    // Out of view? End early
+    if(headX > 1280 || headX < -80){
+      g.setAttribute('opacity','0');
+      active = null;
+      nextAt = now + 130000 + Math.random()*180000;
+      requestAnimationFrame(frame);
+      return;
+    }
+    // Each porpoise's individual phase: leaps in synchronized rhythm with small offsets
+    // Leap cycle: 1.6s. During each cycle: 0..0.5 above surface (arc), 0.5..1 below (flat).
+    const cyc = 1600;
+    for(let i=0;i<N;i++){
+      const lead = i * 9; // 9px back from previous
+      const px = headX - active.dir * lead;
+      const phaseOffset = i * 90; // 90 ms per offset — slight wave pattern
+      const localT = ((elapsed + phaseOffset) % cyc) / cyc;
+      let py = Y_SURFACE - 1; // submerged just under surface
+      let visible = true;
+      if(localT < 0.45){
+        // arc above water
+        const u = localT / 0.45; // 0..1
+        const arcY = -Math.sin(u*Math.PI) * 8; // peak 8px above surface
+        py = Y_SURFACE + arcY;
+      } else {
+        // submerged glide; barely visible
+        py = Y_SURFACE + 1.5;
+        visible = false; // hide body when fully submerged
+      }
+      // Set transform with horizontal mirror based on direction
+      const sx = active.dir; // 1 or -1
+      porps[i].setAttribute('transform', 'translate('+px.toFixed(2)+','+py.toFixed(2)+') scale('+sx+',1)');
+      porps[i].setAttribute('opacity', visible ? '0.92' : '0.4');
+      // Splash ring at top of arc landing — when transitioning to submerged
+      const sp = splashes[i];
+      // Detect arc-end frame: localT crossing 0.45 boundary; show splash for 0.3s
+      // Use a derived progress
+      if(localT > 0.42 && localT < 0.55){
+        const u = (localT - 0.42)/0.13;
+        sp.setAttribute('cx', px.toFixed(2));
+        sp.setAttribute('cy', String(Y_SURFACE+0.5));
+        sp.setAttribute('rx', (1 + 4*u).toFixed(2));
+        sp.setAttribute('ry', (0.4 + 1.0*u).toFixed(2));
+        sp.setAttribute('opacity', (0.7*(1-u)).toFixed(2));
+      } else {
+        sp.setAttribute('opacity','0');
+      }
+    }
+    // Edge fade
+    let op = 1;
+    if(active.dir > 0){
+      if(headX < 60) op = (headX+40)/100;
+      else if(headX > 1140) op = (1240-headX)/100;
+    } else {
+      if(headX > 1140) op = (1240-headX)/100;
+      else if(headX < 60) op = (headX+40)/100;
+    }
+    g.setAttribute('opacity', Math.max(0,Math.min(1,op)).toFixed(2));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.247] porpoise pod tight formation armed (4 porpoises in synchronized low leaps cross the surface every 2-5 min)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
