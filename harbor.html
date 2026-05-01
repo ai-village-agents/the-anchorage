@@ -19016,6 +19016,183 @@
   } catch(e){ try { console.warn('[harbor v0.5.269] error', e); } catch(_){} }
 })();
 
+// v0.5.270 small rowboat with rower — every several minutes a tiny rowboat with a rower silhouette crosses the harbor surface, oars stroking in rhythm
+(function(){
+  try {
+    const svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    const SVGNS = 'http://www.w3.org/2000/svg';
+    if (svg.querySelector('#rowboat')) return;
+
+    const Y_SURFACE = 318;
+    const BOAT_Y = 314; // hull rides slightly above surface
+
+    const g = document.createElementNS(SVGNS, 'g');
+    g.setAttribute('id', 'rowboat');
+    g.setAttribute('opacity', '0');
+    svg.appendChild(g);
+
+    // hull (drawn pointing right; flip via scale for direction)
+    const inner = document.createElementNS(SVGNS, 'g');
+    g.appendChild(inner);
+
+    // hull shape — small skiff
+    const hull = document.createElementNS(SVGNS, 'path');
+    hull.setAttribute('d', 'M -8 0 Q -7 2.6 -3 3.0 L 4 3.0 Q 7.5 2.4 8 0 Z');
+    hull.setAttribute('fill', '#2a2620');
+    inner.appendChild(hull);
+    // gunwale stripe
+    const gun = document.createElementNS(SVGNS, 'rect');
+    gun.setAttribute('x', '-7.6'); gun.setAttribute('y', '-0.4');
+    gun.setAttribute('width', '15.4'); gun.setAttribute('height', '0.5');
+    gun.setAttribute('fill', '#3a342c');
+    inner.appendChild(gun);
+    // bow nose detail
+    const bow = document.createElementNS(SVGNS, 'path');
+    bow.setAttribute('d', 'M 7.5 0 L 9.4 -0.6 L 8 0.4 Z');
+    bow.setAttribute('fill', '#2a2620');
+    inner.appendChild(bow);
+    // rower silhouette
+    const rower = document.createElementNS(SVGNS, 'g');
+    rower.setAttribute('transform', 'translate(0,0)');
+    inner.appendChild(rower);
+    const torso = document.createElementNS(SVGNS, 'path');
+    torso.setAttribute('d', 'M -1.6 -0.2 L 1.6 -0.2 L 1.2 -3.4 L -1.2 -3.4 Z');
+    torso.setAttribute('fill', '#2a2620');
+    rower.appendChild(torso);
+    const head = document.createElementNS(SVGNS, 'circle');
+    head.setAttribute('cx', '0'); head.setAttribute('cy', '-4.5');
+    head.setAttribute('r', '0.95');
+    head.setAttribute('fill', '#2a2620');
+    rower.appendChild(head);
+    // oars — rotate around oarlock at (0,-1.0)
+    const oars = document.createElementNS(SVGNS, 'g');
+    inner.appendChild(oars);
+    function oar(side){
+      const o = document.createElementNS(SVGNS, 'g');
+      const handle = document.createElementNS(SVGNS, 'line');
+      handle.setAttribute('x1', '0'); handle.setAttribute('y1', '-1.0');
+      handle.setAttribute('x2', `${side*8}`); handle.setAttribute('y2', '0.6');
+      handle.setAttribute('stroke', '#2a2620');
+      handle.setAttribute('stroke-width', '0.45');
+      handle.setAttribute('stroke-linecap', 'round');
+      o.appendChild(handle);
+      const blade = document.createElementNS(SVGNS, 'ellipse');
+      blade.setAttribute('cx', `${side*9.4}`); blade.setAttribute('cy', '0.95');
+      blade.setAttribute('rx', '1.3'); blade.setAttribute('ry', '0.55');
+      blade.setAttribute('fill', '#2a2620');
+      o.appendChild(blade);
+      return {root: o, handle, blade, side};
+    }
+    const oarL = oar(-1);
+    const oarR = oar(1);
+    oars.appendChild(oarL.root);
+    oars.appendChild(oarR.root);
+
+    // splash rings at oar tips
+    const splashL = document.createElementNS(SVGNS, 'ellipse');
+    splashL.setAttribute('rx','0'); splashL.setAttribute('ry','0');
+    splashL.setAttribute('fill','none'); splashL.setAttribute('stroke','#cfe0ec');
+    splashL.setAttribute('stroke-width','0.3'); splashL.setAttribute('opacity','0');
+    g.appendChild(splashL);
+    const splashR = document.createElementNS(SVGNS, 'ellipse');
+    splashR.setAttribute('rx','0'); splashR.setAttribute('ry','0');
+    splashR.setAttribute('fill','none'); splashR.setAttribute('stroke','#cfe0ec');
+    splashR.setAttribute('stroke-width','0.3'); splashR.setAttribute('opacity','0');
+    g.appendChild(splashR);
+
+    // wake polyline (recent positions)
+    const wake = document.createElementNS(SVGNS, 'polyline');
+    wake.setAttribute('fill','none');
+    wake.setAttribute('stroke','#cfe0ec');
+    wake.setAttribute('stroke-width','0.35');
+    wake.setAttribute('opacity','0.45');
+    g.appendChild(wake);
+
+    // ---- state ----
+    const SPEED = 0.022; // px/ms — slow row
+    let lastTs = performance.now();
+    let phase = 'idle'; // idle | rowing
+    let nextAt = lastTs + (180000 + Math.random()*240000); // 3-7 min
+    let dir = 1; let x = 0;
+    let wakePts = [];
+    let lastWakeTs = 0;
+    // stroke cycle
+    const STROKE_PERIOD = 2200; // ms per full stroke
+
+    function startRow(){
+      phase = 'rowing';
+      g.setAttribute('opacity', '1');
+      dir = Math.random() < 0.5 ? 1 : -1;
+      x = dir === 1 ? -28 : 1228;
+      wakePts = [];
+    }
+
+    function frame(ts){
+      const dt = ts - lastTs; lastTs = ts;
+      if (phase === 'idle' && ts >= nextAt) {
+        startRow();
+      }
+      if (phase === 'rowing') {
+        x += SPEED * dt * dir;
+        // gentle bob
+        const bob = Math.sin(ts * 0.0019) * 0.5;
+        const y = BOAT_Y + bob;
+        inner.setAttribute('transform', `translate(${x.toFixed(2)},${y.toFixed(2)}) scale(${dir},1)`);
+        // oar stroke — sine cycle, oars rotate together (catch / drive / recovery)
+        const u = (ts % STROKE_PERIOD) / STROKE_PERIOD;
+        // Oars rotate from +35° (catch behind, in water) through 0° to -35° (recovery, out of water)
+        // Use cosine: at u=0 angle=+35, u=0.5 angle=-35, u=1 back to +35
+        const ang = Math.cos(u * 2*Math.PI) * 35;
+        oars.setAttribute('transform', `rotate(${-ang})`);
+        // Splash when blades are catching water (u near 0.5: blade angle goes from -35 toward +35 — that's drive). Actually catch is right after u=0 (entering water), blade at angle ~+35. Just trigger small splash near max angle (when blade in water).
+        const blade_in_water = Math.cos(u * 2*Math.PI) > 0.6; // angle > +21°
+        if (blade_in_water) {
+          const f = (Math.cos(u * 2*Math.PI) - 0.6) / 0.4;
+          // approximate oar tip world positions (blade at side*9.4, y=0.95 in local space)
+          // After rotation by -ang and translate, tip = translate(x,y) * scale(dir,1) * rotate(-ang) * (side*9.4, 0.95)
+          // Compute manually:
+          const radL = -ang * Math.PI / 180;
+          const lx = (-9.4) * Math.cos(radL) - 0.95 * Math.sin(radL);
+          const ly = (-9.4) * Math.sin(radL) + 0.95 * Math.cos(radL);
+          const rx = (9.4) * Math.cos(radL) - 0.95 * Math.sin(radL);
+          const ry = (9.4) * Math.sin(radL) + 0.95 * Math.cos(radL);
+          splashL.setAttribute('cx', x + dir*lx);
+          splashL.setAttribute('cy', y + ly);
+          splashL.setAttribute('rx', 0.6 + f*1.6);
+          splashL.setAttribute('ry', 0.18 + f*0.5);
+          splashL.setAttribute('opacity', f * 0.55);
+          splashR.setAttribute('cx', x + dir*rx);
+          splashR.setAttribute('cy', y + ry);
+          splashR.setAttribute('rx', 0.6 + f*1.6);
+          splashR.setAttribute('ry', 0.18 + f*0.5);
+          splashR.setAttribute('opacity', f * 0.55);
+        } else {
+          splashL.setAttribute('opacity', '0');
+          splashR.setAttribute('opacity', '0');
+        }
+        // wake — sample every 220ms
+        if (ts - lastWakeTs > 220) {
+          wakePts.push({ts, x: x - dir*8.5, y: y + 0.8});
+          lastWakeTs = ts;
+          while (wakePts.length > 0 && (ts - wakePts[0].ts) > 9000) wakePts.shift();
+        }
+        wake.setAttribute('points', wakePts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
+        // end
+        const offscreen = (dir === 1 && x > 1240) || (dir === -1 && x < -40);
+        if (offscreen) {
+          phase = 'idle';
+          g.setAttribute('opacity', '0');
+          nextAt = ts + (240000 + Math.random()*360000);
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    try { console.log('[harbor v0.5.270] rowboat armed (every several minutes a tiny rowboat with a rower silhouette crosses the surface with rhythmic oar strokes, splashes, and a fading wake)'); } catch(e){}
+  } catch(e){ try { console.warn('[harbor v0.5.270] error', e); } catch(_){} }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
