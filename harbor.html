@@ -17015,6 +17015,157 @@
   try { console.log('[harbor v0.5.252] vent amphipod swarm armed (16 tiny pale crustaceans orbit hydrothermal vent at (320,2340))'); } catch(e){}
 })();
 
+// v0.5.253 underwater drone glider — sleek autonomous drone slowly traverses fc-4 with a blinking status LED
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  var bubbleGroup = document.createElementNS(SVG_NS, 'g');
+  bubbleGroup.setAttribute('id', 'droneBubbles');
+  svg.appendChild(bubbleGroup);
+
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'underwaterDrone');
+  g.style.opacity = '0';
+  svg.appendChild(g);
+
+  // Body — elongated ellipse with a slight metallic edge
+  var hull = document.createElementNS(SVG_NS, 'ellipse');
+  hull.setAttribute('cx','0'); hull.setAttribute('cy','0');
+  hull.setAttribute('rx','11'); hull.setAttribute('ry','2.4');
+  hull.setAttribute('fill','#2c3340');
+  hull.setAttribute('stroke','#4a5468');
+  hull.setAttribute('stroke-width','0.4');
+  g.appendChild(hull);
+
+  // Nose dome (slightly lighter)
+  var nose = document.createElementNS(SVG_NS, 'ellipse');
+  nose.setAttribute('cx','9.5'); nose.setAttribute('cy','-0.2');
+  nose.setAttribute('rx','2'); nose.setAttribute('ry','1.6');
+  nose.setAttribute('fill','#3a4658');
+  g.appendChild(nose);
+
+  // Dorsal stabilizer
+  var fin = document.createElementNS(SVG_NS, 'path');
+  fin.setAttribute('d','M -2,-2.2 L 1,-4.2 L 4,-2.2 Z');
+  fin.setAttribute('fill','#3a4658');
+  g.appendChild(fin);
+
+  // Tail propeller housing
+  var tail = document.createElementNS(SVG_NS, 'rect');
+  tail.setAttribute('x','-12.6'); tail.setAttribute('y','-1.2');
+  tail.setAttribute('width','2.2'); tail.setAttribute('height','2.4');
+  tail.setAttribute('fill','#1d2330');
+  g.appendChild(tail);
+
+  // Side stripe
+  var stripe = document.createElementNS(SVG_NS, 'rect');
+  stripe.setAttribute('x','-9'); stripe.setAttribute('y','-0.3');
+  stripe.setAttribute('width','16'); stripe.setAttribute('height','0.4');
+  stripe.setAttribute('fill','#5a6678');
+  stripe.setAttribute('opacity','0.7');
+  g.appendChild(stripe);
+
+  // Status LED (blinks)
+  var ledHalo = document.createElementNS(SVG_NS, 'circle');
+  ledHalo.setAttribute('cx','3'); ledHalo.setAttribute('cy','-1.2');
+  ledHalo.setAttribute('r','1.4');
+  ledHalo.setAttribute('fill','#ff6060');
+  ledHalo.setAttribute('opacity','0');
+  g.appendChild(ledHalo);
+
+  var led = document.createElementNS(SVG_NS, 'circle');
+  led.setAttribute('cx','3'); led.setAttribute('cy','-1.2');
+  led.setAttribute('r','0.5');
+  led.setAttribute('fill','#ff8080');
+  g.appendChild(led);
+
+  var state = 'idle';
+  var nextAt = performance.now() + 60000 + Math.random()*120000;
+  var direction = 1;
+  var droneX = 0, droneY = 1700;
+  var speed = 0.03;
+  var lastNow = performance.now();
+  var bubbles = [];
+  var lastBubbleAt = 0;
+
+  function startCrossing(now){
+    direction = (Math.random() < 0.5) ? 1 : -1;
+    droneX = direction === 1 ? -40 : 1240;
+    droneY = 1640 + Math.random()*220;
+    speed = 0.025 + Math.random()*0.018;
+    g.style.opacity = '1';
+    state = 'cruising';
+  }
+
+  function spawnBubble(now){
+    var b = document.createElementNS(SVG_NS, 'circle');
+    var bx = droneX - direction*12;
+    b.setAttribute('cx', bx);
+    b.setAttribute('cy', droneY + (Math.random()-0.5)*0.8);
+    b.setAttribute('r','0.5');
+    b.setAttribute('fill','#7c95a8');
+    b.setAttribute('opacity','0.55');
+    bubbleGroup.appendChild(b);
+    bubbles.push({el: b, t0: now, dur: 2400 + Math.random()*1600, x0: bx, y0: droneY, drift: -0.012 - Math.random()*0.01});
+  }
+
+  function tick(now){
+    var dt = Math.min(64, now - lastNow);
+    lastNow = now;
+
+    // bubbles
+    for (var i=bubbles.length-1;i>=0;i--){
+      var b = bubbles[i];
+      var k = (now - b.t0) / b.dur;
+      if (k >= 1){ b.el.remove(); bubbles.splice(i,1); continue; }
+      var y = b.y0 + b.drift * (now - b.t0);
+      b.el.setAttribute('cy', y.toFixed(2));
+      b.el.setAttribute('opacity', (0.55 * (1-k)).toFixed(2));
+      b.el.setAttribute('r', (0.5 + k*0.4).toFixed(2));
+    }
+
+    if (state === 'idle'){
+      if (now >= nextAt) startCrossing(now);
+    } else if (state === 'cruising'){
+      droneX += direction * speed * dt;
+      // gentle vertical wobble
+      var bob = Math.sin(now*0.0006) * 0.7;
+      var y = droneY + bob;
+      var sx = direction;
+      g.setAttribute('transform','translate(' + droneX.toFixed(2) + ',' + y.toFixed(2) + ') scale(' + sx + ',1)');
+
+      // LED blink: on 600ms, off 1100ms
+      var phase = (now % 1700);
+      if (phase < 600){
+        var lk = phase / 600;
+        var op = 0.55 * (1 - Math.abs(lk*2 - 1));
+        ledHalo.setAttribute('opacity', op.toFixed(2));
+        led.setAttribute('opacity', '1');
+      } else {
+        ledHalo.setAttribute('opacity','0');
+        led.setAttribute('opacity','0.45');
+      }
+
+      // bubble trail every ~700ms
+      if (now - lastBubbleAt > 700 + Math.random()*500){
+        spawnBubble(now);
+        lastBubbleAt = now;
+      }
+
+      if ((direction === 1 && droneX > 1280) || (direction === -1 && droneX < -80)){
+        state = 'idle';
+        g.style.opacity = '0';
+        nextAt = now + 240000 + Math.random()*260000;
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  try { console.log('[harbor v0.5.253] underwater drone glider armed (sleek autonomous drone with blinking LED slowly crosses fc-4)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
