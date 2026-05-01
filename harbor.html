@@ -19768,6 +19768,50 @@
   } catch(e){ try { console.warn('[harbor v0.5.275] error', e); } catch(_){} }
 })();
 
+// v0.5.276 eastern tide gauge — slim staff at the eastern shore, water level on a slow sine offset from western
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(SVGNS, 'g');
+  g.setAttribute('id','tideGaugeEast');
+  g.setAttribute('pointer-events','none');
+  // Place a tide staff at SX=1118 (east of dock pilings, west of east lighthouse).
+  const SX = 1118;
+  const TOP = 258, BOT = 336;
+  const partsTop = [
+    '<rect x="'+(SX-3)+'" y="252" width="6" height="6" fill="#1a2030"/>',
+    '<rect x="'+(SX-1)+'" y="'+TOP+'" width="2" height="'+(BOT-TOP)+'" fill="#0f1622" opacity="0.95"/>',
+  ];
+  // tick marks every 6px, longer at every 4 ticks; on LEFT side of staff (mirror of western)
+  const ticks = [];
+  for(let i=0; i<=Math.floor((BOT-TOP)/6); i++){
+    const ty = TOP + i*6;
+    const long = (i%4===0);
+    const w = long ? 6 : 3;
+    ticks.push('<line x1="'+(SX-1)+'" y1="'+ty+'" x2="'+(SX-1-w)+'" y2="'+ty+'" stroke="#9ab0c8" stroke-width="0.6" opacity="0.7"/>');
+  }
+  const finial = '<circle cx="'+SX+'" cy="'+TOP+'" r="1.6" fill="#cfd6e2" opacity="0.85"/>';
+  // small triangular indicator at current water level — points east (right side of staff)
+  const slider = '<g id="tideSliderEast"><polygon points="'+(SX+7)+',-4 '+(SX+7)+',4 '+(SX+1)+',0" fill="#7ad9a2" opacity="0.85"/><line x1="'+(SX+7)+'" y1="0" x2="'+(SX+13)+'" y2="0" stroke="#7ad9a2" stroke-width="0.6" opacity="0.5"/></g>';
+  g.innerHTML = partsTop.join('') + ticks.join('') + finial + '<g id="tideSliderEastWrap" transform="translate(0,310)">'+slider+'</g>';
+  svg.appendChild(g);
+  const wrap = g.querySelector('#tideSliderEastWrap');
+  // Same period (90s) but offset 25% in phase so eastern reads slightly out of sync with western
+  const MID = (TOP+BOT)/2;
+  const AMP = 26;
+  const PERIOD = 90000;
+  const PHASE = 0.25; // quarter-cycle offset from western gauge
+  function tick(now){
+    const k = ((now % PERIOD) / PERIOD) + PHASE;
+    const y = MID + Math.sin(k*Math.PI*2) * AMP;
+    wrap.setAttribute('transform','translate(0,'+y.toFixed(2)+')');
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.276] eastern tide gauge armed (slim staff at eastern shore)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
