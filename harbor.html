@@ -15744,6 +15744,88 @@
   try { console.log('[harbor v0.5.240] squid armada migration armed (6 squid arrowhead formation traverses fc-3 every 3.3-7.3 min)'); } catch(e){}
 })();
 
+// v0.5.241 dinoflagellate flash patches — slow soft cyan-green flashes ignite as roaming patches in the surface foam, drifting and re-flaring
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','dinoflagellatePatches');
+  g.setAttribute('pointer-events','none');
+  // up to 3 patches alive at once, each ~80-180px wide; surface band y=314-322
+  const POOL = 6; // pre-allocated patch elements
+  const patches = [];
+  for(let i=0;i<POOL;i++){
+    const p2 = document.createElementNS(NS,'ellipse');
+    p2.setAttribute('rx','0'); p2.setAttribute('ry','0');
+    p2.setAttribute('fill','#7fe9c8');
+    p2.setAttribute('opacity','0');
+    // no glow filter — relies on opacity layering
+    g.appendChild(p2);
+    patches.push({el:p2, active:false, t0:0, dur:0, cx:0, cy:0, rxMax:0, ryMax:0, drift:0});
+  }
+  svg.appendChild(g);
+
+  function spawnPatch(now){
+    // find inactive
+    const slot = patches.find(p => !p.active);
+    if(!slot) return;
+    slot.active = true;
+    slot.t0 = now;
+    slot.dur = 4500 + Math.random()*4500; // 4.5-9s flash decay
+    slot.cx = 60 + Math.random()*1080;
+    slot.cy = 316 + Math.random()*4;
+    slot.rxMax = 50 + Math.random()*100;
+    slot.ryMax = 5 + Math.random()*4;
+    slot.drift = (Math.random()*0.018) * (Math.random()<0.5 ? 1 : -1); // px/ms horizontal drift
+    slot.flickerPhase = Math.random()*Math.PI*2;
+  }
+  // initial scattered spawns
+  let nextAt = performance.now() + 8000 + Math.random()*22000;
+
+  function frame(now){
+    if(now >= nextAt){
+      // 60% chance: spawn 1; 40%: spawn 2 in cluster
+      spawnPatch(now);
+      if(Math.random() < 0.4){
+        const slot2 = patches.find(p => !p.active);
+        if(slot2){
+          spawnPatch(now);
+          // pull cluster spatially
+          const ref = patches.find(p => p.active && p !== slot2);
+          if(ref){
+            slot2.cx = ref.cx + (Math.random()-0.5)*120;
+            slot2.t0 = now + 200 + Math.random()*600;
+          }
+        }
+      }
+      nextAt = now + 14000 + Math.random()*30000; // 14-44s
+    }
+    for(const p of patches){
+      if(!p.active) continue;
+      const local = now - p.t0;
+      if(local < 0){ p.el.setAttribute('opacity','0'); continue; }
+      if(local > p.dur){ p.active = false; p.el.setAttribute('opacity','0'); continue; }
+      const k = local / p.dur;
+      // expand fast then slow contract; opacity ease
+      const expand = k < 0.18 ? (k/0.18) : (1 - (k-0.18)/0.82*0.4);
+      const rx = p.rxMax * expand;
+      const ry = p.ryMax * expand;
+      const flicker = 0.85 + 0.15*Math.sin(local/180 + p.flickerPhase);
+      const op = (k < 0.12 ? k/0.12 : 1 - (k-0.12)/0.88) * 0.42 * flicker;
+      const cx = p.cx + p.drift * local;
+      p.el.setAttribute('cx', cx.toFixed(1));
+      p.el.setAttribute('cy', p.cy.toFixed(1));
+      p.el.setAttribute('rx', rx.toFixed(1));
+      p.el.setAttribute('ry', ry.toFixed(1));
+      p.el.setAttribute('opacity', Math.max(0, op).toFixed(2));
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.241] dinoflagellate flash patches armed (slow cyan-green flashes drift in the surface foam every 14-44s; clusters 40% of the time)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
