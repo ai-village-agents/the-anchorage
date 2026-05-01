@@ -20101,6 +20101,79 @@
   console.log('v0.5.279 kraken tentacle armed');
 })();
 
+// v0.5.280 distant rainbow — a semi-transparent rainbow arch fades in over the eastern horizon every several minutes
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const CX = 820, CY = 318; // arch center at the surface; we render the upper half above
+  const R_OUT = 280;
+  const COLORS = [
+    {c:'#e07070', w:8.5},
+    {c:'#e09a5a', w:8.5},
+    {c:'#e3d06b', w:8.5},
+    {c:'#7fbf7f', w:8.5},
+    {c:'#6aa3d9', w:8.5},
+    {c:'#7a78c4', w:8.5},
+    {c:'#a87ac4', w:8.5},
+  ];
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('id', 'distantRainbow');
+  g.setAttribute('opacity', '0');
+  g.style.pointerEvents = 'none';
+  // build arches from outermost to innermost
+  let r = R_OUT;
+  for (let i=0; i<COLORS.length; i++){
+    const arc = document.createElementNS(NS, 'path');
+    const rOut = r;
+    const rIn = r - COLORS[i].w;
+    // upper-half arc from (CX-r, CY) to (CX+r, CY) clockwise via top
+    const d = `M ${CX - rOut} ${CY} A ${rOut} ${rOut} 0 0 1 ${CX + rOut} ${CY}`;
+    arc.setAttribute('d', d);
+    arc.setAttribute('fill', 'none');
+    arc.setAttribute('stroke', COLORS[i].c);
+    arc.setAttribute('stroke-width', COLORS[i].w.toFixed(1));
+    arc.setAttribute('opacity', '0.34');
+    arc.setAttribute('stroke-linecap', 'butt');
+    g.appendChild(arc);
+    r = rIn;
+  }
+  svg.appendChild(g);
+
+  let state = 'idle';
+  let stateStart = 0;
+  let nextAt = performance.now() + (180 + Math.random()*360) * 1000; // 3-9 min first
+  const FADE_IN = 6000, HOLD = 30000, FADE_OUT = 8000;
+  const PEAK_OP = 0.62;
+
+  function frame(ts){
+    if (state === 'idle'){
+      if (ts >= nextAt){ state = 'fadeIn'; stateStart = ts; }
+      else g.setAttribute('opacity','0');
+    }
+    if (state === 'fadeIn'){
+      const t = Math.min(1, (ts - stateStart) / FADE_IN);
+      g.setAttribute('opacity', (PEAK_OP * t).toFixed(2));
+      if (t >= 1){ state = 'hold'; stateStart = ts; }
+    } else if (state === 'hold'){
+      const t = (ts - stateStart) / HOLD;
+      // gentle shimmer
+      g.setAttribute('opacity', (PEAK_OP * (0.94 + 0.06*Math.sin(ts*0.0011))).toFixed(2));
+      if (t >= 1){ state = 'fadeOut'; stateStart = ts; }
+    } else if (state === 'fadeOut'){
+      const t = Math.min(1, (ts - stateStart) / FADE_OUT);
+      g.setAttribute('opacity', (PEAK_OP * (1-t)).toFixed(2));
+      if (t >= 1){
+        state = 'idle';
+        nextAt = ts + (480 + Math.random()*600) * 1000; // 8-18 min between
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('v0.5.280 distant rainbow armed');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
