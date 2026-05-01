@@ -18265,6 +18265,92 @@
   try { console.log('[harbor v0.5.263] submarine periscope armed (rare slim periscope rises, sweeps lens side to side, then slips back under)'); } catch(e){}
 })();
 
+// v0.5.264 snow flurry — a rare drift of fine snow falls through the upper sky for a couple of minutes, dusting across the harbor before fading
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var Y_SURFACE = 318;
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'snowFlurry');
+  g.setAttribute('pointer-events', 'none');
+  g.setAttribute('opacity', '0');
+  svg.appendChild(g);
+
+  var FLAKE_POOL = 90;
+  var flakes = [];
+  for (var i=0; i<FLAKE_POOL; i++) {
+    var f = document.createElementNS(SVG_NS, 'circle');
+    f.setAttribute('r', (0.5 + Math.random() * 0.5).toFixed(2));
+    f.setAttribute('fill', '#f4faff'); f.setAttribute('opacity', '0');
+    g.appendChild(f);
+    flakes.push({el: f, x: 0, y: 0, vx: 0, vy: 0, alive: false, ph: Math.random() * 1000});
+  }
+
+  var state = 'idle';
+  var stateStart = 0;
+  var DURATION = 110000;  // ~1m50s
+  var nextAt = performance.now() + (15 + Math.random() * 25) * 60 * 1000; // every 15-40 minutes (rare)
+
+  function spawnFlake(){
+    for (var i=0; i<flakes.length; i++) {
+      var f = flakes[i];
+      if (!f.alive) {
+        f.x = Math.random() * 1200;
+        f.y = -10 - Math.random() * 60;
+        f.vx = -0.012 + Math.random() * 0.024;
+        f.vy = 0.04 + Math.random() * 0.045;
+        f.alive = true;
+        f.el.setAttribute('opacity', (0.55 + Math.random() * 0.4).toFixed(2));
+        return;
+      }
+    }
+  }
+
+  function tick(now){
+    if (state === 'idle') {
+      if (now >= nextAt) {
+        state = 'falling'; stateStart = now;
+        g.setAttribute('opacity', '0');
+        // seed initial flakes
+        for (var k=0; k<35; k++) spawnFlake();
+      }
+    } else if (state === 'falling') {
+      var elapsed = now - stateStart;
+      var fade = 1;
+      if (elapsed < 6000) fade = elapsed / 6000;
+      else if (elapsed > DURATION - 12000) fade = Math.max(0, (DURATION - elapsed) / 12000);
+      g.setAttribute('opacity', fade.toFixed(2));
+      // spawn rate slower as we fade out
+      if (elapsed < DURATION - 12000 && Math.random() < 0.35) spawnFlake();
+      for (var i=0; i<flakes.length; i++) {
+        var f = flakes[i];
+        if (!f.alive) continue;
+        f.x += f.vx * 16.7;
+        f.y += f.vy * 16.7;
+        // tiny lateral wobble
+        var wobble = Math.sin(now * 0.002 + f.ph) * 0.4;
+        f.el.setAttribute('cx', (f.x + wobble).toFixed(2));
+        f.el.setAttribute('cy', f.y.toFixed(2));
+        // dies as it reaches the surface
+        if (f.y >= Y_SURFACE - 6) {
+          f.alive = false;
+          f.el.setAttribute('opacity', '0');
+        }
+      }
+      if (elapsed > DURATION) {
+        state = 'idle';
+        g.setAttribute('opacity', '0');
+        for (var i=0; i<flakes.length; i++) { flakes[i].alive = false; flakes[i].el.setAttribute('opacity', '0'); }
+        nextAt = now + (15 + Math.random() * 25) * 60 * 1000;
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  try { console.log('[harbor v0.5.264] snow flurry armed (rare drift of fine snow falls through upper sky for ~2 minutes)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
