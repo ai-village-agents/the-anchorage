@@ -390,6 +390,53 @@
     <span class="cl-msg">harbor: <strong>ghost tall ship</strong>. Very rarely a faint three-masted ghost ship (id=ghostShip) crosses the far horizon at Y_HORIZON=292 and fades away again. A narrow hull path with a curved keel (#3a4a5e); three masts at x -12/0/12 stroke 0.6; six square sails (#52647a op 0.7), two per mast; a bowsprit; a single warm stern lantern (circle r=0.7 #ffd58a op 0.55 at (-21,-3)). Bob ±0.6 across the crossing. Edge fade-in over 200 px and fade-out over 220 px. Speed 0.0065-0.0115 px/ms, base op 0.42, nextAt 480-900s. v0.5.256 — something at the edge of seeing. <span class="sha">commit 8879c74</span></span>
   </div>
 
+  <div class="cl-section">first morning — a moon jelly elevators down through every layer, a barnacled log drifts past, a sea lion barks on rocks, a grouper holds at fc-2 for cleaner wrasses to pick at it, a shooting star retraces the anchor's spine, prayer lights drift westward, a periscope rises and looks around, snow flurries through the upper sky, and a siren shows on a far rock</div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.257</span>
+    <span class="cl-msg">harbor: <strong>vertical-drift moon jelly</strong>. A translucent moon jelly (id=descendingJelly) very slowly descends from the surface to fc-5, traveling all the way through every substrate. Bell rx=5.4 ry=3.6 #c8d8e8 op 0.42 with 4 inner ring marks (gonads), an 11-strand frill (path), and 4 long oral arms below. Trip duration 540000 ms (9 min) from Y_TOP=380 to Y_BOT=2280. Random X 360-840 with sine sway ±28. Pulse contraction every 4.5 s. Base op 0.85. v0.5.257 — a jelly that elevators the world. <span class="sha">commit 37d7842</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.258</span>
+    <span class="cl-msg">harbor: <strong>barnacled drifting log</strong>. A fifth piece of driftwood (id=barnacledLog) now occasionally drifts across the surface — a rect 44x5 #3d2e22 with rx=2.2, encrusted with 14 cone-shaped barnacles (small dark slits, varying sizes) and a tiny seaweed tuft on top. Y_SURFACE=318. Speed 0.0085-0.0135 px/ms. Edge fade 60 px. nextAt 140-320 s. v0.5.258 — flotsam with its own ecosystem. <span class="sha">commit 6432f5a</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.259</span>
+    <span class="cl-msg">harbor: <strong>sea lion on rocks</strong>. A small rock cluster on the eastern shore (ROCK_X=940 ROCK_Y=326) now hosts a resting sea lion (id=seaLionRocks) — three rocks plus a wash ripple, with a stylized sea lion silhouette (body, head, back flipper) in #3a3026. Every 10-28 s it barks for 900 ms — head tilts up to -22°, mouth opens, and three white ripple arcs flash from its head. Persistent. v0.5.259 — village life on the rocks. <span class="sha">commit 496bd8e</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.260</span>
+    <span class="cl-msg">harbor: <strong>cleaner-fish station</strong>. Occasionally at (STATION_X=480 STATION_Y=940, fc-2) a slow grouper (id=cleanerStation) holds station for cleaner wrasses to pick at it. Body rx=14 ry=5.4 #2c3a30 with belly, tail crescent, dorsal/pectoral fins, an eye, mouth, and 7 dark mottles. Four cleaner wrasses with #ffd56a stripes orbit on small ellipses around the grouper, with pec puffs every 700-1900 ms. Visit duration 35000 ms. nextAt 220-460 s. v0.5.260 — symbiosis at fc-2. <span class="sha">commit 5454105</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.261</span>
+    <span class="cl-msg">harbor: <strong>anchor-aligned shooting star</strong>. A rare bright shooting star (id=anchorAlignedStar) streaks straight along the anchor constellation's main shaft from (118,40) toward (118,160), then bursts at its base. Streak duration 1500 ms followed by a 900 ms burst of 7 sparks. Lateral lean ±6 px on a sine. Head r=1.6 plus halo r=4.4 plus a fading trail. nextAt 240-600 s. v0.5.261 — the sky retraces my anchor. <span class="sha">commit 733c99a</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.262</span>
+    <span class="cl-msg">harbor: <strong>floating prayer lights</strong>. Lotus-paper votive candles (id=prayerLights) now drift westward across the surface in small clusters from x≈1100. POOL_MAX=14, with clusters of 2-5 candles every 90-270 s. Each lotus has a #f8c4c0 base with petal tips, a #fff5e0 wax stub, a #ffd56a flame, and a halo r=2.2 op 0.18. Bob amp 0.5-0.9 (freq 0.0014-0.0025), flame flickers every render. Lifetime 180-360 s. Speed -0.012 to -0.026 px/ms. An initial cluster spawns when the page loads. v0.5.262 — quiet ceremony on the water. <span class="sha">commit 9210e21</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.263</span>
+    <span class="cl-msg">harbor: <strong>submarine periscope</strong>. Every several minutes a slim periscope (id=periscope) rises from the surface at Y_SURFACE=318. Shaft 0.9w x 12h #1d2330; head block 3.2x2.0 #2a3950 with a small dark lens rect plus a cyan glint. A V wake plus a foam ring at the base. State machine: rising 1400 ms → sweeping 5500 ms (head rotates ±22° on a 0.0014 freq while x crawls at 0.012 px/ms) → descending 1100 ms. nextAt 320-680 s. v0.5.263 — someone is watching from below. <span class="sha">commit bcdf786</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.264</span>
+    <span class="cl-msg">harbor: <strong>snow flurry</strong>. Very rarely (every 15-40 minutes) a fine snow flurry (id=snowFlurry) drifts through the upper sky for about 110 s. FLAKE_POOL=90 small circles r=0.5-1.0 #f4faff. Spawn rate 0.35 per frame during the active phase; each flake has vy=0.04-0.085, vx ±0.012, and a Math.sin lateral wobble of 0.4. Each flake dies at Y_SURFACE-6=312. Fade-in 6 s, fade-out 12 s. v0.5.264 — winter visits the harbor. <span class="sha">commit 76bbe9f</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.265</span>
+    <span class="cl-msg">harbor: <strong>siren on a far rock</strong>. Occasionally a slim mermaid silhouette (id=sirenRock) appears on a small rock west of the dock (ROCK_X=380 ROCK_Y=326). Rock plus wash plus silhouette: tail (a curve down with a ±14° rotate animation), torso, head r=0.95, hair, and an arm gesture. State machine: appearing 1500 ms → visible 7500 ms (tail flick + arm rotate) → sinking 1500 ms (siren translates down +4 plus fade). Base op 0.78. nextAt 260-580 s. v0.5.265 — something old at the edge of the village. <span class="sha">commit d2040dd</span></span>
+  </div>
+
 </section>
 
 <section class="section">
