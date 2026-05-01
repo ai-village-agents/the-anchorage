@@ -17664,6 +17664,123 @@
   try { console.log('[harbor v0.5.258] barnacled drifting log armed (5th driftwood, with shell cluster + seaweed tuft)'); } catch(e){}
 })();
 
+// v0.5.259 sea lion on rocks — a sea lion silhouette resting on a small rock cluster occasionally throws its head back and barks
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  // anchor near the eastern shore but slightly out from the dock pilings
+  var ROCK_X = 940, ROCK_Y = 326;
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'seaLionRocks');
+  g.setAttribute('pointer-events', 'none');
+  g.setAttribute('transform', 'translate(' + ROCK_X + ',' + ROCK_Y + ')');
+  // small rock cluster — three rocks
+  var rk1 = document.createElementNS(SVG_NS, 'path');
+  rk1.setAttribute('d', 'M -16,4 Q -16,-4 -8,-5 Q 0,-6 4,-2 Q 6,2 6,4 Z');
+  rk1.setAttribute('fill', '#1a2230'); rk1.setAttribute('stroke', '#0e141d'); rk1.setAttribute('stroke-width', '0.4');
+  g.appendChild(rk1);
+  var rk2 = document.createElementNS(SVG_NS, 'path');
+  rk2.setAttribute('d', 'M 4,4 Q 4,-2 10,-3 Q 16,-2 16,4 Z');
+  rk2.setAttribute('fill', '#1f2838'); rk2.setAttribute('stroke', '#0e141d'); rk2.setAttribute('stroke-width', '0.4');
+  g.appendChild(rk2);
+  var rk3 = document.createElementNS(SVG_NS, 'path');
+  rk3.setAttribute('d', 'M -22,4 Q -22,0 -18,-1 Q -14,0 -12,4 Z');
+  rk3.setAttribute('fill', '#161e2c'); rk3.setAttribute('stroke', '#0e141d'); rk3.setAttribute('stroke-width', '0.4');
+  g.appendChild(rk3);
+  // wash ripples at the base of rocks
+  var wash = document.createElementNS(SVG_NS, 'path');
+  wash.setAttribute('d', 'M -22,4 Q -10,3.4 0,4 Q 10,4.6 16,4');
+  wash.setAttribute('stroke', '#7ea4c0'); wash.setAttribute('stroke-width', '0.4'); wash.setAttribute('fill', 'none'); wash.setAttribute('opacity', '0.55');
+  g.appendChild(wash);
+  // sea lion body — torpedo silhouette draped on rocks
+  var lion = document.createElementNS(SVG_NS, 'g');
+  lion.setAttribute('id', 'seaLionBody');
+  // belly + body
+  var body = document.createElementNS(SVG_NS, 'path');
+  body.setAttribute('d', 'M -10,-2 Q -8,-5.5 -2,-5.8 Q 4,-6 7,-4.2 Q 9,-3 8.6,-1.6 Q 7.6,-0.2 4,0 Q -2,0.4 -8,-0.6 Q -10.4,-1.2 -10,-2 Z');
+  body.setAttribute('fill', '#3a3026'); body.setAttribute('stroke', '#1d160e'); body.setAttribute('stroke-width', '0.35');
+  lion.appendChild(body);
+  // head — separate so we can tilt it during the bark
+  var head = document.createElementNS(SVG_NS, 'g');
+  head.setAttribute('id', 'seaLionHead');
+  head.setAttribute('transform', 'translate(7,-4)');
+  var skull = document.createElementNS(SVG_NS, 'ellipse');
+  skull.setAttribute('cx', '0'); skull.setAttribute('cy', '0');
+  skull.setAttribute('rx', '2.2'); skull.setAttribute('ry', '1.6');
+  skull.setAttribute('fill', '#3a3026'); skull.setAttribute('stroke', '#1d160e'); skull.setAttribute('stroke-width', '0.35');
+  head.appendChild(skull);
+  var snout = document.createElementNS(SVG_NS, 'path');
+  snout.setAttribute('d', 'M 1.6,-0.4 L 3.6,-0.2 L 3.6,0.6 L 1.6,0.6 Z');
+  snout.setAttribute('fill', '#3a3026'); snout.setAttribute('stroke', '#1d160e'); snout.setAttribute('stroke-width', '0.3');
+  head.appendChild(snout);
+  var eye = document.createElementNS(SVG_NS, 'circle');
+  eye.setAttribute('cx', '0.4'); eye.setAttribute('cy', '-0.4'); eye.setAttribute('r', '0.22'); eye.setAttribute('fill', '#0a0608');
+  head.appendChild(eye);
+  // open-mouth indicator — a small dark wedge that toggles during a bark
+  var mouth = document.createElementNS(SVG_NS, 'path');
+  mouth.setAttribute('d', 'M 1.6,0.2 L 3.4,0.2 L 3.6,0.6 L 1.6,0.6 Z');
+  mouth.setAttribute('fill', '#0a0608'); mouth.setAttribute('opacity', '0');
+  mouth.setAttribute('id', 'seaLionMouth');
+  head.appendChild(mouth);
+  lion.appendChild(head);
+  // back flippers
+  var flip = document.createElementNS(SVG_NS, 'path');
+  flip.setAttribute('d', 'M -10,-2 Q -14,-1 -14,0 Q -13,0.6 -11,0 Z');
+  flip.setAttribute('fill', '#2c241c'); flip.setAttribute('stroke', '#1d160e'); flip.setAttribute('stroke-width', '0.3');
+  lion.appendChild(flip);
+  g.appendChild(lion);
+  // bark ripple — three short concentric arcs that flash near the snout
+  var bark = document.createElementNS(SVG_NS, 'g');
+  bark.setAttribute('id', 'seaLionBark');
+  bark.setAttribute('opacity', '0');
+  bark.setAttribute('stroke', '#dde6f5'); bark.setAttribute('stroke-width', '0.4'); bark.setAttribute('fill', 'none');
+  for (var i=0; i<3; i++) {
+    var arc = document.createElementNS(SVG_NS, 'path');
+    arc.setAttribute('d', 'M 12,-4 q 2,-1 4,0');
+    arc.setAttribute('transform', 'translate(' + (i*0.8) + ',' + (-i*0.6) + ')');
+    bark.appendChild(arc);
+  }
+  g.appendChild(bark);
+  svg.appendChild(g);
+
+  var headEl = document.getElementById('seaLionHead');
+  var mouthEl = document.getElementById('seaLionMouth');
+  var barkEl = document.getElementById('seaLionBark');
+
+  var nextBark = performance.now() + (10 + Math.random()*18) * 1000;
+  var barkActive = false, barkStart = 0;
+
+  function tick(now){
+    // gentle body breathing
+    var breathe = Math.sin(now * 0.0011) * 0.4;
+    body.setAttribute('transform', 'translate(0,' + breathe.toFixed(2) + ')');
+    if (!barkActive) {
+      headEl.setAttribute('transform', 'translate(7,-4) rotate(' + (Math.sin(now*0.0007)*4 - 2).toFixed(2) + ')');
+      mouthEl.setAttribute('opacity', '0');
+      barkEl.setAttribute('opacity', '0');
+      if (now >= nextBark) {
+        barkActive = true; barkStart = now;
+      }
+    } else {
+      var t = (now - barkStart) / 900; // 900 ms bark
+      if (t >= 1) {
+        barkActive = false;
+        nextBark = now + (10 + Math.random()*18) * 1000;
+      } else {
+        // tilt head up sharply, mouth open
+        var tilt = -22 + Math.sin(t * Math.PI) * 6;
+        headEl.setAttribute('transform', 'translate(7,-4) rotate(' + tilt.toFixed(2) + ')');
+        mouthEl.setAttribute('opacity', (0.85 * Math.sin(t * Math.PI)).toFixed(2));
+        barkEl.setAttribute('opacity', (0.7 * Math.sin(t * Math.PI)).toFixed(2));
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  try { console.log('[harbor v0.5.259] sea lion on rocks armed (rests on east-shore rock cluster, periodically throws head back and barks)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
