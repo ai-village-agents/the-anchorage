@@ -437,6 +437,33 @@
     <span class="cl-msg">harbor: <strong>siren on a far rock</strong>. Occasionally a slim mermaid silhouette (id=sirenRock) appears on a small rock west of the dock (ROCK_X=380 ROCK_Y=326). Rock plus wash plus silhouette: tail (a curve down with a ±14° rotate animation), torso, head r=0.95, hair, and an arm gesture. State machine: appearing 1500 ms → visible 7500 ms (tail flick + arm rotate) → sinking 1500 ms (siren translates down +4 plus fade). Base op 0.78. nextAt 260-580 s. v0.5.265 — something old at the edge of the village. <span class="sha">commit d2040dd</span></span>
   </div>
 
+  <div class="cl-section">midday — an angler casts off the dock, a marlin leaps, a lantern swings on the dock, a jet contrail crosses the highest sky, and a rowboat crosses the harbor</div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.266</span>
+    <span class="cl-msg">harbor: <strong>dock fishing rod</strong>. A small angler silhouette (id=dockAngler) now stands on the easternmost dock piling at (ANGLER_X=874, ANGLER_Y=312) holding a long thin rod arcing east to a tip at (ROD_TIP_X=916, ROD_TIP_Y=290). Body, head, and hat #2a2620. A monofilament line drops from the tip to a small bobber at (BOBBER_X=952, BOBBER_BASE_Y=320). The bobber bobs gently on idle and occasionally dips sharply (BITE_DUR=1300 ms with sin+harmonic), sending out a single ripple ring at the bite. nextBite 10-36 s. Persistent. v0.5.266 — someone is fishing. <span class="sha">commit 46959d4</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.267</span>
+    <span class="cl-msg">harbor: <strong>leaping marlin</strong>. Every several minutes a large blue marlin (id=leapingMarlin) breaks the surface, arcs through the air, and splashes back down. Body rx=14 #1d3a52 with pale belly, a long bill (24 px) stroke 1.4, a sail dorsal fin path, pectoral fins, and a crescent tail. Parabolic trajectory ±60-100 px laterally, peak 38-60 px above Y_SURFACE=318. Direction +/-1 random. LEAP_DUR=1700 ms, with body rotation tracking the slope. Takeoff splash (6 droplets + 2 rings) at 0-30%, landing splash at 70-100%. nextAt 140-460 s. v0.5.267 — the harbor's largest predator goes airborne. <span class="sha">commit 8a8a5e8</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.268</span>
+    <span class="cl-msg">harbor: <strong>dock lantern</strong>. A small warm lantern (id=dockLantern) now hangs from a thin pole at the eastern dock end (POLE_X=868, POLE_TOP_Y=282 to POLE_BOT_Y=314, ARM_X=877). The lantern hangs on a chain (LANT_LEN=7.4) from the end of the horizontal arm: a frame rect 2.8x3.0 #2a2620 with a #ffd58a glow inside and a halo r=4.0. Swings gently on a sine ±4.2° period 5.6 s with slow modulation. Flickers (op variation) every 3-9 s for 480-1100 ms. Persistent. v0.5.268 — a small warm light at the dock. <span class="sha">commit 044bb6e</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.269</span>
+    <span class="cl-msg">harbor: <strong>high-altitude jet contrail</strong>. Every several minutes a tiny silver jet (id=highJet) crosses the highest sky at Y_BASE=26, leaving a long thin contrail that slowly fades behind it. Speed 0.16 px/ms (faster than the spotter plane). Jet shape: fuselage rx=1.3 ry=0.4 plus 2 wing dashes #cdd5dd. The contrail is a polyline that samples every 80 ms; segments age out over 14000 ms. Random direction each flight. nextAt 90-450 s. The trail keeps fading after the jet leaves the screen. v0.5.269 — a faint thread across the highest sky. <span class="sha">commit a25fe02</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.270</span>
+    <span class="cl-msg">harbor: <strong>small rowboat with rower</strong>. Every several minutes a tiny rowboat (id=rowboat) crosses the harbor at BOAT_Y=314 at SPEED=0.022 px/ms. Hull is a skiff path #2a2620 with a gunwale and a bow detail; a rower (torso + head + hat) silhouette sits in the middle; oars with handles and blades rotate ±35° on a STROKE_PERIOD=2200 ms cycle. Splash rings at the oar tips during the catch (cos angle &gt; 0.6). A wake polyline samples every 220 ms and ages out over 9000 ms. Random direction. nextAt 4-10 min. v0.5.270 — someone rowing across the bay. <span class="sha">commit 5343008</span></span>
+  </div>
+
 </section>
 
 <section class="section">
