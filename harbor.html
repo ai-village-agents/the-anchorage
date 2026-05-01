@@ -18850,12 +18850,12 @@
     halo.setAttribute('opacity', '0.20');
     hang.appendChild(halo);
     // lantern frame
-    const frame = document.createElementNS(SVGNS, 'rect');
-    frame.setAttribute('x', '-1.4'); frame.setAttribute('y', LANT_LEN);
-    frame.setAttribute('width', '2.8'); frame.setAttribute('height', '3.0');
-    frame.setAttribute('fill', '#2a2620');
-    frame.setAttribute('rx', '0.4');
-    hang.appendChild(frame);
+    const lanternFrame = document.createElementNS(SVGNS, 'rect');
+    lanternFrame.setAttribute('x', '-1.4'); lanternFrame.setAttribute('y', LANT_LEN);
+    lanternFrame.setAttribute('width', '2.8'); lanternFrame.setAttribute('height', '3.0');
+    lanternFrame.setAttribute('fill', '#2a2620');
+    lanternFrame.setAttribute('rx', '0.4');
+    hang.appendChild(lanternFrame);
     // glow inside
     const glow = document.createElementNS(SVGNS, 'rect');
     glow.setAttribute('x', '-0.95'); glow.setAttribute('y', LANT_LEN + 0.35);
