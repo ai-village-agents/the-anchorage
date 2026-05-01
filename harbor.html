@@ -13970,6 +13970,72 @@
   console.log('[harbor v0.5.222] tide pool crabs armed (two small crabs scuttle along the rim of the tide pool at 620,332)');
 })();
 
+// v0.5.223 kelp paddy with crab on top — a fourth drifting paddy carries a small crab passenger
+(function(){
+  const NS='http://www.w3.org/2000/svg';
+  const svg=document.querySelector('.harbor-svg');
+  if(!svg){return;}
+  const g=document.createElementNS(NS,'g');
+  g.setAttribute('id','kelpPaddyCrab');
+  g.setAttribute('pointer-events','none');
+  // single paddy with similar look to v0.5.146 but with a tiny crab passenger riding
+  g.innerHTML =
+    // wake
+    '<ellipse cx="0" cy="3.4" rx="26" ry="0.9" fill="#7aa2ff" opacity="0.16"/>' +
+    // main mat
+    '<ellipse cx="0" cy="0" rx="24" ry="3.4" fill="#3a5a3e" opacity="0.78"/>' +
+    '<ellipse cx="-7" cy="-1.2" rx="11" ry="2.2" fill="#4f7a55" opacity="0.65"/>' +
+    '<ellipse cx="9" cy="0.8" rx="9" ry="1.8" fill="#2d4a32" opacity="0.7"/>' +
+    // bladders
+    '<circle cx="-12" cy="-2.2" r="1.4" fill="#7fa078" opacity="0.85"/>' +
+    '<circle cx="-3" cy="-2.8" r="1.2" fill="#7fa078" opacity="0.8"/>' +
+    '<circle cx="6" cy="-2.4" r="1.5" fill="#86a87a" opacity="0.85"/>' +
+    '<circle cx="14" cy="-1.8" r="1.1" fill="#7fa078" opacity="0.78"/>' +
+    // trailing fronds
+    '<path id="kelpPaddyCrabFrondA" d="M -18 1 q -8 4 -14 2" fill="none" stroke="#3a5a3e" stroke-width="1.4" stroke-linecap="round" opacity="0.55"/>' +
+    '<path id="kelpPaddyCrabFrondB" d="M 17 1.5 q 9 3 16 1" fill="none" stroke="#3a5a3e" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>' +
+    // crab passenger (slightly above mat at cy=-3 to -4) — orange-red shell
+    '<g id="kelpPaddyCrabRider" transform="translate(2,-3.4)">' +
+      '<ellipse cx="0" cy="0" rx="2.2" ry="1.4" fill="#b35a32" opacity="0.96"/>' +
+      '<circle cx="-2.2" cy="-0.8" r="0.6" fill="#b35a32"/>' +
+      '<circle cx="2.2" cy="-0.8" r="0.6" fill="#b35a32"/>' +
+      '<circle cx="-0.6" cy="-0.6" r="0.25" fill="#fff5cc" opacity="0.9"/>' +
+      '<circle cx="0.6" cy="-0.6" r="0.25" fill="#fff5cc" opacity="0.9"/>' +
+      '<line x1="-1" y1="0.5" x2="-2.6" y2="1.4" stroke="#b35a32" stroke-width="0.32" stroke-linecap="round"/>' +
+      '<line x1="-0.4" y1="0.7" x2="-1.6" y2="1.6" stroke="#b35a32" stroke-width="0.32" stroke-linecap="round"/>' +
+      '<line x1="0.4" y1="0.7" x2="1.6" y2="1.6" stroke="#b35a32" stroke-width="0.32" stroke-linecap="round"/>' +
+      '<line x1="1" y1="0.5" x2="2.6" y2="1.4" stroke="#b35a32" stroke-width="0.32" stroke-linecap="round"/>' +
+    '</g>';
+  const help = svg.querySelector('#helpOverlay');
+  if (help) svg.insertBefore(g, help); else svg.appendChild(g);
+  // distinct drift profile: starts mid-screen, slow speed, slightly different y/scale than the 3 existing paddies
+  const PROFILE = { x: 320, y: 324, sp: 0.0021, sc: 0.92, ph: 2.2 };
+  let lastT = 0;
+  function frame(now){
+    let x = PROFILE.x + now * PROFILE.sp;
+    x = ((x + 60) % 1320) - 60;
+    const bob = Math.sin(now*0.0007 + PROFILE.ph) * 1.4;
+    const sway = Math.sin(now*0.0011 + PROFILE.ph + 0.6) * 1.2;
+    const y = PROFILE.y + bob;
+    g.setAttribute('transform','translate('+x.toFixed(2)+','+y.toFixed(2)+') scale('+PROFILE.sc+',1) rotate('+(sway*0.6).toFixed(2)+')');
+    // wiggle fronds
+    const fA = document.getElementById('kelpPaddyCrabFrondA');
+    const fB = document.getElementById('kelpPaddyCrabFrondB');
+    const w = Math.sin(now*0.0019 + PROFILE.ph)*3;
+    if (fA) fA.setAttribute('d','M -18 1 q -8 '+(4+w).toFixed(2)+' -14 '+(2-w*0.4).toFixed(2));
+    if (fB) fB.setAttribute('d','M 17 1.5 q 9 '+(3-w).toFixed(2)+' 16 '+(1+w*0.5).toFixed(2));
+    // crab subtle wobble: shifts cx slightly with sway
+    const rider = document.getElementById('kelpPaddyCrabRider');
+    if(rider){
+      const cx = 2 + Math.sin(now*0.0013 + PROFILE.ph)*0.4;
+      rider.setAttribute('transform','translate('+cx.toFixed(2)+',-3.4)');
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.223] kelp paddy with crab passenger armed (fourth drifting kelp mat carries a small orange crab on top)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
