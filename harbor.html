@@ -12799,6 +12799,86 @@
 })();
 
 
+// v0.5.212 sea fog bank — every several minutes, a soft horizontal fog bank now drifts across the surface and partially obscures the horizon as it passes
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    var g = document.createElementNS(SVGNS,'g');
+    g.setAttribute('id','seaFogBank');
+    g.setAttribute('pointer-events','none');
+    g.setAttribute('opacity','0');
+    svg.appendChild(g);
+
+    // bank is a stack of soft ellipses with subtle puffs; built once around origin (0,0)
+    // y range covers ~230..295 so it sits on the horizon strip and blanket the lower sky/water meeting line
+    var W = 380; // width of bank in svg units before scaling — deliberately wider than needed
+    var puffs = [
+      // [cx, cy, rx, ry, op]
+      [-160, 268, 80, 12, 0.55],
+      [-90,  264, 100, 14, 0.65],
+      [-10,  266, 120, 16, 0.70],
+      [80,   263, 110, 13, 0.65],
+      [160,  267, 95,  12, 0.55],
+      [-120, 256, 60,  8,  0.45],
+      [40,   256, 70,  9,  0.50],
+      [110,  258, 50,  7,  0.40]
+    ];
+    var html = '';
+    for (var i=0;i<puffs.length;i++){
+      var p = puffs[i];
+      html += '<ellipse cx="'+p[0]+'" cy="'+p[1]+'" rx="'+p[2]+'" ry="'+p[3]+'" fill="#cfdcef" opacity="'+p[4]+'"/>';
+    }
+    // a faint dark wash beneath to deepen the horizon as it crosses
+    html = '<rect x="-260" y="276" width="520" height="22" fill="#1a2230" opacity="0.18"/>' + html;
+    g.innerHTML = html;
+
+    var state = 'idle';
+    var x = -260;
+    var stateStart = 0;
+    var travelDur = 0;
+    var nextStartAt = performance.now() + 60000 + Math.random()*120000;
+
+    function tick(now){
+      if (state === 'idle'){
+        if (now >= nextStartAt){
+          state = 'moving';
+          stateStart = now;
+          travelDur = 60000 + Math.random()*40000; // 60-100s travel time
+          x = -260; // start off-screen left
+        } else {
+          g.setAttribute('opacity','0');
+        }
+      } else if (state === 'moving'){
+        var u = (now - stateStart)/travelDur;
+        if (u >= 1){
+          state = 'idle';
+          g.setAttribute('opacity','0');
+          nextStartAt = now + 240000 + Math.random()*240000; // 4-8 min between bank events
+        } else {
+          // x sweeps from -260 to 1460 across the scene
+          var px = -260 + u*1720;
+          // fade in/out envelope
+          var env = u < 0.12 ? (u/0.12) : (u > 0.88 ? (1-u)/0.12 : 1);
+          // very gentle vertical bob
+          var bob = Math.sin(now*0.0003)*1.5;
+          g.setAttribute('transform','translate('+px.toFixed(1)+','+bob.toFixed(2)+')');
+          g.setAttribute('opacity', (env*0.85).toFixed(3));
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    console.log('[harbor v0.5.212] sea fog bank armed (drifts across the horizon every 4-8 minutes)');
+  } catch(err){
+    try { console.error('[harbor v0.5.212] sea fog bank init failed', err); } catch(e){}
+  }
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
