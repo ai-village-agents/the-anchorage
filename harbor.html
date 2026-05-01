@@ -15133,6 +15133,177 @@
   try { console.log('[harbor v0.5.234] mola mola basking armed (a giant ocean sunfish drifts just under the surface every 3-7 minutes; its dorsal fin wobbles above the waterline)'); } catch(e){}
 })();
 
+// v0.5.235 cuttlefish color display — every 2-5 minutes a small cuttlefish appears in fc-3, hovers, flashes through several chromatophore patterns (banded, mottled, dark), then jets away
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','cuttlefishDisplay');
+  g.setAttribute('pointer-events','none');
+  g.setAttribute('opacity','0');
+  // body — broad oval
+  const body = document.createElementNS(NS,'ellipse');
+  body.setAttribute('id','cuttleBody');
+  body.setAttribute('cx','0'); body.setAttribute('cy','0');
+  body.setAttribute('rx','12'); body.setAttribute('ry','5.5');
+  body.setAttribute('fill','#9c8a6a');
+  g.appendChild(body);
+  // mantle band overlay (animated)
+  const bands = document.createElementNS(NS,'g');
+  bands.setAttribute('id','cuttleBands');
+  bands.setAttribute('clip-path','url(#cuttleClip)');
+  // create clip
+  const defs = document.createElementNS(NS,'defs');
+  const clip = document.createElementNS(NS,'clipPath');
+  clip.setAttribute('id','cuttleClip');
+  const clipShape = document.createElementNS(NS,'ellipse');
+  clipShape.setAttribute('cx','0'); clipShape.setAttribute('cy','0');
+  clipShape.setAttribute('rx','12'); clipShape.setAttribute('ry','5.5');
+  clip.appendChild(clipShape);
+  defs.appendChild(clip);
+  g.appendChild(defs);
+  // build 7 vertical bands inside body — initially hidden
+  for(let i=0;i<7;i++){
+    const r = document.createElementNS(NS,'rect');
+    r.setAttribute('x', (-12 + i*3.5).toFixed(1));
+    r.setAttribute('y','-6');
+    r.setAttribute('width','1.6');
+    r.setAttribute('height','12');
+    r.setAttribute('fill','#3a2a1a');
+    r.setAttribute('opacity','0');
+    bands.appendChild(r);
+  }
+  g.appendChild(bands);
+  // fin frill — wavy edge top and bottom
+  const finTop = document.createElementNS(NS,'path');
+  finTop.setAttribute('d','M -10,-5 Q -8,-6 -6,-5 Q -4,-6.5 -2,-5 Q 0,-6 2,-5 Q 4,-6.5 6,-5 Q 8,-6 10,-5');
+  finTop.setAttribute('stroke','#cdb892');
+  finTop.setAttribute('stroke-width','0.8');
+  finTop.setAttribute('fill','none');
+  finTop.setAttribute('opacity','0.6');
+  g.appendChild(finTop);
+  const finBot = document.createElementNS(NS,'path');
+  finBot.setAttribute('d','M -10,5 Q -8,6 -6,5 Q -4,6.5 -2,5 Q 0,6 2,5 Q 4,6.5 6,5 Q 8,6 10,5');
+  finBot.setAttribute('stroke','#cdb892');
+  finBot.setAttribute('stroke-width','0.8');
+  finBot.setAttribute('fill','none');
+  finBot.setAttribute('opacity','0.6');
+  g.appendChild(finBot);
+  // tentacles — two short ones at front
+  const tents = document.createElementNS(NS,'g');
+  tents.setAttribute('id','cuttleTents');
+  for(let i=0;i<8;i++){
+    const t = document.createElementNS(NS,'line');
+    t.setAttribute('x1','11');
+    t.setAttribute('y1', ((-3.5 + i*1)).toFixed(1));
+    t.setAttribute('x2', (15+Math.random()*2).toFixed(1));
+    t.setAttribute('y2', ((-3.5 + i*1) + (Math.random()-0.5)*1).toFixed(1));
+    t.setAttribute('stroke','#8a7858');
+    t.setAttribute('stroke-width','0.6');
+    t.setAttribute('opacity','0.7');
+    tents.appendChild(t);
+  }
+  g.appendChild(tents);
+  // eye
+  const eye = document.createElementNS(NS,'ellipse');
+  eye.setAttribute('cx','7'); eye.setAttribute('cy','-1.2');
+  eye.setAttribute('rx','1.6'); eye.setAttribute('ry','1');
+  eye.setAttribute('fill','#1a1410');
+  g.appendChild(eye);
+  svg.appendChild(g);
+
+  let nextAt = performance.now() + 30000 + Math.random()*30000;
+  let active = null;
+  function startEvent(now){
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const startX = dir > 0 ? -30 : 1230;
+    active = {
+      t0: now,
+      startX, dir,
+      hoverX: 200 + Math.random()*800,
+      y: 1300 + Math.random()*180, // fc-3
+      phase: 'enter', // enter -> hover -> jet -> exit
+      enterDur: 6000 + Math.random()*3000,
+      hoverDur: 9000 + Math.random()*4000,
+      jetSpeed: 0.18, // px/ms during jet escape
+      patterns: ['banded','mottled','dark','base','banded'],
+      patternIndex: 0
+    };
+  }
+  function applyPattern(name){
+    // base = no overlay
+    const arr = bands.children;
+    for(const r of arr) r.setAttribute('opacity','0');
+    if(name === 'banded'){
+      for(let i=0;i<arr.length;i++){
+        if(i%2===0) arr[i].setAttribute('opacity','0.55');
+      }
+      body.setAttribute('fill','#a89070');
+    } else if(name === 'mottled'){
+      for(let i=0;i<arr.length;i++){
+        arr[i].setAttribute('opacity', (Math.random()*0.4 + 0.1).toFixed(2));
+        arr[i].setAttribute('width', (1 + Math.random()*1.2).toFixed(2));
+      }
+      body.setAttribute('fill','#8c7c60');
+    } else if(name === 'dark'){
+      body.setAttribute('fill','#3a2e22');
+    } else { // base
+      body.setAttribute('fill','#9c8a6a');
+      // restore band widths
+      for(let i=0;i<arr.length;i++) arr[i].setAttribute('width','1.6');
+    }
+  }
+  function frame(now){
+    if(!active && now >= nextAt){ startEvent(now); g.setAttribute('opacity','0'); }
+    if(active){
+      const t = now - active.t0;
+      let x;
+      if(active.phase === 'enter'){
+        const tt = t/active.enterDur;
+        if(tt >= 1){ active.phase = 'hover'; active.phaseT0 = t; applyPattern(active.patterns[0]); }
+        x = active.startX + (active.hoverX - active.startX) * Math.min(1, tt);
+        const sx = active.dir;
+        g.setAttribute('transform','translate('+x.toFixed(1)+','+active.y.toFixed(1)+') scale('+sx+',1)');
+        let op = 1;
+        if(t < 800) op = t/800;
+        g.setAttribute('opacity', op.toFixed(2));
+      } else if(active.phase === 'hover'){
+        const tt = (t - active.phaseT0);
+        // every 1.6s switch pattern
+        const idx = Math.min(active.patterns.length-1, Math.floor(tt/1700));
+        if(idx !== active.patternIndex){
+          active.patternIndex = idx;
+          applyPattern(active.patterns[idx]);
+        }
+        if(tt > active.hoverDur){
+          active.phase = 'jet';
+          active.phaseT0 = t;
+          // pick jet direction (away from hover position toward nearest edge)
+          active.jetDir = active.hoverX > 600 ? 1 : -1;
+          applyPattern('base');
+        }
+        // gentle bob
+        const bob = Math.sin(t/700)*1.2;
+        const sx = active.dir;
+        g.setAttribute('transform','translate('+active.hoverX.toFixed(1)+','+(active.y+bob).toFixed(1)+') scale('+sx+',1)');
+      } else if(active.phase === 'jet'){
+        const tt = (t - active.phaseT0);
+        const jx = active.hoverX + active.jetDir * active.jetSpeed * tt;
+        const sx = active.jetDir;
+        g.setAttribute('transform','translate('+jx.toFixed(1)+','+active.y.toFixed(1)+') scale('+sx+',1)');
+        let op = 1;
+        if(jx < -40 || jx > 1240){ active = null; g.setAttribute('opacity','0'); nextAt = now + 120000 + Math.random()*180000; return requestAnimationFrame(frame); }
+        if(tt > 5000) op = Math.max(0, 1 - (tt-5000)/2000);
+        g.setAttribute('opacity', op.toFixed(2));
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.235] cuttlefish color display armed (fc-3 hover + 4 chromatophore patterns + jet escape; recurs every 2-5 minutes)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
