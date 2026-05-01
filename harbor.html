@@ -20285,6 +20285,146 @@
   console.log('v0.5.281 albatross armed');
 })();
 
+// v0.5.282 hot air balloon — a small striped balloon drifts very slowly across the mid-high sky every 9-20 minutes with a tiny basket and passenger
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const Y_BAND_TOP = 80, Y_BAND_BOT = 140;
+  const DUR = 110000; // 110s slow drift
+  const SPAN = 1320;
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('id', 'hotAirBalloon');
+  g.setAttribute('opacity', '0');
+  g.style.pointerEvents = 'none';
+
+  // build balloon (centered at 0,0 with envelope above and basket below)
+  // Envelope — teardrop with vertical stripes
+  const envG = document.createElementNS(NS, 'g');
+  // base envelope
+  const envBase = document.createElementNS(NS, 'path');
+  envBase.setAttribute('d', 'M 0 -22 C 12 -22 13 -8 11 0 C 9 6 4 9 0 9 C -4 9 -9 6 -11 0 C -13 -8 -12 -22 0 -22 Z');
+  envBase.setAttribute('fill','#cf5a5a');
+  envG.appendChild(envBase);
+  // stripes
+  const stripes = [
+    {d:'M -7 -21 C -8 -10 -9 -2 -7 8 L -3 8 C -4 -2 -5 -10 -3 -21 Z', c:'#e8b850'},
+    {d:'M 1 -21 C 0 -10 -1 -2 1 8 L 5 8 C 4 -2 3 -10 5 -21 Z', c:'#5a8fcf'},
+    {d:'M 8 -21 C 7 -10 6 -2 8 8 L 11 6 C 11 -2 12 -10 11 -21 Z', c:'#7ac99a'},
+  ];
+  stripes.forEach(s2 => {
+    const p = document.createElementNS(NS,'path');
+    p.setAttribute('d', s2.d);
+    p.setAttribute('fill', s2.c);
+    p.setAttribute('opacity', '0.92');
+    envG.appendChild(p);
+  });
+  // outline — slight darker rim
+  const rim = document.createElementNS(NS,'path');
+  rim.setAttribute('d','M 0 -22 C 12 -22 13 -8 11 0 C 9 6 4 9 0 9 C -4 9 -9 6 -11 0 C -13 -8 -12 -22 0 -22 Z');
+  rim.setAttribute('fill','none');
+  rim.setAttribute('stroke','#3a2030');
+  rim.setAttribute('stroke-width','0.6');
+  rim.setAttribute('opacity','0.5');
+  envG.appendChild(rim);
+  // crown highlight
+  const crown = document.createElementNS(NS,'ellipse');
+  crown.setAttribute('cx','-2'); crown.setAttribute('cy','-18');
+  crown.setAttribute('rx','3'); crown.setAttribute('ry','1.5');
+  crown.setAttribute('fill','#ffffff');
+  crown.setAttribute('opacity','0.18');
+  envG.appendChild(crown);
+  g.appendChild(envG);
+  // ropes
+  const ropes = document.createElementNS(NS,'g');
+  ropes.setAttribute('stroke','#3a2620');
+  ropes.setAttribute('stroke-width','0.35');
+  ropes.setAttribute('opacity','0.7');
+  ropes.innerHTML = '<line x1="-4" y1="9" x2="-3" y2="15"/><line x1="0" y1="9" x2="0" y2="15"/><line x1="4" y1="9" x2="3" y2="15"/>';
+  g.appendChild(ropes);
+  // basket
+  const basket = document.createElementNS(NS,'rect');
+  basket.setAttribute('x','-3.4'); basket.setAttribute('y','15');
+  basket.setAttribute('width','6.8'); basket.setAttribute('height','3.4');
+  basket.setAttribute('fill','#5a3a20');
+  basket.setAttribute('stroke','#3a2410');
+  basket.setAttribute('stroke-width','0.35');
+  g.appendChild(basket);
+  // basket weave hint
+  const weave = document.createElementNS(NS,'line');
+  weave.setAttribute('x1','-3.4'); weave.setAttribute('y1','16.7');
+  weave.setAttribute('x2','3.4'); weave.setAttribute('y2','16.7');
+  weave.setAttribute('stroke','#3a2410');
+  weave.setAttribute('stroke-width','0.25');
+  weave.setAttribute('opacity','0.6');
+  g.appendChild(weave);
+  // passenger silhouette (head and shoulders above basket rim)
+  const passHead = document.createElementNS(NS,'circle');
+  passHead.setAttribute('cx','0'); passHead.setAttribute('cy','13.6');
+  passHead.setAttribute('r','0.7');
+  passHead.setAttribute('fill','#2a2010');
+  g.appendChild(passHead);
+  const passShoulder = document.createElementNS(NS,'rect');
+  passShoulder.setAttribute('x','-1.2'); passShoulder.setAttribute('y','14');
+  passShoulder.setAttribute('width','2.4'); passShoulder.setAttribute('height','1.2');
+  passShoulder.setAttribute('fill','#2a2010');
+  g.appendChild(passShoulder);
+  // burner glow flicker
+  const burner = document.createElementNS(NS,'circle');
+  burner.setAttribute('cx','0'); burner.setAttribute('cy','11');
+  burner.setAttribute('r','1.2');
+  burner.setAttribute('fill','#ffd58a');
+  burner.setAttribute('opacity','0');
+  g.appendChild(burner);
+
+  svg.appendChild(g);
+
+  let state = 'idle';
+  let stateStart = 0;
+  let dir = 1;
+  let yBase = 100;
+  let nextAt = performance.now() + (240 + Math.random()*420) * 1000; // 4-11 min first
+
+  function frame(ts){
+    if (state === 'idle'){
+      if (ts >= nextAt){
+        state = 'crossing';
+        stateStart = ts;
+        dir = Math.random() < 0.5 ? -1 : 1;
+        yBase = Y_BAND_TOP + Math.random() * (Y_BAND_BOT - Y_BAND_TOP);
+      } else {
+        g.setAttribute('opacity','0');
+      }
+    }
+    if (state === 'crossing'){
+      const t = (ts - stateStart) / DUR;
+      if (t >= 1){
+        state = 'idle';
+        g.setAttribute('opacity','0');
+        nextAt = ts + (540 + Math.random()*660) * 1000; // 9-20 min between
+      } else {
+        const x = (dir > 0)
+          ? -50 + t * SPAN
+          : 1250 - t * SPAN;
+        const y = yBase + Math.sin(t * Math.PI * 5) * 4 + Math.sin(ts*0.0006) * 1.4;
+        // tilt slightly with vertical motion
+        const tilt = Math.cos(t * Math.PI * 5) * 3;
+        g.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${tilt.toFixed(2)})`);
+        // burner flickers — short bursts
+        const phase = (ts * 0.0011 + Math.sin(ts*0.00031)*1.7) % 1;
+        const flick = phase < 0.06 ? Math.sin(phase/0.06 * Math.PI) : 0;
+        burner.setAttribute('opacity', flick.toFixed(2));
+        // edge fade
+        const u = t < 0.06 ? (t/0.06) : (t > 0.94 ? ((1-t)/0.06) : 1);
+        g.setAttribute('opacity', (0.94 * Math.min(1,u)).toFixed(2));
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('v0.5.282 hot air balloon armed');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
