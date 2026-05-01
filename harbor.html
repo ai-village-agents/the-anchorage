@@ -13378,6 +13378,107 @@
 })();
 
 
+// v0.5.218 drifting moonlight reflection — soft elongated pale-gold lozenge of glow on the surface beneath the moon, with shimmering inner bands that fade in and out and drift slowly with the tide
+(function(){
+  try {
+    const svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    const MX = 180;       // moon cx
+    const SY = 320;       // surface center
+    const layer = document.createElementNS('http://www.w3.org/2000/svg','g');
+    layer.setAttribute('id','moonReflection');
+    layer.setAttribute('pointer-events','none');
+    svg.appendChild(layer);
+    // outer soft glow lozenge (very faint, wide)
+    const outer = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    outer.setAttribute('cx', MX.toFixed(1));
+    outer.setAttribute('cy', SY.toFixed(1));
+    outer.setAttribute('rx','46');
+    outer.setAttribute('ry','22');
+    outer.setAttribute('fill','#e8d896');
+    outer.setAttribute('opacity','0.07');
+    layer.appendChild(outer);
+    // inner glow lozenge (smaller, brighter)
+    const inner = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    inner.setAttribute('cx', MX.toFixed(1));
+    inner.setAttribute('cy', SY.toFixed(1));
+    inner.setAttribute('rx','28');
+    inner.setAttribute('ry','12');
+    inner.setAttribute('fill','#f5e8b8');
+    inner.setAttribute('opacity','0.13');
+    layer.appendChild(inner);
+    // shimmer bands — 6 small horizontal ellipses that drift and fade
+    const POOL = 6;
+    const bands = [];
+    for(let i=0;i<POOL;i++){
+      const e = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+      e.setAttribute('cy', SY.toFixed(1));
+      e.setAttribute('rx','7');
+      e.setAttribute('ry','1.6');
+      e.setAttribute('fill','#fff5cc');
+      e.setAttribute('opacity','0');
+      layer.appendChild(e);
+      bands.push({el: e, t0: 0, dur: 0, x0: 0, drift: 0, active: false});
+    }
+    function fireBand(now){
+      for(const b of bands){
+        if(!b.active){
+          b.active = true;
+          b.t0 = now;
+          b.dur = 1800 + Math.random()*1600;
+          // place within the lozenge
+          b.x0 = MX + (Math.random()-0.5)*44;
+          b.drift = (Math.random()-0.5)*8;
+          return;
+        }
+      }
+    }
+    let nextBand = 0;
+    function tick(){
+      const now = performance.now();
+      // global slow drift (tide-like) — subtle horizontal swing of the whole reflection
+      const slowSwing = Math.sin(now/8000) * 6;
+      const slowRy = 22 + Math.sin(now/3200)*1.4;
+      const innerSwing = Math.sin(now/6700) * 3;
+      const innerRy = 12 + Math.sin(now/2400)*0.9;
+      outer.setAttribute('cx', (MX+slowSwing).toFixed(1));
+      outer.setAttribute('ry', slowRy.toFixed(2));
+      inner.setAttribute('cx', (MX+innerSwing).toFixed(1));
+      inner.setAttribute('ry', innerRy.toFixed(2));
+      // gentle pulse on inner opacity
+      const pulse = 0.10 + 0.05*Math.sin(now/1900);
+      inner.setAttribute('opacity', pulse.toFixed(3));
+      // spawn bands
+      if(now >= nextBand){
+        fireBand(now);
+        nextBand = now + 350 + Math.random()*900;
+      }
+      for(const b of bands){
+        if(b.active){
+          const u = (now - b.t0)/b.dur;
+          if(u >= 1){
+            b.active = false;
+            b.el.setAttribute('opacity','0');
+          } else {
+            const x = b.x0 + b.drift*u;
+            const y = SY + Math.sin(u*Math.PI*2 + b.t0/300)*1.4;
+            const env = Math.sin(u*Math.PI);
+            b.el.setAttribute('cx', x.toFixed(1));
+            b.el.setAttribute('cy', y.toFixed(1));
+            b.el.setAttribute('opacity', (env*0.42).toFixed(3));
+          }
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    console.log('[harbor v0.5.218] drifting moonlight reflection armed (soft pale-gold lozenge below the moon with shimmering inner bands)');
+  } catch(err){
+    try { console.error('[harbor v0.5.218] moonlight reflection init failed', err); } catch(e){}
+  }
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
