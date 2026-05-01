@@ -18149,6 +18149,122 @@
   try { console.log('[harbor v0.5.262] floating prayer lights armed (lotus-paper votive candles drift westward in clusters from the eastern shore)'); } catch(e){}
 })();
 
+// v0.5.263 submarine periscope — every once in a while a slim periscope rises from the surface, sweeps slowly side to side, and slips back under
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var Y_SURFACE = 318;
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'periscope');
+  g.setAttribute('pointer-events', 'none');
+  g.setAttribute('opacity', '0');
+
+  // shaft — thin vertical pole
+  var shaft = document.createElementNS(SVG_NS, 'rect');
+  shaft.setAttribute('x', '-0.45'); shaft.setAttribute('y', '-12');
+  shaft.setAttribute('width', '0.9'); shaft.setAttribute('height', '12');
+  shaft.setAttribute('fill', '#1d2330'); shaft.setAttribute('stroke', '#2a3950'); shaft.setAttribute('stroke-width', '0.2');
+  g.appendChild(shaft);
+  // head block — small rectangular prism
+  var hb = document.createElementNS(SVG_NS, 'g');
+  hb.setAttribute('id', 'periscopeHead');
+  var headRect = document.createElementNS(SVG_NS, 'rect');
+  headRect.setAttribute('x', '-1.6'); headRect.setAttribute('y', '-13.5');
+  headRect.setAttribute('width', '3.2'); headRect.setAttribute('height', '2.0');
+  headRect.setAttribute('rx', '0.3');
+  headRect.setAttribute('fill', '#2a3950'); headRect.setAttribute('stroke', '#0e141d'); headRect.setAttribute('stroke-width', '0.25');
+  hb.appendChild(headRect);
+  // small lens — black with cyan glint
+  var lens = document.createElementNS(SVG_NS, 'rect');
+  lens.setAttribute('x', '0.4'); lens.setAttribute('y', '-13.0');
+  lens.setAttribute('width', '1.0'); lens.setAttribute('height', '0.9');
+  lens.setAttribute('fill', '#0a0608');
+  hb.appendChild(lens);
+  var glint = document.createElementNS(SVG_NS, 'rect');
+  glint.setAttribute('x', '0.6'); glint.setAttribute('y', '-12.85');
+  glint.setAttribute('width', '0.3'); glint.setAttribute('height', '0.25');
+  glint.setAttribute('fill', '#9ec5fd'); glint.setAttribute('opacity', '0.85');
+  hb.appendChild(glint);
+  g.appendChild(hb);
+  // wake — V wake at the surface
+  var wakeL = document.createElementNS(SVG_NS, 'path');
+  wakeL.setAttribute('d', 'M -0.6,0 L -8,1.2');
+  wakeL.setAttribute('stroke', '#7ea4c0'); wakeL.setAttribute('stroke-width', '0.4'); wakeL.setAttribute('fill', 'none'); wakeL.setAttribute('opacity', '0.55');
+  g.appendChild(wakeL);
+  var wakeR = document.createElementNS(SVG_NS, 'path');
+  wakeR.setAttribute('d', 'M 0.6,0 L 8,1.2');
+  wakeR.setAttribute('stroke', '#7ea4c0'); wakeR.setAttribute('stroke-width', '0.4'); wakeR.setAttribute('fill', 'none'); wakeR.setAttribute('opacity', '0.55');
+  g.appendChild(wakeR);
+  // foam ring at base
+  var foam = document.createElementNS(SVG_NS, 'ellipse');
+  foam.setAttribute('cx', '0'); foam.setAttribute('cy', '0.5');
+  foam.setAttribute('rx', '2.2'); foam.setAttribute('ry', '0.5');
+  foam.setAttribute('fill', '#dde6f5'); foam.setAttribute('opacity', '0.6');
+  g.appendChild(foam);
+  svg.appendChild(g);
+
+  var headEl = document.getElementById('periscopeHead');
+
+  var state = 'idle';
+  var stateStart = 0;
+  var x = 0, dir = 1;
+  var nextAt = performance.now() + (320 + Math.random() * 360) * 1000;
+
+  function spawn(now){
+    state = 'rising';
+    stateStart = now;
+    dir = Math.random() < 0.5 ? 1 : -1;
+    x = 200 + Math.random() * 800;
+    g.setAttribute('opacity', '0');
+    g.setAttribute('transform', 'translate(' + x + ',' + Y_SURFACE + ')');
+  }
+
+  function tick(now){
+    if (state === 'idle') {
+      if (now >= nextAt) spawn(now);
+    } else if (state === 'rising') {
+      var t = (now - stateStart) / 1400;
+      if (t >= 1) { state = 'sweeping'; stateStart = now; }
+      else {
+        // shaft scales from 0 height to full
+        shaft.setAttribute('y', (-12 * t).toFixed(2));
+        shaft.setAttribute('height', (12 * t).toFixed(2));
+        var hy = -13.5 * t;
+        headEl.setAttribute('transform', 'translate(0,' + (-13.5 * (1 - t)).toFixed(2) + ')');
+        g.setAttribute('opacity', (0.85 * t).toFixed(2));
+      }
+    } else if (state === 'sweeping') {
+      var elapsed = now - stateStart;
+      var dur = 5500;
+      if (elapsed >= dur) { state = 'descending'; stateStart = now; }
+      else {
+        // head rotates side to side; periscope crawls horizontally slowly
+        var rot = Math.sin(elapsed * 0.0014) * 22;
+        headEl.setAttribute('transform', 'translate(0,0) rotate(' + rot.toFixed(2) + ')');
+        x += dir * 0.012 * 16.7;
+        g.setAttribute('transform', 'translate(' + x.toFixed(2) + ',' + Y_SURFACE + ')');
+      }
+    } else if (state === 'descending') {
+      var t = (now - stateStart) / 1100;
+      if (t >= 1) {
+        state = 'idle';
+        g.setAttribute('opacity', '0');
+        nextAt = now + (320 + Math.random() * 360) * 1000;
+      } else {
+        var k = 1 - t;
+        shaft.setAttribute('y', (-12 * k).toFixed(2));
+        shaft.setAttribute('height', (12 * k).toFixed(2));
+        headEl.setAttribute('transform', 'translate(0,' + (-13.5 * (1 - k)).toFixed(2) + ')');
+        g.setAttribute('opacity', (0.85 * k).toFixed(2));
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  try { console.log('[harbor v0.5.263] submarine periscope armed (rare slim periscope rises, sweeps lens side to side, then slips back under)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
