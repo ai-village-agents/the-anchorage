@@ -13156,6 +13156,110 @@
 })();
 
 
+// v0.5.216 storm cell lightning bolt — when the storm cell is present, occasionally fire a jagged white-blue bolt from the cloud underbelly down to the surface
+(function(){
+  try {
+    const svg = document.querySelector('.harbor-svg');
+    if(!svg) return;
+    const Y_HORIZON = 296;
+    const layer = document.createElementNS('http://www.w3.org/2000/svg','g');
+    layer.setAttribute('id','stormCellBolt');
+    layer.setAttribute('pointer-events','none');
+    svg.appendChild(layer);
+    const halo = document.createElementNS('http://www.w3.org/2000/svg','path');
+    halo.setAttribute('stroke','#cfe0ff');
+    halo.setAttribute('stroke-width','5');
+    halo.setAttribute('fill','none');
+    halo.setAttribute('opacity','0');
+    halo.setAttribute('stroke-linecap','round');
+    halo.setAttribute('stroke-linejoin','round');
+    layer.appendChild(halo);
+    const bolt = document.createElementNS('http://www.w3.org/2000/svg','path');
+    bolt.setAttribute('stroke','#ecf3ff');
+    bolt.setAttribute('stroke-width','1.6');
+    bolt.setAttribute('fill','none');
+    bolt.setAttribute('opacity','0');
+    bolt.setAttribute('stroke-linecap','round');
+    bolt.setAttribute('stroke-linejoin','round');
+    layer.appendChild(bolt);
+    let nextBolt = performance.now() + 30000 + Math.random()*60000;
+    let flashing = false;
+    let flashStart = 0;
+    let flashDur = 0;
+    function readCellCenter(){
+      const cellLayer = document.getElementById('stormCellLayer');
+      if(!cellLayer) return null;
+      const cloud = cellLayer.firstElementChild;
+      if(!cloud) return null;
+      const op = parseFloat(cloud.getAttribute('opacity')||'0');
+      if(op < 0.4) return null;
+      const t = cloud.getAttribute('transform')||'';
+      const m = t.match(/translate\(\s*([\-0-9.]+)/);
+      const drift = m ? parseFloat(m[1]) : 0;
+      let sx=0, n=0, maxY = -Infinity;
+      for(const child of cloud.children){
+        if(child.tagName && child.tagName.toLowerCase() === 'ellipse'){
+          const cx = parseFloat(child.getAttribute('cx')||'0');
+          const cy = parseFloat(child.getAttribute('cy')||'0');
+          const ry = parseFloat(child.getAttribute('ry')||'0');
+          sx += cx; n++;
+          if(cy + ry > maxY) maxY = cy + ry;
+        }
+      }
+      if(n===0) return null;
+      return { x: sx/n + drift + (Math.random()-0.5)*40, y: maxY + 2 };
+    }
+    function makeBoltPath(x, y){
+      const xEnd = x + (Math.random()-0.5)*70;
+      const dy = Y_HORIZON - y;
+      const seg = 7;
+      let d = 'M ' + x.toFixed(1) + ' ' + y.toFixed(1);
+      for(let i=1;i<=seg;i++){
+        const t = i/seg;
+        const cx = x + (xEnd-x)*t + (Math.random()-0.5)*22;
+        const cy = y + dy*t;
+        d += ' L ' + cx.toFixed(1) + ' ' + cy.toFixed(1);
+      }
+      return d;
+    }
+    function tick(){
+      const now = performance.now();
+      if(!flashing && now >= nextBolt){
+        const c = readCellCenter();
+        if(c){
+          const d = makeBoltPath(c.x, c.y);
+          bolt.setAttribute('d', d);
+          halo.setAttribute('d', d);
+          flashing = true;
+          flashStart = now;
+          flashDur = 240 + Math.random()*200;
+        } else {
+          nextBolt = now + 6000 + Math.random()*8000;
+        }
+      }
+      if(flashing){
+        const fu = (now - flashStart)/flashDur;
+        if(fu >= 1){
+          bolt.setAttribute('opacity','0');
+          halo.setAttribute('opacity','0');
+          flashing = false;
+          nextBolt = now + 14000 + Math.random()*30000;
+        } else {
+          const blink = Math.sin(fu*Math.PI*3) * (1-fu);
+          bolt.setAttribute('opacity', Math.max(0, blink).toFixed(3));
+          halo.setAttribute('opacity', Math.max(0, blink*0.6).toFixed(3));
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    console.log('[harbor v0.5.216] storm cell lightning bolt armed (jagged bolt from cloud to surface when storm cell is present)');
+  } catch(err){
+    try { console.error('[harbor v0.5.216] storm cell lightning bolt init failed', err); } catch(e){}
+  }
+})();
+
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
