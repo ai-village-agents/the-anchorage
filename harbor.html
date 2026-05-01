@@ -19812,6 +19812,110 @@
   console.log('[harbor v0.5.276] eastern tide gauge armed (slim staff at eastern shore)');
 })();
 
+// v0.5.277 lighthouse keeper boat — small motorboat motors out from the west lighthouse and back periodically
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(SVGNS, 'g');
+  g.setAttribute('id','keeperBoat');
+  g.setAttribute('pointer-events','none');
+  // West lighthouse at (240,220), islet base ~ y=236.
+  // Boat moors at HOME (270, 320) just east of the islet, motors east and back.
+  const HOME_X = 270;
+  const FAR_X = 380;
+  const BOAT_Y = 320;
+  // Hull: small dark skiff, about 16 px wide
+  g.innerHTML = [
+    // wake polyline behind
+    '<polyline id="keeperWake" fill="none" stroke="#cfe0f3" stroke-width="0.5" stroke-linecap="round" opacity="0.55" points=""/>',
+    '<g id="keeperBody">',
+      // hull
+      '<path d="M -8 0 L 8 0 L 6.5 2.4 L -6.5 2.4 Z" fill="#221d18"/>',
+      // gunwale stripe
+      '<path d="M -8 0 L 8 0" stroke="#5a4736" stroke-width="0.4"/>',
+      // small cabin block
+      '<rect x="-2.2" y="-2.6" width="4.6" height="2.6" fill="#3a2f24"/>',
+      // tiny roof window light (yellow)
+      '<rect x="-1.0" y="-2.0" width="1.4" height="1.0" fill="#ffd58a" opacity="0.85"/>',
+      // outboard motor at stern
+      '<rect x="-9" y="-0.8" width="1.4" height="2.4" fill="#1a1410"/>',
+      // bow light (white)
+      '<circle cx="7.8" cy="-0.6" r="0.6" fill="#ffffff" opacity="0.9"/>',
+      // tiny standing keeper figure
+      '<rect x="2.6" y="-3.6" width="1.0" height="2.4" fill="#2a2620"/>',
+      '<circle cx="3.1" cy="-4.0" r="0.55" fill="#2a2620"/>',
+    '</g>'
+  ].join('');
+  svg.appendChild(g);
+  const body = g.querySelector('#keeperBody');
+  const wake = g.querySelector('#keeperWake');
+  // Motion: idle at HOME for a while, motor out to FAR over OUT_DUR, idle there briefly, return.
+  // States: 'idle_home', 'going_out', 'idle_far', 'going_back'
+  let state = 'idle_home';
+  let nextTransition = performance.now() + 8000 + Math.random()*22000;
+  const OUT_DUR = 26000;
+  const FAR_IDLE = 6000 + Math.random()*8000;
+  let segStart = 0, segFromX = HOME_X, segToX = HOME_X;
+  let curX = HOME_X;
+  const wakePts = []; // [x,y,t]
+  let lastSample = 0;
+  function frame(now){
+    let t;
+    if(state === 'idle_home' || state === 'idle_far'){
+      curX = (state === 'idle_home') ? HOME_X : FAR_X;
+      if(now > nextTransition){
+        if(state === 'idle_home'){ state = 'going_out'; segFromX = HOME_X; segToX = FAR_X; segStart = now; }
+        else { state = 'going_back'; segFromX = FAR_X; segToX = HOME_X; segStart = now; }
+      }
+    } else {
+      t = (now - segStart) / OUT_DUR;
+      if(t >= 1){
+        curX = segToX;
+        if(state === 'going_out'){ state = 'idle_far'; nextTransition = now + FAR_IDLE; }
+        else { state = 'idle_home'; nextTransition = now + 90000 + Math.random()*150000; } // long pause between trips
+      } else {
+        // ease in/out
+        const e = t<0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+        curX = segFromX + (segToX - segFromX) * e;
+      }
+    }
+    // gentle vertical bob
+    const bob = Math.sin(now/680) * 0.4;
+    // small heading tilt when moving
+    let tilt = 0;
+    if(state === 'going_out') tilt = 2;
+    else if(state === 'going_back') tilt = -2;
+    // Reverse the boat for going back (face east/west)
+    let scaleX = 1;
+    if(state === 'going_back' || state === 'idle_home') scaleX = 1; // by default boat faces east
+    // Actually — when returning we want the boat to face west. Use scaleX=-1 then.
+    if(state === 'going_back') scaleX = -1;
+    body.setAttribute('transform','translate('+curX.toFixed(2)+','+(BOAT_Y+bob).toFixed(2)+') scale('+scaleX+',1) rotate('+tilt+')');
+    // wake samples while moving
+    if(state === 'going_out' || state === 'going_back'){
+      if(now - lastSample > 240){
+        wakePts.push([curX, BOAT_Y+bob+1.5, now]);
+        lastSample = now;
+      }
+    }
+    // age out wake
+    while(wakePts.length && now - wakePts[0][2] > 9000) wakePts.shift();
+    if(wakePts.length){
+      const pts = wakePts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+      wake.setAttribute('points', pts);
+      // age opacity averaging
+      const avgAge = (now - wakePts[0][2]) / 9000;
+      wake.setAttribute('opacity', (0.55 * (1 - avgAge*0.6)).toFixed(2));
+    } else {
+      wake.setAttribute('points','');
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.277] lighthouse keeper boat armed (motors east from the west lighthouse and back)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
