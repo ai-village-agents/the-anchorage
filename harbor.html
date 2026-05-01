@@ -17561,6 +17561,109 @@
   try { console.log('[harbor v0.5.257] vertical-drift moon jelly armed (slow descent through every substrate, ~9 min cycle)'); } catch(e){}
 })();
 
+// v0.5.258 barnacled drifting log — a 5th driftwood log with a cluster of barnacles attached
+(function(){
+  var svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('id', 'barnacledLog');
+  g.setAttribute('pointer-events', 'none');
+  // log body — slightly longer and chunkier than the others
+  var log = document.createElementNS(SVG_NS, 'rect');
+  log.setAttribute('x', '-22'); log.setAttribute('y', '-2.6');
+  log.setAttribute('width', '44'); log.setAttribute('height', '5');
+  log.setAttribute('rx', '2.2'); log.setAttribute('ry', '2.2');
+  log.setAttribute('fill', '#3d2e22'); log.setAttribute('stroke', '#241a12'); log.setAttribute('stroke-width', '0.4');
+  g.appendChild(log);
+  // grain lines
+  var grain = document.createElementNS(SVG_NS, 'path');
+  grain.setAttribute('d', 'M -19,-0.6 L 19,-0.6 M -17,1.2 L 17,1.2');
+  grain.setAttribute('stroke', '#241a12'); grain.setAttribute('stroke-width', '0.3'); grain.setAttribute('opacity', '0.6');
+  g.appendChild(grain);
+  // wet end caps
+  var capL = document.createElementNS(SVG_NS, 'ellipse');
+  capL.setAttribute('cx', '-22'); capL.setAttribute('cy', '0'); capL.setAttribute('rx', '1.2'); capL.setAttribute('ry', '2.5');
+  capL.setAttribute('fill', '#1f1810'); g.appendChild(capL);
+  var capR = document.createElementNS(SVG_NS, 'ellipse');
+  capR.setAttribute('cx', '22'); capR.setAttribute('cy', '0'); capR.setAttribute('rx', '1.2'); capR.setAttribute('ry', '2.5');
+  capR.setAttribute('fill', '#1f1810'); g.appendChild(capR);
+  // barnacle cluster — small white-grey cones with dark openings
+  var cluster = document.createElementNS(SVG_NS, 'g');
+  var positions = [
+    [-12, -2.4, 1.0], [-9, -2.7, 1.3], [-6, -2.5, 0.9],
+    [-10.5, -2.3, 0.8], [-7.5, -2.2, 0.7],
+    [3, -2.6, 1.1], [5.5, -2.4, 0.9], [8, -2.7, 1.0], [6.5, -2.2, 0.7],
+    [-3, -2.3, 0.8], [-1, -2.2, 0.7], [1, -2.4, 0.9],
+    [11, -2.3, 0.8], [13, -2.5, 1.0]
+  ];
+  for (var i=0; i<positions.length; i++) {
+    var bx = positions[i][0], by = positions[i][1], br = positions[i][2];
+    var bg = document.createElementNS(SVG_NS, 'g');
+    bg.setAttribute('transform', 'translate(' + bx + ',' + by + ')');
+    var shell = document.createElementNS(SVG_NS, 'path');
+    shell.setAttribute('d', 'M ' + (-br).toFixed(2) + ',0 Q ' + (-br*0.6).toFixed(2) + ',' + (-br*1.6).toFixed(2) + ' 0,' + (-br*1.7).toFixed(2) + ' Q ' + (br*0.6).toFixed(2) + ',' + (-br*1.6).toFixed(2) + ' ' + br.toFixed(2) + ',0 Z');
+    shell.setAttribute('fill', '#cfc8b8'); shell.setAttribute('stroke', '#5a4f3e'); shell.setAttribute('stroke-width', '0.25');
+    bg.appendChild(shell);
+    var slit = document.createElementNS(SVG_NS, 'line');
+    slit.setAttribute('x1', '0'); slit.setAttribute('y1', (-br*1.5).toFixed(2));
+    slit.setAttribute('x2', '0'); slit.setAttribute('y2', (-br*0.4).toFixed(2));
+    slit.setAttribute('stroke', '#3a2e1e'); slit.setAttribute('stroke-width', '0.3');
+    bg.appendChild(slit);
+    cluster.appendChild(bg);
+  }
+  g.appendChild(cluster);
+  // a tiny tuft of seaweed snagged on top
+  var tuft = document.createElementNS(SVG_NS, 'path');
+  tuft.setAttribute('d', 'M -16,-2.6 q 0.4,-2.2 1.6,-2.8 m 0.6,0.4 q 0.6,-1.4 -0.4,-2.2');
+  tuft.setAttribute('stroke', '#3a5a30'); tuft.setAttribute('stroke-width', '0.4'); tuft.setAttribute('fill', 'none'); tuft.setAttribute('opacity', '0.7');
+  g.appendChild(tuft);
+  svg.appendChild(g);
+
+  var Y_SURFACE = 318;
+  var state = 'idle', x = 0, y = Y_SURFACE, dir = 1, baseY = Y_SURFACE, t0 = 0;
+  var SPEED = 0.011;
+  var nextAt = performance.now() + (140 + Math.random()*180) * 1000;
+  g.setAttribute('opacity', '0');
+
+  function spawn(now){
+    dir = Math.random() < 0.5 ? 1 : -1;
+    x = dir > 0 ? -50 : 1250;
+    SPEED = 0.0085 + Math.random() * 0.005;
+    state = 'crossing';
+    t0 = now;
+    g.setAttribute('opacity', '0.9');
+  }
+
+  function tick(now){
+    if (state === 'idle') {
+      if (now >= nextAt) spawn(now);
+    } else if (state === 'crossing') {
+      x += dir * SPEED * 16.7;
+      var bob = Math.sin((now - t0) * 0.0017) * 0.7;
+      var roll = Math.sin((now - t0) * 0.001) * 4;
+      var fade = 1;
+      if (dir > 0) {
+        if (x < 60) fade = Math.max(0, x / 60);
+        if (x > 1140) fade = Math.max(0, (1200 - x) / 60);
+      } else {
+        if (x > 1140) fade = Math.max(0, (1200 - x) / 60);
+        if (x < 60) fade = Math.max(0, x / 60);
+      }
+      g.setAttribute('opacity', (0.9 * fade).toFixed(2));
+      g.setAttribute('transform', 'translate(' + x.toFixed(2) + ',' + (Y_SURFACE + bob).toFixed(2) + ') rotate(' + roll.toFixed(2) + ') scale(' + (dir > 0 ? 1 : -1) + ',1)');
+      if ((dir > 0 && x > 1260) || (dir < 0 && x < -60)) {
+        state = 'idle';
+        g.setAttribute('opacity', '0');
+        nextAt = now + (140 + Math.random()*180) * 1000;
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  try { console.log('[harbor v0.5.258] barnacled drifting log armed (5th driftwood, with shell cluster + seaweed tuft)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
