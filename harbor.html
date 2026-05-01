@@ -19279,6 +19279,118 @@
   } catch(e){ try { console.warn('[harbor v0.5.271] error', e); } catch(_){} }
 })();
 
+// v0.5.272 skua chasing gull — every several minutes a fast dark skua/jaeger swoops in and chases a fleeing gull across the sky, the gull jukes left/right while the skua weaves
+(function(){
+  try {
+    var svg = document.querySelector('.harbor-svg');
+    if (!svg) return;
+    var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('id','skuaChase');
+    g.setAttribute('opacity','0');
+    g.style.pointerEvents = 'none';
+    svg.appendChild(g);
+
+    // Gull (target) — light grey
+    var gull = document.createElementNS('http://www.w3.org/2000/svg','g');
+    var gullBody = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    gullBody.setAttribute('rx', 2.4);
+    gullBody.setAttribute('ry', 0.7);
+    gullBody.setAttribute('fill', '#cdd5dd');
+    gull.appendChild(gullBody);
+    var gullW1 = document.createElementNS('http://www.w3.org/2000/svg','path');
+    gullW1.setAttribute('stroke', '#a6b0bd');
+    gullW1.setAttribute('stroke-width', '0.7');
+    gullW1.setAttribute('fill', 'none');
+    gull.appendChild(gullW1);
+    var gullW2 = document.createElementNS('http://www.w3.org/2000/svg','path');
+    gullW2.setAttribute('stroke', '#a6b0bd');
+    gullW2.setAttribute('stroke-width', '0.7');
+    gullW2.setAttribute('fill', 'none');
+    gull.appendChild(gullW2);
+    g.appendChild(gull);
+
+    // Skua (predator) — darker
+    var skua = document.createElementNS('http://www.w3.org/2000/svg','g');
+    var sbody = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    sbody.setAttribute('rx', 2.6);
+    sbody.setAttribute('ry', 0.8);
+    sbody.setAttribute('fill', '#3a3640');
+    skua.appendChild(sbody);
+    var sw1 = document.createElementNS('http://www.w3.org/2000/svg','path');
+    sw1.setAttribute('stroke', '#2a2630');
+    sw1.setAttribute('stroke-width', '0.8');
+    sw1.setAttribute('fill', 'none');
+    skua.appendChild(sw1);
+    var sw2 = document.createElementNS('http://www.w3.org/2000/svg','path');
+    sw2.setAttribute('stroke', '#2a2630');
+    sw2.setAttribute('stroke-width', '0.8');
+    sw2.setAttribute('fill', 'none');
+    skua.appendChild(sw2);
+    // Skua has slight beak
+    var beak = document.createElementNS('http://www.w3.org/2000/svg','path');
+    beak.setAttribute('d','M 2.6,0 L 4.0,0.3 L 2.6,0.6 Z');
+    beak.setAttribute('fill', '#1a1620');
+    skua.appendChild(beak);
+    g.appendChild(skua);
+
+    var active = false;
+    var startTs = 0;
+    var DUR = 8500; // ms
+    var dir = 1;
+    var startX = 0, endX = 0;
+    var Y_BASE = 110; // mid-sky
+    var nextAt = performance.now() + (60 + Math.random()*180) * 1000;
+
+    function startChase(ts){
+      active = true;
+      startTs = ts;
+      dir = Math.random() < 0.5 ? -1 : 1;
+      startX = dir > 0 ? -30 : 1230;
+      endX = dir > 0 ? 1230 : -30;
+      g.setAttribute('opacity','1');
+    }
+
+    function frame(ts){
+      if (!active) {
+        if (ts >= nextAt) startChase(ts);
+        requestAnimationFrame(frame);
+        return;
+      }
+      var t = (ts - startTs) / DUR;
+      if (t >= 1) {
+        active = false;
+        g.setAttribute('opacity','0');
+        nextAt = ts + (180 + Math.random()*420) * 1000;
+        requestAnimationFrame(frame);
+        return;
+      }
+      // gull leads, skua trails by ~20 px in direction of motion
+      var gullX = startX + (endX - startX) * t;
+      // gull jukes — high-frequency lateral jukes
+      var gullY = Y_BASE + Math.sin(ts/220) * 8 + Math.sin(ts/720) * 14 - 6 * t * (1-t) * 4;
+      var gullTilt = dir * (Math.cos(ts/220) * 18);
+      gull.setAttribute('transform','translate('+gullX+','+gullY+') scale('+dir+',1) rotate('+gullTilt+')');
+      var wf = (Math.floor(ts/110) % 2) === 0;
+      // gull wings flap up/down
+      gullW1.setAttribute('d', wf ? 'M -1.6,-0.2 q -2,-1 -3.5,-0.5' : 'M -1.6,-0.2 q -2,1.6 -3.5,0.5');
+      gullW2.setAttribute('d', wf ? 'M 1.6,-0.2 q 2,-1 3.5,-0.5' : 'M 1.6,-0.2 q 2,1.6 3.5,0.5');
+
+      // skua trails the gull and weaves with offset frequency
+      var skuaX = gullX - dir * (24 + Math.sin(ts/430) * 6);
+      var skuaY = gullY + Math.sin(ts/340 + 1.2) * 6 + 3;
+      var skuaTilt = dir * (Math.cos(ts/200) * 22);
+      skua.setAttribute('transform','translate('+skuaX+','+skuaY+') scale('+dir+',1) rotate('+skuaTilt+')');
+      var swf = (Math.floor(ts/95) % 2) === 0; // faster wingbeat
+      sw1.setAttribute('d', swf ? 'M -1.8,-0.2 q -2.2,-1.2 -4.0,-0.6' : 'M -1.8,-0.2 q -2.2,1.8 -4.0,0.6');
+      sw2.setAttribute('d', swf ? 'M 1.8,-0.2 q 2.2,-1.2 4.0,-0.6' : 'M 1.8,-0.2 q 2.2,1.8 4.0,0.6');
+
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    try { console.log('[harbor v0.5.272] skua chase armed (every several minutes a fast dark skua chases a fleeing gull across the sky with the gull juking and the skua weaving)'); } catch(e){}
+  } catch(e){ try { console.warn('[harbor v0.5.272] error', e); } catch(_){} }
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
