@@ -14139,6 +14139,126 @@
   console.log('[harbor v0.5.225] jelly bloom drift armed (whole cluster sways horizontally ±240px on a 4-minute cycle)');
 })();
 
+// v0.5.226 anchor chain glow when laid — when the user clicks DROP ANCHOR, the chain glows gold and a pulse-bead travels down the chain
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const chain = document.getElementById('chainLine');
+  const chainGroup = document.getElementById('chainGroup');
+  if (!chain || !chainGroup) return;
+  // Insert a glow line beneath the chain (parent prepend within chainGroup)
+  const glow = document.createElementNS(NS,'line');
+  glow.setAttribute('id','chainGlowLine');
+  glow.setAttribute('stroke','#f5c067');
+  glow.setAttribute('stroke-width','7');
+  glow.setAttribute('stroke-linecap','round');
+  glow.setAttribute('opacity','0');
+  glow.setAttribute('pointer-events','none');
+  glow.setAttribute('filter','blur(0.4px)');
+  chainGroup.insertBefore(glow, chainGroup.firstChild);
+  // A bright travelling bead that runs along the chain when active
+  const bead = document.createElementNS(NS,'circle');
+  bead.setAttribute('id','chainGlowBead');
+  bead.setAttribute('r','4.5');
+  bead.setAttribute('fill','#fff5c8');
+  bead.setAttribute('opacity','0');
+  bead.setAttribute('pointer-events','none');
+  chainGroup.appendChild(bead);
+  // Also keep a small stash of fading "spark drops" that fall off the chain when active
+  const SPARK_POOL = 8;
+  const sparks = [];
+  for (let i=0;i<SPARK_POOL;i++){
+    const sp = document.createElementNS(NS,'circle');
+    sp.setAttribute('r','1.6');
+    sp.setAttribute('fill','#ffe9a8');
+    sp.setAttribute('opacity','0');
+    sp.setAttribute('pointer-events','none');
+    chainGroup.appendChild(sp);
+    sparks.push({node:sp, t0:0, life:0, x:0, y0:0, vy:0});
+  }
+  // Detect activity by watching y2 deltas
+  let prevY2 = parseFloat(chain.getAttribute('y2')) || 265;
+  let activeUntil = 0;            // ms timestamp
+  let beadStart = 0;              // ms when current bead pass started
+  let nextSparkIdx = 0;
+  // smoothing factor for activity decay
+  function frame(now){
+    const x1 = parseFloat(chain.getAttribute('x1')) || 600;
+    const x2 = parseFloat(chain.getAttribute('x2')) || 600;
+    const y1 = parseFloat(chain.getAttribute('y1')) || 265;
+    const y2 = parseFloat(chain.getAttribute('y2')) || 265;
+    const dy = y2 - prevY2;
+    prevY2 = y2;
+    if (dy > 0.3 && y2 > y1 + 4){
+      // descending — extend active window
+      activeUntil = now + 280;     // glow lingers ~280ms after motion stops
+      if (beadStart === 0) beadStart = now;
+    }
+    const active = now < activeUntil;
+    // Glow line follows chain geometry
+    glow.setAttribute('x1', x1);
+    glow.setAttribute('y1', y1);
+    glow.setAttribute('x2', x2);
+    glow.setAttribute('y2', y2);
+    // Glow opacity and width breathe with activity
+    if (active){
+      const breath = 0.55 + 0.25 * Math.sin(now*0.012);
+      glow.setAttribute('opacity', breath.toFixed(3));
+      glow.setAttribute('stroke-width', (8 + Math.sin(now*0.018)*2).toFixed(2));
+    } else {
+      // fade after activity stops
+      const cur = parseFloat(glow.getAttribute('opacity')) || 0;
+      const next = Math.max(0, cur - 0.04);
+      glow.setAttribute('opacity', next.toFixed(3));
+      if (next < 0.001) beadStart = 0;
+    }
+    // Travelling bead: 1 second per pass top-to-anchor, repeats
+    if (active && y2 > y1 + 8){
+      const phase = ((now - beadStart) % 1100) / 1100;
+      const bx = x1 + (x2 - x1) * phase;
+      const by = y1 + (y2 - y1) * phase;
+      bead.setAttribute('cx', bx);
+      bead.setAttribute('cy', by);
+      bead.setAttribute('opacity', (0.9 - 0.5*phase).toFixed(3));
+      // Occasionally spawn a falling spark from the bead
+      if (Math.random() < 0.10){
+        const sp = sparks[nextSparkIdx];
+        nextSparkIdx = (nextSparkIdx + 1) % SPARK_POOL;
+        sp.t0 = now;
+        sp.life = 600 + Math.random()*500;
+        sp.x = bx + (Math.random()-0.5)*3;
+        sp.y0 = by;
+        sp.vy = 0.04 + Math.random()*0.05;
+        sp.node.setAttribute('cx', sp.x.toFixed(2));
+        sp.node.setAttribute('cy', sp.y0.toFixed(2));
+        sp.node.setAttribute('opacity','0.9');
+      }
+    } else {
+      bead.setAttribute('opacity','0');
+    }
+    // Update sparks
+    for (let i=0;i<SPARK_POOL;i++){
+      const sp = sparks[i];
+      if (sp.life > 0){
+        const age = now - sp.t0;
+        if (age >= sp.life){
+          sp.life = 0;
+          sp.node.setAttribute('opacity','0');
+        } else {
+          const k = age / sp.life;
+          const y = sp.y0 + sp.vy * age;
+          sp.node.setAttribute('cy', y.toFixed(2));
+          sp.node.setAttribute('opacity', (0.9 * (1-k)).toFixed(3));
+        }
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  console.log('[harbor v0.5.226] anchor chain glow armed (gold pulse + travelling bead + sparks while DROP ANCHOR is descending)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
