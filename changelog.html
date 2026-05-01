@@ -358,6 +358,38 @@
     <span class="cl-msg">harbor: <strong>nudibranch on rock</strong>. A small dark rock now sits on the seafloor of fc-1 (path M716,720 Q720,705 730,704 Q745,701 755,705 Q770,710 772,720 Z, #1a2330), and a tiny purple-and-orange nudibranch crawls slowly back and forth along its top. The body is rx=3.6 ry=1.4 with a #a045a0 fill and #4a1450 stroke; the mantle is edged in warm orange (#ffae5a, sw=0.45); three pale cerata (#fff5cc) dot its back and two rhinophore antennae sit up front. It moves at 0.0035 px/ms across x=722-766, following the rock's arc (peak y≈702.9), reverses direction at each edge with a 2-5 s pause, and occasionally pauses to graze. v0.5.250 — a small colorful sea slug to mark the milestone. <span class="sha">commit 194cef1</span></span>
   </div>
 
+  <div class="cl-section">dawn — a pelican skims and dips, the vent crackles with amphipods, a drone slips through the deep, a whale's song travels down through every layer, a whale shark cruises the boundary, and a ghost ship crosses the horizon</div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.251</span>
+    <span class="cl-msg">harbor: <strong>surface-skimming pelican</strong>. A low pelican (id=skimmingPelican) periodically crosses the harbor at flight altitude Y=298, just above the surface (Y_SURFACE=318). Body rx=8 ry=2.6 #3a3640, head rx=3 ry=2.2 at (7.6,-1), long beak path 'M 10,-0.4 L 19,2.6 L 16,3.4 L 10,1.1 Z' #4a4046. Two wings (paths q-3,0 / q2,0.6) toggle every 220ms. State machine cycles idle→approaching→diving (360ms ease-in to DIP_Y=313)→skimming (120ms with beak in water)→recovering (540ms ease-out)→approaching, performing 1-3 dips per crossing. On each dip a 55% chance the pelican comes up with a small fish (rx=1.5 ry=0.55 #b5c4cc op 0.95) in its beak. Each dip leaves two splash rings (rx 1→23, ry 0.4→4.4, dur 1100ms) on the surface. Speed 0.055-0.075 px/ms, nextAt 200-460s. v0.5.251 — a working bird at the surface. <span class="sha">commit 50c8d5a</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.252</span>
+    <span class="cl-msg">harbor: <strong>bioluminescent amphipod swarm</strong>. A persistent cloud of 16 tiny pale crustaceans (id=ventAmphipods) now orbits the hydrothermal vent at (320,2340). Each amphipod is rx=0.7 ry=0.4 #d6f5ff, sitting r=18-48 px from vent center with its own angular velocity ±0.0006-0.0015 rad/ms and yOff -0..-16 px. Wobble amp 1.4-4.0, freq 0.0014-0.0028. Each one flickers every 1.8-5.4 s for 320-540 ms (op +0.35 above its 0.55-0.87 baseline). No nextAt — they are always present, a constant tiny crackle of life around the vent. v0.5.252 — the deepest layer breathes. <span class="sha">commit 83defc3</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.253</span>
+    <span class="cl-msg">harbor: <strong>underwater drone glider</strong>. A sleek autonomous drone (id=underwaterDrone) now slowly traverses fc-4 at y=1640-1860. Hull rx=11 ry=2.4 #2c3340 stroke #4a5468; nose rx=2 ry=1.6 #3a4658 at (9.5,-0.2); a small dorsal fin path; tail rect 2.2x2.4 #1d2330; side stripe rect 16x0.4 #5a6678. A red status LED at (3,-1.2) — circle r=0.5 with halo r=1.4 #ff6060/#ff8080 — blinks 600 ms on / 1100 ms off. A faint bubble trail (#7c95a8 r=0.5→0.9, lifetime 2400-4000 ms, drift up at -0.012-0.022 px/ms) emits every 700-1200 ms behind it. Speed 0.025-0.043 px/ms, nextAt 240-500s. v0.5.253 — a machine in the wayback layer. <span class="sha">commit 716a89d</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.254</span>
+    <span class="cl-msg">harbor: <strong>whale song echolocation pulse</strong>. Occasionally an unseen source somewhere in fc-1 (ox 200-1000, oy 380-620) emits a downward-traveling pulse (id=whaleSongPulse): three nested rings (#a8d4e6 / #90c4d8 / #7eb6ca, sw=0.9, fill=none) each 820 ms apart, each ring rx 3→283 and ry 0.8→22.8 over dur=5400 ms. The cy of each ring descends from oy down to oy + 1700, traveling all the way through every substrate to fc-5. Op fades in over the first 12% then fades out to 0. nextAt 90-240s. v0.5.254 — a sound passing through every layer. <span class="sha">commit 76d0a85</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.255</span>
+    <span class="cl-msg">harbor: <strong>passing whale shark</strong>. A large slow whale shark (id=whaleShark) now occasionally cruises the fc-2/fc-3 boundary at Y 1100-1220. Body rx=40 ry=7.5 #324050; pale belly rx=32 ry=3.2 at (-2,3.4) #3e4e60; head rx=12 ry=5.2 at (30,-0.5); crescent tail path 'M -38,0 L -52,-7 L -47,0 L -52,7 Z'; small dorsal/pectoral/anal fins #283340; 19 white spots (#7a8898 op 0.55 r=0.8) scattered across body; a tiny eye r=0.5 at (36,-1.5). Edge fade 80 px. Base op 0.85, speed 0.010-0.015 px/ms, nextAt 360-720s. v0.5.255 — the boundary has its own giant. <span class="sha">commit b4a4660</span></span>
+  </div>
+
+  <div class="cl-row">
+    <span class="cl-ver">v0.5.256</span>
+    <span class="cl-msg">harbor: <strong>ghost tall ship</strong>. Very rarely a faint three-masted ghost ship (id=ghostShip) crosses the far horizon at Y_HORIZON=292 and fades away again. A narrow hull path with a curved keel (#3a4a5e); three masts at x -12/0/12 stroke 0.6; six square sails (#52647a op 0.7), two per mast; a bowsprit; a single warm stern lantern (circle r=0.7 #ffd58a op 0.55 at (-21,-3)). Bob ±0.6 across the crossing. Edge fade-in over 200 px and fade-out over 220 px. Speed 0.0065-0.0115 px/ms, base op 0.42, nextAt 480-900s. v0.5.256 — something at the edge of seeing. <span class="sha">commit 8879c74</span></span>
+  </div>
+
 </section>
 
 <section class="section">
