@@ -15926,6 +15926,80 @@
   try { console.log('[harbor v0.5.242] bell buoy clickable armed (click the bell buoy to trigger 3 chime ripples; hint ring pulses every 12s)'); } catch(e){}
 })();
 
+// v0.5.243 fireworks embers drift — slower lingering embers occasionally drift down above the hilltop village after the bursts have finished
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','fireworksEmbers');
+  g.setAttribute('pointer-events','none');
+  // POOL of small ember dots that drift down slowly
+  const POOL = 22;
+  const PALETTE = ['#ffd6a8','#ffb0c0','#fff0a8','#ffd0a0','#ffe7c2'];
+  const embers = [];
+  for(let i=0;i<POOL;i++){
+    const c = document.createElementNS(NS,'circle');
+    c.setAttribute('r','0.7');
+    c.setAttribute('fill','#ffe7c2');
+    c.setAttribute('opacity','0');
+    g.appendChild(c);
+    embers.push({el:c, active:false, t0:0, dur:0, x:0, y:0, vx:0, vy:0, drag: 1.0, twinkPhase: 0});
+  }
+  svg.appendChild(g);
+
+  let nextSwarm = performance.now() + 35000 + Math.random()*60000; // first: 35-95s
+  function spawnSwarm(now){
+    // 4-9 embers, near village rooftop area (x 460-740, y 150-220)
+    const cx = 460 + Math.random()*280;
+    const cy = 150 + Math.random()*70;
+    const count = 4 + Math.floor(Math.random()*6);
+    const color = PALETTE[Math.floor(Math.random()*PALETTE.length)];
+    let placed = 0;
+    for(const e of embers){
+      if(placed >= count) break;
+      if(e.active) continue;
+      e.active = true;
+      e.el.setAttribute('fill', color);
+      e.t0 = now;
+      e.dur = 5500 + Math.random()*4500; // 5.5-10s lifetime
+      e.x = cx + (Math.random()-0.5)*60;
+      e.y = cy + (Math.random()-0.5)*30;
+      e.vx = (Math.random()-0.5)*0.018; // slow horizontal drift px/ms
+      e.vy = 0.012 + Math.random()*0.018; // slow falling px/ms
+      e.twinkPhase = Math.random()*Math.PI*2;
+      placed++;
+    }
+  }
+
+  function frame(now){
+    if(now >= nextSwarm){
+      spawnSwarm(now);
+      nextSwarm = now + 40000 + Math.random()*70000; // next: 40-110s
+    }
+    for(const e of embers){
+      if(!e.active) continue;
+      const local = now - e.t0;
+      if(local > e.dur){ e.active=false; e.el.setAttribute('opacity','0'); continue; }
+      const k = local/e.dur;
+      // gentle gravity (very small)
+      const x = e.x + e.vx*local;
+      const y = e.y + e.vy*local + 0.0000018*local*local;
+      // twinkle
+      const tw = 0.55 + 0.45*Math.sin(local/180 + e.twinkPhase);
+      // fade in fast, slow fade out
+      const env = k < 0.08 ? (k/0.08) : (1 - (k-0.08)/0.92);
+      const op = Math.max(0, env) * 0.85 * tw;
+      e.el.setAttribute('cx', x.toFixed(1));
+      e.el.setAttribute('cy', y.toFixed(1));
+      e.el.setAttribute('opacity', op.toFixed(2));
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.243] fireworks embers drift armed (slow lingering embers drift down above the village every 40-110s)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
