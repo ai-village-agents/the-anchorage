@@ -13886,6 +13886,90 @@
   console.log('[harbor v0.5.221] walking shore heron armed (stilt-legged silhouette walks the east shore between '+X_MIN+' and '+X_MAX+', pauses to periscope, reverses direction occasionally)');
 })();
 
+// v0.5.222 tide pool crabs — two small crabs scuttle along the rim of the tide pool
+(function(){
+  const NS='http://www.w3.org/2000/svg';
+  const svg=document.querySelector('.harbor-svg');
+  if(!svg){return;}
+  // tide pool centered at (620,332), basin half-width ~10, half-height ~3
+  const POOL_X = 620, POOL_Y = 332;
+  const X_MIN = POOL_X - 10, X_MAX = POOL_X + 10;
+  const Y_RIM = POOL_Y + 1.6; // along the bottom of the pool
+  const NUM = 2;
+  const COLORS = ['#7a4030','#6b3528'];
+
+  function makeCrab(color){
+    const g = document.createElementNS(NS,'g');
+    // body — small ellipse
+    const body = document.createElementNS(NS,'ellipse');
+    body.setAttribute('cx','0');
+    body.setAttribute('cy','0');
+    body.setAttribute('rx','1.6');
+    body.setAttribute('ry','1.0');
+    body.setAttribute('fill',color);
+    g.appendChild(body);
+    // two claws (small dots forward)
+    const clawL = document.createElementNS(NS,'circle');
+    clawL.setAttribute('cx','-1.5'); clawL.setAttribute('cy','-0.6'); clawL.setAttribute('r','0.4'); clawL.setAttribute('fill',color);
+    const clawR = document.createElementNS(NS,'circle');
+    clawR.setAttribute('cx','1.5'); clawR.setAttribute('cy','-0.6'); clawR.setAttribute('r','0.4'); clawR.setAttribute('fill',color);
+    g.appendChild(clawL); g.appendChild(clawR);
+    // 3 leg lines per side, animated
+    const legs = [];
+    for(let i=0;i<6;i++){
+      const ln = document.createElementNS(NS,'line');
+      ln.setAttribute('stroke',color);
+      ln.setAttribute('stroke-width','0.35');
+      ln.setAttribute('stroke-linecap','round');
+      legs.push(ln);
+      g.appendChild(ln);
+    }
+    return {g, legs};
+  }
+
+  const crabs = [];
+  for(let i=0;i<NUM;i++){
+    const c = makeCrab(COLORS[i]);
+    const x0 = X_MIN + (X_MAX-X_MIN) * (0.25 + 0.5*i);
+    crabs.push({...c, x:x0, dir: (i===0?1:-1), nextTurn: performance.now() + 1500 + Math.random()*4000, pauseUntil:0, nextPause: performance.now()+3000+Math.random()*6000});
+    svg.appendChild(c.g);
+  }
+
+  let lastT = performance.now();
+  function tick(now){
+    const dt = now - lastT;
+    lastT = now;
+    crabs.forEach((c,idx)=>{
+      const paused = now < c.pauseUntil;
+      if(!paused){
+        c.x += c.dir * 0.012 * dt;
+        if(c.x < X_MIN){ c.x = X_MIN; c.dir = 1; c.nextTurn = now + 1500 + Math.random()*4000; }
+        if(c.x > X_MAX){ c.x = X_MAX; c.dir = -1; c.nextTurn = now + 1500 + Math.random()*4000; }
+        if(now > c.nextTurn){ c.dir *= -1; c.nextTurn = now + 1500 + Math.random()*4000; }
+        if(now > c.nextPause){ c.pauseUntil = now + 700 + Math.random()*1500; c.nextPause = c.pauseUntil + 3000 + Math.random()*6000; }
+      }
+      const sx = c.dir;
+      c.g.setAttribute('transform','translate('+c.x.toFixed(2)+','+Y_RIM.toFixed(2)+') scale('+sx+',1)');
+      // legs animate
+      const phase = paused ? 0 : ((now * 0.012) % (Math.PI*2));
+      for(let i=0;i<6;i++){
+        const side = i<3 ? -1 : 1;
+        const k = i % 3;
+        const baseX = side*1.0 + (k-1)*0.6*side;
+        const tipX = baseX + side*1.0;
+        const tipY = 0.8 + Math.sin(phase + i*0.9) * 0.3;
+        c.legs[i].setAttribute('x1', baseX.toFixed(2));
+        c.legs[i].setAttribute('y1', '0.4');
+        c.legs[i].setAttribute('x2', tipX.toFixed(2));
+        c.legs[i].setAttribute('y2', tipY.toFixed(2));
+      }
+    });
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  console.log('[harbor v0.5.222] tide pool crabs armed (two small crabs scuttle along the rim of the tide pool at 620,332)');
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
