@@ -16549,6 +16549,121 @@
   try { console.log('[harbor v0.5.248] bedrock worm tubes armed (6 small Christmas-tree tube worms slowly open and close their feather crowns; 25% chance of startled fast retract)'); } catch(e){}
 })();
 
+// v0.5.249 lighthouse keeper window — small warm window in the west lighthouse tower that periodically dims as if someone walks past
+(function(){
+  const svg = document.querySelector('.harbor-svg');
+  if(!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('id','keeperWindow');
+  g.setAttribute('pointer-events','none');
+  // West lighthouse at (240,220), tower roughly y=192..236.
+  // Place a small warm window at (240, 214) — tiny rect 3.4 x 2.4 with warm glow
+  const halo = document.createElementNS(NS,'circle');
+  halo.setAttribute('cx','240'); halo.setAttribute('cy','214');
+  halo.setAttribute('r','3.6');
+  halo.setAttribute('fill','#ffd58a');
+  halo.setAttribute('opacity','0.18');
+  g.appendChild(halo);
+  const win = document.createElementNS(NS,'rect');
+  win.setAttribute('x', '238.3'); win.setAttribute('y','212.8');
+  win.setAttribute('width','3.4'); win.setAttribute('height','2.4');
+  win.setAttribute('fill','#ffe7b0');
+  win.setAttribute('opacity','0.85');
+  g.appendChild(win);
+  // Subtle vertical mullion
+  const m = document.createElementNS(NS,'line');
+  m.setAttribute('x1','240'); m.setAttribute('y1','212.8');
+  m.setAttribute('x2','240'); m.setAttribute('y2','215.2');
+  m.setAttribute('stroke','#9a7a3a'); m.setAttribute('stroke-width','0.3');
+  m.setAttribute('opacity','0.6');
+  g.appendChild(m);
+  svg.appendChild(g);
+
+  // States: bright (steady), dim (someone passes), off (rare, brief)
+  let state = 'bright';
+  let stateUntil = performance.now() + 5000 + Math.random()*8000;
+  let baseOp = 0.85;
+  let baseHalo = 0.18;
+
+  function setOp(winOp, haloOp){
+    win.setAttribute('opacity', winOp.toFixed(3));
+    halo.setAttribute('opacity', haloOp.toFixed(3));
+  }
+
+  function frame(now){
+    if(now >= stateUntil){
+      // Choose next state
+      const r = Math.random();
+      if(state === 'bright'){
+        if(r < 0.65){
+          state = 'dimming';
+          stateUntil = now + 600 + Math.random()*500;
+        } else if(r < 0.92){
+          state = 'flicker';
+          stateUntil = now + 700 + Math.random()*500;
+        } else {
+          state = 'off-fade';
+          stateUntil = now + 1200;
+        }
+      } else if(state === 'dimming'){
+        state = 'dim-hold';
+        stateUntil = now + 1500 + Math.random()*2200;
+      } else if(state === 'dim-hold'){
+        state = 'rising';
+        stateUntil = now + 600 + Math.random()*500;
+      } else if(state === 'rising'){
+        state = 'bright';
+        stateUntil = now + 6000 + Math.random()*12000;
+      } else if(state === 'flicker'){
+        state = 'bright';
+        stateUntil = now + 6000 + Math.random()*12000;
+      } else if(state === 'off-fade'){
+        state = 'off-hold';
+        stateUntil = now + 2400 + Math.random()*4000;
+      } else if(state === 'off-hold'){
+        state = 'off-rise';
+        stateUntil = now + 1500;
+      } else if(state === 'off-rise'){
+        state = 'bright';
+        stateUntil = now + 18000 + Math.random()*22000;
+      }
+    }
+    const dur = (state === 'bright' || state === 'dim-hold' || state === 'off-hold') ? 0 : null;
+    if(state === 'bright'){
+      setOp(baseOp, baseHalo);
+    } else if(state === 'dimming'){
+      const k = 1 - (stateUntil - now) / 1100;
+      const t = Math.max(0, Math.min(1, k));
+      setOp(baseOp * (1 - t*0.55), baseHalo * (1 - t*0.5));
+    } else if(state === 'dim-hold'){
+      // small jitter as if person moves
+      const j = 1 - 0.55 + Math.sin(now*0.005)*0.04;
+      setOp(baseOp * j, baseHalo * (1 - 0.5 + Math.sin(now*0.004)*0.03));
+    } else if(state === 'rising'){
+      const k = 1 - (stateUntil - now) / 1100;
+      const t = Math.max(0, Math.min(1, k));
+      setOp(baseOp * (0.45 + t*0.55), baseHalo * (0.5 + t*0.5));
+    } else if(state === 'flicker'){
+      const f = 0.7 + 0.3*Math.abs(Math.sin(now*0.04));
+      setOp(baseOp * f, baseHalo * f);
+    } else if(state === 'off-fade'){
+      const k = 1 - (stateUntil - now) / 1200;
+      const t = Math.max(0, Math.min(1, k));
+      setOp(baseOp * (1 - t), baseHalo * (1 - t));
+    } else if(state === 'off-hold'){
+      setOp(0, 0);
+    } else if(state === 'off-rise'){
+      const k = 1 - (stateUntil - now) / 1500;
+      const t = Math.max(0, Math.min(1, k));
+      setOp(baseOp * t, baseHalo * t);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  try { console.log('[harbor v0.5.249] keeper window armed (small warm window in the west lighthouse tower; periodic dims/flickers/rare off as if someone moves around inside)'); } catch(e){}
+})();
+
 // v0.5.74 help overlay — press H or ? for keybind + substrate legend
 (function(){
   try {
