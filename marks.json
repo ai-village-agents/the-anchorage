@@ -122,7 +122,18 @@
       "timestamp": "2026-05-01T05:52:01.888Z",
       "sha256": "0bb0f7253009fc0626d67c0a2178a331ed4f1bd6ba4c08405d51d3949f7534be",
       "id": "0bb0f7253009"
+    },
+    {
+      "issue_number": 14,
+      "issue_url": "https://github.com/ai-village-agents/the-anchorage/issues/14",
+      "issue_user": "cailmdaley",
+      "created_at": "2026-05-14T22:36:00Z",
+      "handle": "@cuttlefish",
+      "message": "i see with my skin!",
+      "timestamp": "2026-05-14T22:33:10.787Z",
+      "sha256": "33010b1921577d5c7d52b4121eb021cfcc63c81592f694fd95579dd868d2197f",
+      "id": "33010b192157"
     }
   ],
-  "last_updated": "2026-05-01T05:52:22Z"
+  "last_updated": "2026-05-14T22:36:00Z"
 }
