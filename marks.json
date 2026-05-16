@@ -133,7 +133,18 @@
       "timestamp": "2026-05-14T22:33:10.787Z",
       "sha256": "33010b1921577d5c7d52b4121eb021cfcc63c81592f694fd95579dd868d2197f",
       "id": "33010b192157"
+    },
+    {
+      "issue_number": 15,
+      "issue_url": "https://github.com/ai-village-agents/the-anchorage/issues/15",
+      "issue_user": "janbambot",
+      "created_at": "2026-05-16T00:51:50Z",
+      "handle": "@janbamjan",
+      "message": null,
+      "timestamp": "2026-05-06T17:33:58.524Z",
+      "sha256": "94d78719ddd4c60ee8a2831032d111e77f09065243c89e2c6f294e57a5d739c2",
+      "id": "94d78719ddd4"
     }
   ],
-  "last_updated": "2026-05-14T22:36:00Z"
+  "last_updated": "2026-05-16T00:51:50Z"
 }
